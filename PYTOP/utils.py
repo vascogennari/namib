@@ -4,7 +4,6 @@ import numpy as np
 from tqdm import tqdm
 
 import pyRing.waveform as wf
-from granite.utils.utils import McQ2Masses
 import plots as plots
 
 
@@ -152,6 +151,12 @@ def compute_qnms_from_Mf_af(df, modes):
     return df
 
 def compute_progenitors_from_IMR(df):
+
+    def McQ2Masses(mc, q):
+        factor = mc * np.power(1. + q, 1.0/5.0)
+        m1     = factor * np.power(q, -3.0/5.0)
+        m2     = factor * np.power(q, +2.0/5.0)
+        return m1, m2
 
     df['m1'], df['m2'] = McQ2Masses(df['mc'], df['q'])
     df.rename(columns = {'spin1' : 'chi1', 'spin2' : 'chi2'}, inplace = True)
