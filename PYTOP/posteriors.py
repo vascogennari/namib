@@ -34,15 +34,16 @@ if __name__=='__main__':
         'ordering'         : [],
         'compare-ordering' : [],
 
-        'corner'      : 0,
-        'violin'      : 0,
-        'ridgeline'   : 0,
-        'plot-HMs'    : 0,
-        'plot-cpnest' : '',
-        'evidence-top': 1,
-        'plot-time'   : 0,
-        'plot-strain' : 0,
-        'palette'     : 'crest',
+        'corner'        : 0,
+        'violin'        : 0,
+        'ridgeline'     : 0,
+        'plot-HMs'      : 0,
+        'plot-cpnest'   : '',
+        'BF-comparison' : 0,
+        'evidence-top'  : 1,
+        'plot-time'     : 0,
+        'plot-strain'   : 0,
+        'palette'       : 'crest',
         'corner-settings'    : {'figsize': (15, 15), 'smooth': 0},
         'violin-settings'    : {'figsize': (15, 25), 'alpha': 0.5, 'rotation': 0},
         'ridgeline-settings' : {'figsize': (20, 10), 'alpha': 0.5, 'overlap': 0.5, 'fade': 0},
@@ -98,6 +99,9 @@ if __name__=='__main__':
             try: input_pars[key] = ast.literal_eval(Config.get('plots', key))
             except: pass
         if 'plot-cpnest' in key :
+            try: input_pars[key] = ast.literal_eval(Config.get('plots', key))
+            except: pass
+        if 'BF-comparison' in key :
             try: input_pars[key] = ast.literal_eval(Config.get('plots', key))
             except: pass
         if 'evidence-top'in key :

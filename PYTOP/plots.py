@@ -166,7 +166,7 @@ def violin_plots(pars, SampDataFrame, EvidenceDataFrame):
 
     params = pars['parameters']
     if not pars['compare'] == '':
-        if pars['compare-hard']:
+        if pars['BF-comparison']:
             if pars['evidence-top']: params = ['BF_comparison'] + params
             else:                    params = params + ['BF_comparison']
         else:

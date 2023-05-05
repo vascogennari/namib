@@ -288,7 +288,7 @@ class Posteriors:
                     if not pars['compare'] == '': EventEvidenceDataFrame.insert(0, pars['compare'], single_evt_keys[pars['compare']])
                     self.EvidenceDataFrame = pd.concat([self.EvidenceDataFrame, EventEvidenceDataFrame], ignore_index=True)
 
-        if (not pars['compare'] == '') and (pars['compare-hard'] or len(pd.unique(self.SampDataFrame[pars['compare']]))==2): self.EvidenceDataFrame = compute_bayes_factor(pars, self.EvidenceDataFrame)
+        if (not pars['compare'] == '') and pars['BF-comparison']: self.EvidenceDataFrame = compute_bayes_factor(pars, self.EvidenceDataFrame)
 
     def return_samples_dict(self):
         return self.SampDataFrame, self.EvidenceDataFrame
