@@ -93,6 +93,13 @@ def labels_parameters(pars_list):
             labels.append('$d_L\ [Mpc]$')
             labels_dict[par] = '$d_L\ [Mpc]$'
 
+        elif par == 'mc':
+            labels.append('$M_c\ [M_{\odot}]$')
+            labels_dict[par] = '$M_c\ [M_{\odot}]$'
+        elif par == 'q':
+            labels.append('$q$')
+            labels_dict[par] = '$q$'
+
         elif par == 'ell':
             labels.append('$l\ [km]$')
             labels_dict[par] = '$l\ [km]$'
@@ -114,7 +121,7 @@ def labels_parameters_evidence(par):
     return label
 
 
-def palettes(pars, colormap, number_colors):
+def palettes(pars, colormap, number_colors, corner_plot = False):
 
     # To take inspiration for choosing the palette:
     # https://r02b.github.io/seaborn_palettes/
@@ -130,8 +137,12 @@ def palettes(pars, colormap, number_colors):
             else:        colors = sns.color_palette(pars['palette'], number_colors)
         except:
             if colormap: colors = cm.get_cmap(pars['palette'])
-            else:        colors = mcp.gen_color(cmap = pars['palette'], n = number_colors)         
+            else:        colors = mcp.gen_color(cmap = pars['palette'], n = number_colors)
     else:
         colors = pars['palette']
+    
+    if corner_plot:
+        try:    colors = sns.color_palette('crest', number_colors)
+        except: colors = mcp.gen_color(cmap = 'crest', n = number_colors)
 
     return colors

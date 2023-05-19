@@ -7,6 +7,39 @@ import pyRing.waveform as wf
 import plots as plots
 
 
+def from_IMR_to_RD_samples(df, pars):
+
+    if (set(['m1_detect', 'm2_detect']) <= set(df.keys())):
+        df.rename(columns = {'m1_detect' : 'm1', 'm2_detect' : 'm2'}, inplace = True)
+    if (set(['s1z', 's2z']) <= set(df.keys())):
+        df.rename(columns = {'s1z' : 'chi1', 's2z' : 'chi2'}, inplace = True)
+    if (set(['spin1', 'spin2']) <= set(df.keys())):
+        df.rename(columns = {'spin1' : 'chi1', 'spin2' : 'chi2'}, inplace = True)
+    if (set(['Mc', 'q']) <= set(df.keys())) or (set(['mc', 'q']) <= set(df.keys())):
+        df = compute_progenitors_from_IMR(df)
+    if (set(['Mc', 'q']) <= set(pars['parameters'])) or (set(['mc', 'q']) <= set(pars['parameters'])) and (set(['m1', 'm2']) <= set(df.keys())):
+        df = compute_progenitors_from_IMR(df, inverse = True)
+    if (set(['Mf', 'af']) <= set(pars['parameters'])) and (set(['m1', 'm2', 'chi1', 'chi2']) <= set(df.keys())):
+        df = compute_Mf_af_from_IMR(df)
+    if (set(['f_22', 'tau_22']) <= set(pars['parameters'])) and ((set(['Mf', 'af']) <= set(df.keys())) or (set(['m1', 'm2', 'chi1', 'chi2']) <= set(df.keys()))):
+        df = compute_qnms_from_Mf_af(df,  pars['modes'])
+    if (set(['f_22', 'tau_22']) <= set(pars['parameters'])) and (set(['m1', 'm2', 'chi1', 'chi2']) <= set(df.keys())) and not (set(['Mf', 'af']) <= set(pars['parameters'])):
+        df = compute_Mf_af_from_IMR(df)
+        df = compute_qnms_from_Mf_af(df, pars['modes'])
+    if (set(['f_22', 'tau_22']) <= set(pars['parameters'])) and (set(['f_t_0', 'tau_t_0']) <= set(df.keys())):
+        df.rename(columns = {'f_t_0' : 'f_22', 'tau_t_0' : 'tau_22'}, inplace = True)  
+    if (set(['distance']) <= set(pars['parameters'])) and (set(['logdistance']) <= set(df.keys())):
+        df.insert(0, 'distance', np.exp(df.logdistance))
+    if (set(['iota']) <= set(pars['parameters'])) and (set(['cosiota']) <= set(df.keys())):
+        df.insert(0, 'iota', np.exp(df.cosiota))
+
+    if not (set(pars['parameters']).difference(df.keys()) == set()):
+        additional_pars = set(pars['parameters']).difference(df.keys())
+        for additional_par in additional_pars: df.insert(0, additional_par, 0)
+
+    return df
+
+
 def read_posteriors_event(file_path, pars):
     '''
     Read the posteriors distribution of a single file.
@@ -21,40 +54,26 @@ def read_posteriors_event(file_path, pars):
                 tmp = f['EXP1']['posterior_samples']
             except:
                 tmp = f['combined']['posterior_samples']   # IMPROVE ME: Check the CPNest version
+                if pars['include-prior']:
+                    try:    tmpp = f['combined']['prior_samples']
+                    except: raise ValueError('Invalid option for prior reading: cannot find prior samples. Exiting...')
             load = np.array(tmp)
+            if pars['include-prior']: loadp = np.array(tmpp)
+
     df = pd.DataFrame(load)
-
-    if (set(['m1_detect', 'm2_detect']) <= set(df.keys())):
-        df.insert(0, 'm1', df.m1_detect)
-        df.insert(0, 'm2', df.m2_detect)
-    if (set(['s1z', 's2z']) <= set(df.keys())):
-        df.insert(0, 'chi1', df.s1z)
-        df.insert(0, 'chi2', df.s2z)
-    if (set(['Mc', 'q']) <= set(df.keys())):
-        df = compute_progenitors_from_IMR(df)
-    if (set(['Mf', 'af']) <= set(pars['parameters'])) and (set(['m1', 'm2', 'chi1', 'chi2']) <= set(df.keys())):
-        df = compute_Mf_af_from_IMR(df)
-    if (set(['f_22', 'tau_22']) <= set(pars['parameters'])) and ((set(['Mf', 'af']) <= set(df.keys())) or (set(['m1', 'm2', 'chi1', 'chi2']) <= set(df.keys()))):
-        df = compute_qnms_from_Mf_af(df, pars['modes'])
-    if (set(['f_22', 'tau_22']) <= set(pars['parameters'])) and (set(['m1', 'm2', 'chi1', 'chi2']) <= set(df.keys())) and not (set(['Mf', 'af']) <= set(pars['parameters'])):
-        df = compute_Mf_af_from_IMR(df)
-        df = compute_qnms_from_Mf_af(df, pars['modes'])
-    if (set(['f_22', 'tau_22']) <= set(pars['parameters'])) and (set(['f_t_0', 'tau_t_0']) <= set(df.keys())):
-        df.insert(0, 'f_22',   df.f_t_0)
-        df.insert(0, 'tau_22', df.tau_t_0)
-    if (set(['distance']) <= set(pars['parameters'])) and (set(['logdistance']) <= set(df.keys())):
-        df.insert(0, 'distance', np.exp(df.logdistance))
-    if (set(['iota']) <= set(pars['parameters'])) and (set(['cosiota']) <= set(df.keys())):
-        df.insert(0, 'iota', np.exp(df.cosiota))
-
-    if not (set(pars['parameters']).difference(df.keys()) == set()):
-        additional_pars = set(pars['parameters']).difference(df.keys())
-        for additional_par in additional_pars: df.insert(0, additional_par, 0)
-
+    df = from_IMR_to_RD_samples(df, pars)
     df = df.filter(items = pars['parameters'])
+
+    if pars['include-prior']:
+        dfp = pd.DataFrame(loadp)
+        dfp = from_IMR_to_RD_samples(dfp, pars)
+        dfp = dfp.filter(items = pars['parameters'])
+    else:
+        dfp = pd.DataFrame()
+
     nsamp = len(df)
 
-    return df, nsamp
+    return df, dfp, nsamp
 
 def read_evidence_event(dir_path, file_path):
 
@@ -150,16 +169,21 @@ def compute_qnms_from_Mf_af(df, modes):
 
     return df
 
-def compute_progenitors_from_IMR(df):
+def compute_progenitors_from_IMR(df, inverse = False):
 
     def McQ2Masses(mc, q):
         factor = mc * np.power(1. + q, 1.0/5.0)
         m1     = factor * np.power(q, -3.0/5.0)
         m2     = factor * np.power(q, +2.0/5.0)
         return m1, m2
-
-    df['m1'], df['m2'] = McQ2Masses(df['mc'], df['q'])
-    df.rename(columns = {'spin1' : 'chi1', 'spin2' : 'chi2'}, inplace = True)
+    
+    def Masses2McQ(m1, m2):
+        q  = m2/m1
+        mc = (m1*m2)**(3./5.)/(m1+m2)**(1./5.)
+        return mc, q
+    
+    if not inverse: df['m1'], df['m2'] = McQ2Masses(df['mc'], df['q'])
+    else:           df['mc'], df['q']  = Masses2McQ(df['m1'], df['m2'])
 
     return df
 
@@ -266,6 +290,7 @@ class Posteriors:
         if not (pars['file-path'] == ''): dir_path = pars['file-path']
 
         self.SampDataFrame     = pd.DataFrame(columns = pars['parameters'])
+        self.PriorDataFrame    = pd.DataFrame(columns = pars['parameters'])
         self.EvidenceDataFrame = pd.DataFrame()
         single_evt_keys = {'event': str(), 'pipeline': str(), 'model': str(), 'submodel': str(), 'time': str(), 'GR_tag': str()}
 
@@ -278,15 +303,20 @@ class Posteriors:
                 for i,key in enumerate(single_evt_keys.keys()):
                     single_evt_keys[key] = keys[i]
 
-                EventDataFrame, _ = read_posteriors_event(file_path, pars)
+                EventDataFrame, EventPriorDataFrame, _ = read_posteriors_event(file_path, pars)
                 if not pars['stack-mode'] == '':
                     EventDataFrame = EventDataFrame.assign(par = single_evt_keys[pars['stack-mode']])
                     EventDataFrame.rename(columns={'par': pars['stack-mode']}, inplace = True)
+                    if pars['include-prior']:
+                        EventPriorDataFrame = EventPriorDataFrame.assign(par = single_evt_keys[pars['stack-mode']])
+                        EventPriorDataFrame.rename(columns={'par': pars['stack-mode']}, inplace = True)
                 if not pars['compare'] == '':
                     EventDataFrame = EventDataFrame.assign(par = single_evt_keys[pars['compare']])
                     EventDataFrame.rename(columns={'par': pars['compare']}, inplace = True)                
 
-                self.SampDataFrame = pd.concat([self.SampDataFrame, EventDataFrame], ignore_index=True)
+                self.SampDataFrame      = pd.concat([self.SampDataFrame,  EventDataFrame],      ignore_index=True)
+                if pars['include-prior']:
+                    self.PriorDataFrame = pd.concat([self.PriorDataFrame, EventPriorDataFrame], ignore_index=True)
                 if pars['evidence']:
                     EventEvidenceDataFrame = read_evidence_event(dir_path, file_path)
                     EventEvidenceDataFrame.insert(0, pars['stack-mode'], single_evt_keys[pars['stack-mode']])
@@ -296,15 +326,15 @@ class Posteriors:
         if (not pars['compare'] == '') and pars['BF-comparison']: self.EvidenceDataFrame = compute_bayes_factor(pars, self.EvidenceDataFrame)
 
     def return_samples_dict(self):
-        return self.SampDataFrame, self.EvidenceDataFrame
+        return self.SampDataFrame, self.PriorDataFrame, self.EvidenceDataFrame
 
 
 class Plots:
     '''
     Compute corner and violin plots.
     '''
-    def __init__(self, pars, SampDataFrame, EvidenceDataFrame):
+    def __init__(self, pars, SampDataFrame, PriorDataFrame, EvidenceDataFrame):
         
-        if pars['corner']:    plots.corner_plots(   pars, SampDataFrame)
-        if pars['violin']:    plots.violin_plots(   pars, SampDataFrame, EvidenceDataFrame)
-        if pars['ridgeline']: plots.ridgeline_plots(pars, SampDataFrame)
+        if pars['corner']:    plots.corner_plots(   pars, SampDataFrame, PriorDataFrame)
+        if pars['violin']:    plots.violin_plots(   pars, SampDataFrame, PriorDataFrame, EvidenceDataFrame)
+        if pars['ridgeline']: plots.ridgeline_plots(pars, SampDataFrame, PriorDataFrame)

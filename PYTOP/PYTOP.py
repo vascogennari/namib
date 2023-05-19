@@ -33,6 +33,7 @@ if __name__=='__main__':
         'save-post'          : 0,
         'ordering'           : [],
         'compare-ordering'   : [],
+        'include-prior'      : 0,
 
         'corner'             : 0,
         'violin'             : 0,
@@ -44,6 +45,8 @@ if __name__=='__main__':
         'plot-time'          : 0,
         'plot-strain'        : 0,
         'palette'            : 'crest',
+        'single-prior'       : '',
+        'prior-color'        : '#828F61',
         'corner-settings'    : {'figsize': (15, 15), 'smooth': 0},
         'violin-settings'    : {'figsize': (15, 25), 'alpha': 0.5, 'rotation': 0},
         'ridgeline-settings' : {'figsize': (20, 10), 'alpha': 0.5, 'overlap': 0.5, 'fade': 0},
@@ -77,7 +80,7 @@ if __name__=='__main__':
 
     # Read the posteriors and create the .txt files with the reduced posteriors
     PostOutput = Posteriors(input_pars)
-    SampDataFrame, EvidenceDataFrame = PostOutput.return_samples_dict()
+    SampDataFrame, PriorDataFrame, EvidenceDataFrame = PostOutput.return_samples_dict()
 
     if input_pars['save-post']:
         red_post_dir = create_directory(out_dir, 'reduced_posteriors')
@@ -89,7 +92,7 @@ if __name__=='__main__':
 
     if  input_pars['corner'] or input_pars['violin'] or input_pars['ridgeline']:
         input_pars['plots-dir'] = create_directory(out_dir, 'plots')
-        Plots(input_pars, SampDataFrame, EvidenceDataFrame)
+        Plots(input_pars, SampDataFrame, PriorDataFrame, EvidenceDataFrame)
         print('\nPlots are saved in:\n{}'.format(input_pars['plots-dir']))
     
     print('\nFinished.\n')

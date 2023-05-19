@@ -54,7 +54,7 @@ def bounds_dictionary(pars):
     return bounds_dict
 
 
-def corner_plots(pars, SampDataFrame):
+def corner_plots(pars, SampDataFrame, PriorDataFrame):
 
     if not pars['compare'] == '': comp_pars = pd.unique(SampDataFrame[pars['compare']])
     else:                         comp_pars = 'a'
@@ -66,7 +66,7 @@ def corner_plots(pars, SampDataFrame):
         else: raise ValueError('Invalid option for {stack_mode} ordering.'.format(stack_mode = pars['stack-mode']))
 
     levels = [0.5, 0.68, 0.90]
-    colors = lp.palettes(pars, colormap = False, number_colors = len(keys))
+    colors = lp.palettes(pars, colormap = False, number_colors = len(keys), corner_plot = True)
     
     for comp in comp_pars:
         if not pars['compare'] == '': SampDataFrameComp = SampDataFrame[SampDataFrame[pars['compare']] == comp]
@@ -105,6 +105,41 @@ def corner_plots(pars, SampDataFrame):
             )
         fig.axes[np.shape(samp)[-1]-1].legend(*fig.axes[0].get_legend_handles_labels(), loc = 'center', frameon = False)
         for axx in fig.axes: axx.grid(visible = True)
+
+        # Plot prior samples if required
+        if pars['include-prior']:
+            if pars['single-prior'] == '':
+                for i,key in enumerate(keys):
+                    samp = np.column_stack(PriorDataFrame[par] for par in params)
+                    fig = corner(
+                        samp,
+                        fig              = fig,
+                        range            = range,
+                        levels           = levels,
+                        hist_kwargs      = {'density':True, 'label':'$\mathrm{'+lab+'}$'},
+                        color            = pars['prior-color'],
+                        show_titles      = False,
+                        title_kwargs     = {"fontsize":12},
+                        use_math_text    = True,
+                        no_fill_contours = True,
+                        smooth           = pars['corner-settings']['smooth'],
+                    )
+            else:
+                samp = np.column_stack(PriorDataFrame[PriorDataFrame[pars['stack-mode']] == pars['single-prior']][par] for par in params)
+                fig = corner(
+                    samp,
+                    fig              = fig,
+                    range            = range,
+                    levels           = levels,
+                    hist_kwargs      = {'density':True, 'label':'$\mathrm{'+lab+'}$'},
+                    color            = pars['prior-color'],
+                    show_titles      = False,
+                    title_kwargs     = {"fontsize":12},
+                    use_math_text    = True,
+                    no_fill_contours = True,
+                    smooth           = pars['corner-settings']['smooth'],
+                )
+
         
         if not pars['compare'] == '': filename = os.path.join(pars['plots-dir'], 'corner_{name}_{comp}.pdf'.format(name = pars['stack-mode'], comp = comp))
         else:                         filename = os.path.join(pars['plots-dir'], 'corner_{name}.pdf'.format(name = pars['stack-mode']))
@@ -112,7 +147,7 @@ def corner_plots(pars, SampDataFrame):
 
 
 
-def violin_plots(pars, SampDataFrame, EvidenceDataFrame):
+def violin_plots(pars, SampDataFrame, PriorDataFrame, EvidenceDataFrame):
 
     keys = pd.unique(SampDataFrame[pars['stack-mode']])
     if pars['stack-mode'] == 'time': keys = sort_times_list(keys)
@@ -378,7 +413,7 @@ def violin_plots(pars, SampDataFrame, EvidenceDataFrame):
 
 
 
-def ridgeline_plots(pars, SampDataFrame):
+def ridgeline_plots(pars, SampDataFrame, PriorDataFrame):
 
     import pandas as pd
 

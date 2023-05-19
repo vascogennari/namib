@@ -12,10 +12,11 @@ setup(
     version          = '1.0.0',
     description      = 'Python package for handling and displaying multiple posterior distributions.',
     author           = 'Vasco Gennari',
-    author_email     = 'vasco.gennari@ligo.org',
+    author_email     = 'vasco.gennari@gmail.com',
+    url              = 'https://github.com/vascogennari/PYTOP',
     long_description = long_description,
     packages         = ['PYTOP'],
-    url              = 'https://github.com/vascogennari/PYTOP',
     python_requires  = '>=3',
     install_requires = requirements,
+    entry_points     = {'console_scripts': ['PYTOP = PYTOP.PYTOP:main']}
 )
