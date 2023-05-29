@@ -9,6 +9,7 @@ import plots as plots
 
 def from_IMR_to_RD_samples(df, pars):
 
+    # granite
     if (set(['m1_detect', 'm2_detect']) <= set(df.keys())):
         df.rename(columns = {'m1_detect' : 'm1', 'm2_detect' : 'm2'}, inplace = True)
     if (set(['s1z', 's2z']) <= set(df.keys())):
@@ -17,8 +18,10 @@ def from_IMR_to_RD_samples(df, pars):
         df.rename(columns = {'spin1' : 'chi1', 'spin2' : 'chi2'}, inplace = True)
     if (set(['Mc', 'q']) <= set(df.keys())) or (set(['mc', 'q']) <= set(df.keys())):
         df = compute_progenitors_from_IMR(df)
-    if (set(['Mc', 'q']) <= set(pars['parameters'])) or (set(['mc', 'q']) <= set(pars['parameters'])) and (set(['m1', 'm2']) <= set(df.keys())):
+    if (set(['Mc', 'q']) <= set(pars['parameters'])) or (set(['mc', 'q']) <= set(pars['parameters'])) or (set(['q']) <= set(pars['parameters'])) and (set(['m1', 'm2']) <= set(df.keys())):
         df = compute_progenitors_from_IMR(df, inverse = True)
+
+    # Compute remnant pars
     if (set(['Mf', 'af']) <= set(pars['parameters'])) and (set(['m1', 'm2', 'chi1', 'chi2']) <= set(df.keys())):
         df = compute_Mf_af_from_IMR(df)
     if (set(['f_22', 'tau_22']) <= set(pars['parameters'])) and ((set(['Mf', 'af']) <= set(df.keys())) or (set(['m1', 'm2', 'chi1', 'chi2']) <= set(df.keys()))):
@@ -26,19 +29,41 @@ def from_IMR_to_RD_samples(df, pars):
     if (set(['f_22', 'tau_22']) <= set(pars['parameters'])) and (set(['m1', 'm2', 'chi1', 'chi2']) <= set(df.keys())) and not (set(['Mf', 'af']) <= set(pars['parameters'])):
         df = compute_Mf_af_from_IMR(df)
         df = compute_qnms_from_Mf_af(df, pars['modes'])
+
+    # Damped-sinusoids
     if (set(['f_22', 'tau_22']) <= set(pars['parameters'])) and (set(['f_t_0', 'tau_t_0']) <= set(df.keys())):
-        df.rename(columns = {'f_t_0' : 'f_22', 'tau_t_0' : 'tau_22'}, inplace = True)  
+        if pars['ds-scaling'] and (set(['f_t_0', 'tau_t_0']) <= set(df.keys())): df.tau_t_0 *= 1000  # Set time in [ms]
+        df.rename(columns = {'f_t_0' : 'f_22', 'tau_t_0' : 'tau_22'}, inplace = True)
+    if 'A2220' in set(pars['parameters']) and 'logA_t_0' in set(df.keys()):
+        df['logA_t_0'] = df['logA_t_0'].apply(lambda x: np.exp(x))
+        if pars['ds-scaling'] and 'logA_t_0' in set(df.keys()): df.logA_t_0 *= 1e10  # Scale amplitude as [1e-21]
+        df.rename(columns = {'logA_t_0' : 'A2220'}, inplace = True)    
+    if 'A2330' in set(pars['parameters']) and 'logA_t_1' in set(df.keys()):
+        df['logA_t_1'] = df['logA_t_1'].apply(lambda x: np.exp(x))
+        if pars['ds-scaling'] and 'logA_t_1' in set(df.keys()): df.logA_t_1 *= 1e10  # Scale amplitude as [1e-21]
+        df.rename(columns = {'logA_t_1' : 'A2330'}, inplace = True)    
+
+    # Extrinsic parameters
     if (set(['distance']) <= set(pars['parameters'])) and (set(['logdistance']) <= set(df.keys())):
         df.insert(0, 'distance', np.exp(df.logdistance))
+    if (set(['iota']) <= set(pars['parameters'])) and (set(['costheta_jn']) <= set(df.keys())):
+        df.insert(0, 'iota', np.arccos(df.costheta_jn))
     if (set(['iota']) <= set(pars['parameters'])) and (set(['cosiota']) <= set(df.keys())):
-        df.insert(0, 'iota', np.exp(df.cosiota))
+        df.insert(0, 'iota', np.arccos(df.cosiota))
+
+    # Set positive spins
+    if 'chi1' in set(pars['parameters']):
+        df['chi1'] = df['chi1'].apply(lambda x: np.abs(x))
+    if (set(['chi2']) in set(pars['parameters'])):
+        df['chi2'] = df['chi2'].apply(lambda x: np.abs(x))
 
     if not (set(pars['parameters']).difference(df.keys()) == set()):
         additional_pars = set(pars['parameters']).difference(df.keys())
-        for additional_par in additional_pars: df.insert(0, additional_par, 0)
+        for additional_par in additional_pars:
+            df.insert(0, additional_par, np.nan)
+            df[additional_par][0] = 0
 
     return df
-
 
 def read_posteriors_event(file_path, pars):
     '''
@@ -186,6 +211,24 @@ def compute_progenitors_from_IMR(df, inverse = False):
     else:           df['mc'], df['q']  = Masses2McQ(df['m1'], df['m2'])
 
     return df
+
+def clean_empty_keys_violin(samp_L, samp_R):
+
+    tmp = np.array([0,1])
+    for samp in [samp_L, samp_R]:
+        for i,elem in enumerate(samp):
+            if   not list(elem):       samp[i] = tmp
+            elif np.isnan(elem).any(): samp[i] = tmp
+    
+    return samp_L, samp_R
+
+def clean_empty_keys_corner(samp):
+
+    tmp = np.array([0,1])
+    for i,elem in enumerate(samp.T):
+        if np.isnan(elem).any(): samp.T[i] = np.zeros(len(elem))
+    
+    return samp
 
 def create_directory(parent_path, name):
 

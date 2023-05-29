@@ -34,6 +34,7 @@ if __name__=='__main__':
         'ordering'           : [],
         'compare-ordering'   : [],
         'include-prior'      : 0,
+        'ds-scaling'         : 0,
 
         'corner'             : 0,
         'violin'             : 0,
@@ -41,7 +42,7 @@ if __name__=='__main__':
         'plot-HMs'           : 0,
         'plot-cpnest'        : '',
         'BF-comparison'      : 0,
-        'evidence-top'       : 1,
+        'evidence-top'       : 0,
         'plot-time'          : 0,
         'plot-strain'        : 0,
         'palette'            : 'crest',
@@ -71,7 +72,7 @@ if __name__=='__main__':
             except: pass
 
     input_pars['parent-dir'] = pardir_path
-    samp_dir                 = create_directory(input_pars['parent-dir'], 'samples')   
+    samp_dir                 = create_directory(input_pars['parent-dir'], 'samples')
     input_pars['samp-dir']   = os.path.join(samp_dir, input_pars['samp-dir'])
     print('\nPosteriors are read from:\n{}'.format(input_pars['samp-dir']))
 

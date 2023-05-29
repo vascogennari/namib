@@ -88,6 +88,8 @@ def corner_plots(pars, SampDataFrame, PriorDataFrame):
         for i,key in enumerate(keys):
             SampDataFrameFilt = SampDataFrameComp[SampDataFrameComp[pars['stack-mode']] == key]
             samp = np.column_stack(SampDataFrameFilt[par] for par in params)
+            samp = utils.clean_empty_keys_corner(samp)  # FIXME: This is a hardfix that should be changed
+
             lab = key.replace('_', '\_')
             fig = corner(
                 samp,
@@ -327,6 +329,8 @@ def violin_plots(pars, SampDataFrame, PriorDataFrame, EvidenceDataFrame):
                     if (not (SampDataFrameFilt_L == 0).all()) or (not (SampDataFrameFilt_R == 0).all()):
                         samp_L = [np.float_(SampDataFrameFilt_L[SampDataFrameComp_L[pars['stack-mode']] == key]) for key in keys]
                         samp_R = [np.float_(SampDataFrameFilt_R[SampDataFrameComp_R[pars['stack-mode']] == key]) for key in keys]
+                        samp_L, samp_R = utils.clean_empty_keys_violin(samp_L, samp_R)  # FIXME: This is a hardfix that should be changed
+
                         violinplot(samp_L,
                                 positions    = positions,
                                 labels       = label_x,
@@ -430,8 +434,11 @@ def ridgeline_plots(pars, SampDataFrame, PriorDataFrame):
 
         if pars['bounds'] == []: range = None
         else:                    range = pars['bounds'][pi]
+        if pi == 0: flag = True
+        else:       flag = False
 
         if pars['compare'] == '':
+            comp_pars = keys
             colors = lp.palettes(pars, colormap = True, number_colors = 0)
             SampDataFrame['ordering'] = pd.Categorical(SampDataFrame[pars['stack-mode']], categories = keys, ordered = True)
             subset = ax[:,pi]
@@ -439,6 +446,8 @@ def ridgeline_plots(pars, SampDataFrame, PriorDataFrame):
                 by        = 'ordering',
                 column    = par,
                 ylim      = 'own',
+                legend    = flag,
+                ylabels   = flag,
                 colormap  = colors,
                 alpha     = pars['ridgeline-settings']['alpha'],
                 fade      = pars['ridgeline-settings']['fade'],
@@ -447,6 +456,7 @@ def ridgeline_plots(pars, SampDataFrame, PriorDataFrame):
                 linecolor = 'k',
                 x_range   = range,
                 ax        = subset,
+                xlabels   = labels_dict[par]
             )
         else:
             comp_pars = pd.unique(SampDataFrame[pars['compare']])
@@ -491,6 +501,7 @@ def ridgeline_plots(pars, SampDataFrame, PriorDataFrame):
         ax[len(keys)-1][pi].xaxis.set_visible(True)
         ax[len(keys)-1][pi].set_xlabel(labels_dict[par])
 
+    if pars['compare'] == '': colors = lp.palettes(pars, colormap = False, number_colors = len(comp_pars))
     import matplotlib.patches as mpatches
     patch = [mpatches.Patch(facecolor = colors[ci], edgecolor = 'k', alpha = pars['violin-settings']['alpha'], label = comp_pars[ci]) for ci,c in enumerate(comp_pars)]
     fig.axes[0].legend(handles = patch, loc = 2, frameon = False)
