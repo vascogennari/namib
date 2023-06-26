@@ -3,7 +3,6 @@ from optparse import OptionParser
 
 from utils import Posteriors, Plots, save_posteriors_to_txt
 from utils import create_directory
-import numpy as np
 
 
 if __name__=='__main__':

@@ -7,23 +7,7 @@ from joypy import joyplot
 import utils as utils, labels_palettes as lp
 
 
-def time_array_from_list(input_keys):
-
-    num_keys = len(input_keys)
-    # Convert the list into a numpy array and sort it
-    tmp = np.empty(num_keys)
-    for i, key in enumerate(input_keys):
-        tmp[i] = float(key.strip('M'))
-    times = np.sort(tmp)
-
-    switch = False
-    for key in input_keys:
-        if '.' in key: switch = True
-    if not switch: times = times.astype(int)
-
-    return times
-
-def sort_times_list(input_keys):
+def sort_times_list(input_keys, labels = False):
 
     num_keys = len(input_keys)
     # Convert the list into a numpy array and sort it
@@ -41,21 +25,8 @@ def sort_times_list(input_keys):
         tmp = str(key)
         if not switch:
             if tmp.endswith('.0'): tmp = tmp[:-2]
-        keys[i] = tmp + 'M'
-
-    # IMPROVEME: find a cleaner way to check a generic condition
-    try:
-        idx = keys.index('-5M')
-        keys[idx] = '-05M'
-    except: pass
-    try:
-        idx = keys.index('0M')
-        keys[idx] = '00M'
-    except: pass
-    try:
-        idx = keys.index('5M')
-        keys[idx] = '05M'
-    except: pass
+        keys[i] = tmp
+        if not labels: keys[i] += 'M'
 
     return keys
 
@@ -175,7 +146,7 @@ def violin_plots(pars, SampDataFrame, PriorDataFrame, EvidenceDataFrame):
             if ((set(pars['compare-ordering']) <= set(comp_pars))) and (len(pars['compare-ordering']) == len(comp_pars)): comp_pars = pars['compare-ordering']
             else: raise ValueError('Invalid option for {compare} ordering.'.format(compare = pars['compare-ordering']))
     else: comp_pars = 'a'
-    if pars['stack-mode'] == 'time': label_x = time_array_from_list(keys)
+    if pars['stack-mode'] == 'time': label_x = sort_times_list(keys, labels = True)
     else:                            label_x = keys
 
     positions = np.arange(len(keys))
