@@ -58,6 +58,9 @@ if __name__=='__main__':
         if ('samp-dir' in key) or ('output' in key) or ('stack-mode' in key) or ('compare' in key):
             try: input_pars[key] = Config.get('input', key)
             except: pass
+        if ('compare-hard' in key) or ('evidence' in key) or ('save-post' in key) or ('include-prior' in key) or ('ds-scaling' in key):
+            try: input_pars[key] = Config.getboolean('input', key)
+            except: pass
         else:
             switch = 0
             try: input_pars[key] = ast.literal_eval(Config.get('input', key))

@@ -43,6 +43,20 @@ def sort_times_list(input_keys):
             if tmp.endswith('.0'): tmp = tmp[:-2]
         keys[i] = tmp + 'M'
 
+    # IMPROVEME: find a cleaner way to check a generic condition
+    try:
+        idx = keys.index('-5M')
+        keys[idx] = '-05M'
+    except: pass
+    try:
+        idx = keys.index('0M')
+        keys[idx] = '00M'
+    except: pass
+    try:
+        idx = keys.index('5M')
+        keys[idx] = '05M'
+    except: pass
+
     return keys
 
 def bounds_dictionary(pars):
@@ -141,7 +155,6 @@ def corner_plots(pars, SampDataFrame, PriorDataFrame):
                     no_fill_contours = True,
                     smooth           = pars['corner-settings']['smooth'],
                 )
-
         
         if not pars['compare'] == '': filename = os.path.join(pars['plots-dir'], 'corner_{name}_{comp}.pdf'.format(name = pars['stack-mode'], comp = comp))
         else:                         filename = os.path.join(pars['plots-dir'], 'corner_{name}.pdf'.format(name = pars['stack-mode']))
@@ -188,7 +201,7 @@ def violin_plots(pars, SampDataFrame, PriorDataFrame, EvidenceDataFrame):
     else:
         if not pars['compare-hard']:
             colors = lp.palettes(pars, colormap = False, number_colors = len(comp_pars))
-        else:                  
+        else:
             colors = lp.palettes(pars, colormap = False, number_colors = 2)
             plot_opts_L = {
                 'violin_fc'      : colors[0],
@@ -211,7 +224,7 @@ def violin_plots(pars, SampDataFrame, PriorDataFrame, EvidenceDataFrame):
                 if pars['evidence-top']: params = [pars['plot-cpnest']] + params
                 else:                    params = params + [pars['plot-cpnest']]
     if pars['plot-time']: params = ['times'] + params
-    
+
     if (not pars['compare'] == '') and pars['compare-hard']: comp_pars_loop = 'A'
     else:                                                    comp_pars_loop = comp_pars
 
@@ -313,13 +326,13 @@ def violin_plots(pars, SampDataFrame, PriorDataFrame, EvidenceDataFrame):
                                     elinewidth = 1        ,
                                     capsize    = 4        ,
                                     ecolor     = 'k'      ,
-                                    mfc        = colors[c],
+                                    mfc        = colors[ci],
                                     ms         = 8        ,
                                     mew        = 1        ,
                                     mec        = 'k'      ,
                                     alpha      = pars['violin-settings']['alpha'],
                                 )
-                                ax[pi].scatter(keys, value, s = 50, c = colors[c], alpha = pars['violin-settings']['alpha'])
+                                ax[pi].scatter(keys, value, s = 50, c = colors[ci], alpha = pars['violin-settings']['alpha'])
                             ax[pi].set_ylabel(label_evidence)
                             ax[pi].tick_params(labelsize = 8, axis = 'x')
             else:
@@ -329,7 +342,7 @@ def violin_plots(pars, SampDataFrame, PriorDataFrame, EvidenceDataFrame):
                     if (not (SampDataFrameFilt_L == 0).all()) or (not (SampDataFrameFilt_R == 0).all()):
                         samp_L = [np.float_(SampDataFrameFilt_L[SampDataFrameComp_L[pars['stack-mode']] == key]) for key in keys]
                         samp_R = [np.float_(SampDataFrameFilt_R[SampDataFrameComp_R[pars['stack-mode']] == key]) for key in keys]
-                        samp_L, samp_R = utils.clean_empty_keys_violin(samp_L, samp_R)  # FIXME: This is a hardfix that should be changed
+                        samp_L, samp_R = utils.clean_empty_keys_violin(samp_L, samp_R)  # FIXME: This is a hardfix which should be changed
 
                         violinplot(samp_L,
                                 positions    = positions,
@@ -396,13 +409,13 @@ def violin_plots(pars, SampDataFrame, PriorDataFrame, EvidenceDataFrame):
                                 elinewidth = 1        ,
                                 capsize    = 4        ,
                                 ecolor     = 'k'      ,
-                                mfc        = colors[c],
+                                mfc        = colors[ci],
                                 ms         = 8        ,
                                 mew        = 1        ,
                                 mec        = 'k'      ,
                                 alpha      = pars['violin-settings']['alpha'],
                             )
-                            ax[pi].scatter(keys, value, s = 50, c = colors[c], alpha = pars['violin-settings']['alpha'] )
+                            ax[pi].scatter(keys, value, s = 50, c = colors[ci], alpha = pars['violin-settings']['alpha'] )
                         ax[pi].set_ylabel(label_evidence)
                         ax[pi].tick_params(labelsize = 8, axis = 'x')
     [l.set_rotation(pars['violin-settings']['rotation']) for l in ax[len(params)-1].get_xticklabels()]

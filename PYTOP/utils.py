@@ -214,12 +214,12 @@ def compute_progenitors_from_IMR(df, inverse = False):
 
 def clean_empty_keys_violin(samp_L, samp_R):
 
-    tmp = np.array([0,1])
+    tmp = np.array([1000,1001])
     for samp in [samp_L, samp_R]:
         for i,elem in enumerate(samp):
             if   not list(elem):       samp[i] = tmp
             elif np.isnan(elem).any(): samp[i] = tmp
-    
+
     return samp_L, samp_R
 
 def clean_empty_keys_corner(samp):
@@ -251,8 +251,8 @@ def compute_bayes_factor(pars, df):
     for key in keys:
         evidence_L = (df[pars['stack-mode']] == key) & (df[pars['compare']] == comp_pars[0])
         evidence_R = (df[pars['stack-mode']] == key) & (df[pars['compare']] == comp_pars[1])
-        df.loc[df.index[df[pars['stack-mode']] == key].tolist(), 'Bayes_factor'] =       float(df[evidence_R]['lnZ'])       - float(df[evidence_L]['lnZ'])
-        try:    df.loc[df.index[df[pars['stack-mode']] == key].tolist(), 'Bayes_factor_error'] = float(df[evidence_R]['lnZ_error']) + float(df[evidence_L]['lnZ_error'])
+        df.loc[df.index[df[pars['stack-mode']] == key].tolist(), 'Bayes_factor'] =               float(df[evidence_R]['lnZ'].iloc[0])       - float(df[evidence_L]['lnZ'].iloc[0])
+        try:    df.loc[df.index[df[pars['stack-mode']] == key].tolist(), 'Bayes_factor_error'] = float(df[evidence_R]['lnZ_error'].iloc[0]) + float(df[evidence_L]['lnZ_error'].iloc[0])
         except: df.loc[df.index[df[pars['stack-mode']] == key].tolist(), 'Bayes_factor_error'] = 0.1
 
     return df

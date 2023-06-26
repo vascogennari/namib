@@ -100,6 +100,12 @@ def labels_parameters(pars_list):
             labels.append('$q$')
             labels_dict[par] = '$q$'
 
+        elif par == 'domega_220':
+            labels.append('$\\delta\\omega_{22}$')
+            labels_dict[par] = '$\\delta\\omega_{22}$'
+        elif par == 'domega_330':
+            labels.append('$\\delta\\omega_{33}$')
+            labels_dict[par] = '$\\delta\\omega_{33}$'
         elif par == 'ell':
             labels.append('$l\ [km]$')
             labels_dict[par] = '$l\ [km]$'

@@ -1,8 +1,8 @@
 import os
 
 # ------------------------- #
-input_path  = '/Users/vascogennari/Documents/work/code/python/results/GW190521B_HMs/PROD0/Kerr-amp'
-output_path = '/Users/vascogennari/Documents/work/code/python/PYTOP/samples/GW190521B/PROD0/Kerr_amp'
+input_path  = '/Users/vascogennari/Documents/work/code/python/results/GW190521B/PROD2/TGR'
+output_path = '/Users/vascogennari/Documents/work/code/python/PYTOP/samples/GW190521B/PROD2/TGR'
 
 elements = {
     'name'     : '',
@@ -10,7 +10,7 @@ elements = {
     'model'    : '',
     'submodel' : '',
     'time'     : '',
-    'GR_tag'   : 'GR',
+    'GR_tag'   : 'nGR',
 }
 # ------------------------- #
 
@@ -34,14 +34,13 @@ for file in os.listdir(input_path):
         filename_evidence = filename_tmp + '_noise.txt'
 
         nested_sampler_path = os.path.join(input_path,  file, 'Nested_sampler')
-        input_filename  = os.path.join(nested_sampler_path, 'cpnest.h5')
+        input_filename  = os.path.join(nested_sampler_path, 'raynest.h5')
         output_filename = os.path.join(output_path, filename)
         input_evidence  = os.path.join(nested_sampler_path, 'Evidence.txt')
         output_evidence_dir = os.path.join(output_path, 'noise_evidences')
         if not os.path.exists(output_evidence_dir): os.makedirs(output_evidence_dir)
         output_evidence = os.path.join(output_evidence_dir, filename_evidence)
 
-        
         os.system('scp -r {input_filename} {output_filename}'.format(input_filename=input_filename, output_filename=output_filename))
         os.system('scp -r {input_evidence} {output_evidence}'.format(input_evidence=input_evidence, output_evidence=output_evidence))
 
