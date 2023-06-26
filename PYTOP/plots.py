@@ -181,12 +181,6 @@ def violin_plots(pars, SampDataFrame, PriorDataFrame, EvidenceDataFrame):
     positions = np.arange(len(keys))
     _, labels = lp.labels_parameters(pars['parameters'])
     if not pars['bounds'] == []: bounds_dict = bounds_dictionary(pars)
-    if pars['plot-time']:
-        times = time_array_from_list(keys)
-        times, times_kde = utils.process_peaktime(os.path.join(pars['samp-dir'], 'time_distribution'), times) 
-    if pars['plot-strain']:
-        times = time_array_from_list(keys)
-        times, strain = utils.whiten_strain(os.path.join(pars['samp-dir'], 'time_distribution'), times)
 
     if pars['compare'] == '':
         colors = lp.palettes(pars, colormap = False, number_colors = 1)
@@ -223,7 +217,6 @@ def violin_plots(pars, SampDataFrame, PriorDataFrame, EvidenceDataFrame):
             if not pars['plot-cpnest'] == '':
                 if pars['evidence-top']: params = [pars['plot-cpnest']] + params
                 else:                    params = params + [pars['plot-cpnest']]
-    if pars['plot-time']: params = ['times'] + params
 
     if (not pars['compare'] == '') and pars['compare-hard']: comp_pars_loop = 'A'
     else:                                                    comp_pars_loop = comp_pars
@@ -246,126 +239,69 @@ def violin_plots(pars, SampDataFrame, PriorDataFrame, EvidenceDataFrame):
             SampDataFrameComp_R = SampDataFrame[SampDataFrame[pars['compare']] == comp_pars[1]]
 
         for pi,par in enumerate(params):
-            if pars['plot-strain']:
-                if pi==0:
-                    ax[pi].plot(times, strain, linewidth = 1, color = 'k', alpha = pars['violin-settings']['alpha'])
-                    ax[pi].set_ylim(-0.4e-21, 0.4e-21)
-            if pars['plot-time']:
-                if pi==0:
-                    ax[pi].plot(times, times_kde, linewidth  = 1, color = 'k', alpha = pars['violin-settings']['alpha'])
-                    ax[pi].fill_between(times, times_kde, color = colors[0],   alpha = pars['violin-settings']['alpha'])
-                    ax[pi].set_ylabel('$p(t_{peak})$') 
-                else:
-                    if (not par == 'BF_comparison') or (not par == pars['plot-cpnest']):
-                        SampDataFrameFilt_L = SampDataFrameComp_L[par]
-                        SampDataFrameFilt_R = SampDataFrameComp_R[par]
-                        samp_L = [np.float_(SampDataFrameFilt_L[SampDataFrameComp_L[pars['stack-mode']] == key]) for key in keys]
-                        samp_R = [np.float_(SampDataFrameFilt_R[SampDataFrameComp_R[pars['stack-mode']] == key]) for key in keys]
-                        violinplot(samp_L,
-                                positions    = positions,
-                                labels       = label_x,
-                                show_boxplot = False,
-                                side         = 'left',
-                                ax           = ax[pi],
-                                plot_opts    = plot_opts_L)
-                        violinplot(samp_R,
-                                positions    = positions,
-                                labels       = label_x,
-                                show_boxplot = False,
-                                side         = 'right',
-                                ax           = ax[pi],
-                                plot_opts    = plot_opts_R)
-                        ax[pi].set_ylabel(labels[par])
-                        if not pars['bounds'] == []: ax[pi].set_ylim(bounds_dict[par])
-                        if not (pi == len(pars['parameters'])-1): ax[pi].xaxis.set_visible(False)
-                    else:
-                        if par == 'BF_comparison':
-                            EvidenceDataFrame['ordering'] = pd.Categorical(EvidenceDataFrame[pars['stack-mode']], categories = keys, ordered = True)
-                            value     = EvidenceDataFrame[EvidenceDataFrame[pars['compare']] == comp_pars[0]].sort_values('ordering').Bayes_factor
-                            value_err = EvidenceDataFrame[EvidenceDataFrame[pars['compare']] == comp_pars[0]].sort_values('ordering').Bayes_factor_error
-                            label_evidence = lp.labels_parameters_evidence(par)
-                            ax[pi].errorbar(
-                                keys                  ,
-                                value                 ,
-                                value_err             ,
-                                fmt        = 'o'      ,
-                                linewidth  = 1        ,
-                                elinewidth = 1        ,
-                                capsize    = 4        ,
-                                ecolor     = 'k'      ,
-                                mfc        = 'None'   ,
-                                ms         = 8        ,
-                                mew        = 1        ,
-                                mec        = 'k'      ,
-                                alpha      = pars['violin-settings']['alpha'],
-                            )
-                            cs = [colors[1] if b > 0 else colors[0] for b in value]
-                            ax[pi].scatter(keys, value, s = 50, c = cs, alpha = pars['violin-settings']['alpha'])
-                            ax[pi].set_ylabel(label_evidence)
-                            ax[pi].tick_params(labelsize = 8, axis = 'x')
-                        elif par == pars['plot-cpnest']:
-                            EvidenceDataFrame['ordering'] = pd.Categorical(EvidenceDataFrame[pars['stack-mode']], categories = keys, ordered = True)
-                            for c,comp in enumerate(comp_pars):
-                                if   pars['plot-cpnest'] == 'bayes-factor':
-                                    value     = EvidenceDataFrame[EvidenceDataFrame[pars['compare']] == comp].sort_values('ordering').lnB
-                                    value_err = EvidenceDataFrame[EvidenceDataFrame[pars['compare']] == comp].sort_values('ordering').lnZ_error
-                                elif pars['plot-cpnest'] == 'information':
-                                    value     = EvidenceDataFrame[EvidenceDataFrame[pars['compare']] == comp].sort_values('ordering').H
-                                    value_err = 0
-                                elif pars['plot-cpnest'] == 'likelihood':
-                                    raise ValueError('Maximum likelihood is not currently implemented.')
-                                    value     = EvidenceDataFrame[EvidenceDataFrame[pars['compare']] == comp].sort_values('ordering').maxL
-                                    value_err = 0
-                                label_evidence = lp.labels_parameters_evidence(par)                               
-                                ax[pi].errorbar(
-                                    keys                  ,
-                                    value                 ,
-                                    value_err             ,
-                                    fmt        = 'o'      ,
-                                    linewidth  = 1        ,
-                                    elinewidth = 1        ,
-                                    capsize    = 4        ,
-                                    ecolor     = 'k'      ,
-                                    mfc        = colors[ci],
-                                    ms         = 8        ,
-                                    mew        = 1        ,
-                                    mec        = 'k'      ,
-                                    alpha      = pars['violin-settings']['alpha'],
-                                )
-                                ax[pi].scatter(keys, value, s = 50, c = colors[ci], alpha = pars['violin-settings']['alpha'])
-                            ax[pi].set_ylabel(label_evidence)
-                            ax[pi].tick_params(labelsize = 8, axis = 'x')
-            else:
-                if (not par == 'BF_comparison') and (not par == pars['plot-cpnest']):
-                    SampDataFrameFilt_L = SampDataFrameComp_L[par]
-                    SampDataFrameFilt_R = SampDataFrameComp_R[par]
-                    if (not (SampDataFrameFilt_L == 0).all()) or (not (SampDataFrameFilt_R == 0).all()):
-                        samp_L = [np.float_(SampDataFrameFilt_L[SampDataFrameComp_L[pars['stack-mode']] == key]) for key in keys]
-                        samp_R = [np.float_(SampDataFrameFilt_R[SampDataFrameComp_R[pars['stack-mode']] == key]) for key in keys]
-                        samp_L, samp_R = utils.clean_empty_keys_violin(samp_L, samp_R)  # FIXME: This is a hardfix which should be changed
+            if (not par == 'BF_comparison') and (not par == pars['plot-cpnest']):
+                SampDataFrameFilt_L = SampDataFrameComp_L[par]
+                SampDataFrameFilt_R = SampDataFrameComp_R[par]
+                if (not (SampDataFrameFilt_L == 0).all()) or (not (SampDataFrameFilt_R == 0).all()):
+                    samp_L = [np.float_(SampDataFrameFilt_L[SampDataFrameComp_L[pars['stack-mode']] == key]) for key in keys]
+                    samp_R = [np.float_(SampDataFrameFilt_R[SampDataFrameComp_R[pars['stack-mode']] == key]) for key in keys]
+                    samp_L, samp_R = utils.clean_empty_keys_violin(samp_L, samp_R)  # FIXME: This is a hardfix which should be changed
 
-                        violinplot(samp_L,
-                                positions    = positions,
-                                labels       = label_x,
-                                show_boxplot = False,
-                                side         = 'left',
-                                ax           = ax[pi],
-                                plot_opts    = plot_opts_L)
-                        violinplot(samp_R,
-                                positions    = positions,
-                                labels       = label_x,
-                                show_boxplot = False,
-                                side         = 'right',
-                                ax           = ax[pi],
-                                plot_opts    = plot_opts_R)
-                        ax[pi].set_ylabel(labels[par])
-                        if not pars['bounds'] == []: ax[pi].set_ylim(bounds_dict[par])
-                        if not (pi == len(params )-1): ax[pi].xaxis.set_visible(False)
-                else:
-                    if par == 'BF_comparison':
-                        EvidenceDataFrame['ordering'] = pd.Categorical(EvidenceDataFrame[pars['stack-mode']], categories = keys, ordered = True)
-                        value     = EvidenceDataFrame[EvidenceDataFrame[pars['compare']] == comp_pars[0]].sort_values('ordering').Bayes_factor
-                        value_err = EvidenceDataFrame[EvidenceDataFrame[pars['compare']] == comp_pars[0]].sort_values('ordering').Bayes_factor_error
+                    violinplot(samp_L,
+                            positions    = positions,
+                            labels       = label_x,
+                            show_boxplot = False,
+                            side         = 'left',
+                            ax           = ax[pi],
+                            plot_opts    = plot_opts_L)
+                    violinplot(samp_R,
+                            positions    = positions,
+                            labels       = label_x,
+                            show_boxplot = False,
+                            side         = 'right',
+                            ax           = ax[pi],
+                            plot_opts    = plot_opts_R)
+                    ax[pi].set_ylabel(labels[par])
+                    if not pars['bounds'] == []: ax[pi].set_ylim(bounds_dict[par])
+                    if not (pi == len(params )-1): ax[pi].xaxis.set_visible(False)
+            else:
+                if par == 'BF_comparison':
+                    EvidenceDataFrame['ordering'] = pd.Categorical(EvidenceDataFrame[pars['stack-mode']], categories = keys, ordered = True)
+                    value     = EvidenceDataFrame[EvidenceDataFrame[pars['compare']] == comp_pars[0]].sort_values('ordering').Bayes_factor
+                    value_err = EvidenceDataFrame[EvidenceDataFrame[pars['compare']] == comp_pars[0]].sort_values('ordering').Bayes_factor_error
+                    label_evidence = lp.labels_parameters_evidence(par)
+                    ax[pi].errorbar(
+                        keys                  ,
+                        value                 ,
+                        value_err             ,
+                        fmt        = 'o'      ,
+                        linewidth  = 1        ,
+                        elinewidth = 1        ,
+                        capsize    = 4        ,
+                        ecolor     = 'k'      ,
+                        mfc        = 'None'   ,
+                        ms         = 8        ,
+                        mew        = 1        ,
+                        mec        = 'k'      ,
+                        alpha      = pars['violin-settings']['alpha'],
+                    )
+                    cs = [colors[1] if b > 0 else colors[0] for b in value]
+                    ax[pi].scatter(keys, value, s = 50, c = cs, alpha = pars['violin-settings']['alpha'])
+                    ax[pi].set_ylabel(label_evidence)
+                    ax[pi].tick_params(labelsize = 8, axis = 'x')
+                elif par == pars['plot-cpnest']:
+                    EvidenceDataFrame['ordering'] = pd.Categorical(EvidenceDataFrame[pars['stack-mode']], categories = keys, ordered = True)
+                    for c,comp in enumerate(comp_pars):
+                        if   pars['plot-cpnest'] == 'bayes-factor':
+                            value     = EvidenceDataFrame[EvidenceDataFrame[pars['compare']] == comp].sort_values('ordering').lnB
+                            value_err = EvidenceDataFrame[EvidenceDataFrame[pars['compare']] == comp].sort_values('ordering').lnZ_error
+                        elif pars['plot-cpnest'] == 'information':
+                            value     = EvidenceDataFrame[EvidenceDataFrame[pars['compare']] == comp].sort_values('ordering').H
+                            value_err = 0
+                        elif pars['plot-cpnest'] == 'likelihood':
+                            raise ValueError('Maximum likelihood is not currently implemented.')
+                            value     = EvidenceDataFrame[EvidenceDataFrame[pars['compare']] == comp].sort_values('ordering').maxL
+                            value_err = 0
                         label_evidence = lp.labels_parameters_evidence(par)
                         ax[pi].errorbar(
                             keys                  ,
@@ -376,48 +312,15 @@ def violin_plots(pars, SampDataFrame, PriorDataFrame, EvidenceDataFrame):
                             elinewidth = 1        ,
                             capsize    = 4        ,
                             ecolor     = 'k'      ,
-                            mfc        = 'None'   ,
+                            mfc        = colors[ci],
                             ms         = 8        ,
                             mew        = 1        ,
                             mec        = 'k'      ,
                             alpha      = pars['violin-settings']['alpha'],
                         )
-                        cs = [colors[1] if b > 0 else colors[0] for b in value]
-                        ax[pi].scatter(keys, value, s = 50, c = cs, alpha = pars['violin-settings']['alpha'])
-                        ax[pi].set_ylabel(label_evidence)
-                        ax[pi].tick_params(labelsize = 8, axis = 'x')
-                    elif par == pars['plot-cpnest']:
-                        EvidenceDataFrame['ordering'] = pd.Categorical(EvidenceDataFrame[pars['stack-mode']], categories = keys, ordered = True)
-                        for c,comp in enumerate(comp_pars):
-                            if   pars['plot-cpnest'] == 'bayes-factor':
-                                value     = EvidenceDataFrame[EvidenceDataFrame[pars['compare']] == comp].sort_values('ordering').lnB
-                                value_err = EvidenceDataFrame[EvidenceDataFrame[pars['compare']] == comp].sort_values('ordering').lnZ_error
-                            elif pars['plot-cpnest'] == 'information':
-                                value     = EvidenceDataFrame[EvidenceDataFrame[pars['compare']] == comp].sort_values('ordering').H
-                                value_err = 0
-                            elif pars['plot-cpnest'] == 'likelihood':
-                                raise ValueError('Maximum likelihood is not currently implemented.')
-                                value     = EvidenceDataFrame[EvidenceDataFrame[pars['compare']] == comp].sort_values('ordering').maxL
-                                value_err = 0
-                            label_evidence = lp.labels_parameters_evidence(par)
-                            ax[pi].errorbar(
-                                keys                  ,
-                                value                 ,
-                                value_err             ,
-                                fmt        = 'o'      ,
-                                linewidth  = 1        ,
-                                elinewidth = 1        ,
-                                capsize    = 4        ,
-                                ecolor     = 'k'      ,
-                                mfc        = colors[ci],
-                                ms         = 8        ,
-                                mew        = 1        ,
-                                mec        = 'k'      ,
-                                alpha      = pars['violin-settings']['alpha'],
-                            )
-                            ax[pi].scatter(keys, value, s = 50, c = colors[ci], alpha = pars['violin-settings']['alpha'] )
-                        ax[pi].set_ylabel(label_evidence)
-                        ax[pi].tick_params(labelsize = 8, axis = 'x')
+                        ax[pi].scatter(keys, value, s = 50, c = colors[ci], alpha = pars['violin-settings']['alpha'] )
+                    ax[pi].set_ylabel(label_evidence)
+                    ax[pi].tick_params(labelsize = 8, axis = 'x')
     [l.set_rotation(pars['violin-settings']['rotation']) for l in ax[len(params)-1].get_xticklabels()]
     if pars['stack-mode'] == 'time': plt.xlabel('$Time\ [M_{f}]$')
     if not pars['compare'] == '':

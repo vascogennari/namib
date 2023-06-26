@@ -274,53 +274,6 @@ def save_posteriors_to_txt(pars, path, df):
 
     print('\nProcessed posteriors and are saved in:\n{}'.format(path))
 
-def process_peaktime(path, times):
-
-    import lal
-    from scipy.stats import gaussian_kde
-
-    peaktime_samples = pd.read_csv(os.path.join(path, 'peaktime_posteriors.txt'), delimiter='\t')
-    input_parameters = pd.read_csv(os.path.join(path, 'input_parameters.txt'),    delimiter='\t')
-
-    mass_time_units_conversion = lal.MSUN_SI * lal.G_SI / (lal.C_SI**3)
-    times_post = peaktime_samples['H1'] - float(input_parameters['t_H1'].values)
-    times_post = times_post / (mass_time_units_conversion * float(input_parameters['Mf'].values))
-    kde = gaussian_kde(times_post)
-    times_array = np.linspace(times[0], times[-1], 1000)
-    times_kde   = kde(times_array)
-
-    # Check that this is correct
-    times_array *= 2
-    times_array += (times[-1]-times[0])
-
-    return times_array, times_kde
-
-def whiten_strain(path, times):
-
-    import lal
-    from gwpy.timeseries import TimeSeries
-    from gwpy.signal import filter_design
-    print('\nFetching the GW strain.')
-
-    input_parameters = pd.read_csv(os.path.join(path, 'input_parameters.txt'), delimiter='\t')
-    trigtime = float(input_parameters['t_H1'].values)
-    mass_time_units_conversion = lal.MSUN_SI * lal.G_SI / (lal.C_SI**3)
-
-    strain = TimeSeries.fetch_open_data('H1', trigtime-1, trigtime+1)
-    filter = filter_design.bandpass(100, 250, strain.sample_rate)
-    zpk = filter_design.concatenate_zpks(filter)
-    strain_filt = strain.filter(zpk, filtfilt=True)
-    starttime = strain_filt.t0.to_value()
-    dt        = strain_filt.dt.to_value()
-    rawstrain = np.array(strain_filt.data)
-    T = 2
-    times_array = np.linspace(starttime, starttime+T-dt, len(strain))
-
-    times_array = (times_array - float(input_parameters['t_H1'].values)) / (mass_time_units_conversion * float(input_parameters['Mf'].values))
-    times_array = (times_array + 100)/20
-
-    return times_array, rawstrain
-
 
 class Posteriors:
     '''

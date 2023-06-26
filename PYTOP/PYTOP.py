@@ -43,8 +43,6 @@ if __name__=='__main__':
         'plot-cpnest'        : '',
         'BF-comparison'      : 0,
         'evidence-top'       : 0,
-        'plot-time'          : 0,
-        'plot-strain'        : 0,
         'palette'            : 'crest',
         'single-prior'       : '',
         'prior-color'        : '#828F61',
