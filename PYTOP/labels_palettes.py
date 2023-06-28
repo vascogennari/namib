@@ -92,6 +92,12 @@ def labels_parameters(pars_list):
         elif par == 'distance':
             labels.append('$d_L\ [Mpc]$')
             labels_dict[par] = '$d_L\ [Mpc]$'
+        elif par == 'psi':
+            labels.append('$\\psi$')
+            labels_dict[par] = '$\\psi$'
+        elif par == 'phase_22':
+            labels.append('$\\phi_{22}$')
+            labels_dict[par] = '$\\phi_{22}$'
 
         elif par == 'mc':
             labels.append('$M_c\ [M_{\odot}]$')

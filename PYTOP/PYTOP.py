@@ -38,10 +38,11 @@ if __name__=='__main__':
         'corner'             : 0,
         'violin'             : 0,
         'ridgeline'          : 0,
-        'plot-HMs'           : 0,
+        'TGR-plot'           : 0,
         'plot-cpnest'        : '',
         'BF-comparison'      : 0,
         'evidence-top'       : 0,
+        'time-percentiles'   : [],
         'palette'            : 'crest',
         'single-prior'       : '',
         'prior-color'        : '#828F61',
@@ -51,24 +52,23 @@ if __name__=='__main__':
     }
     for key in input_pars.keys():
 
-        keytype = type(input_pars[key])
         if ('samp-dir' in key) or ('output' in key) or ('stack-mode' in key) or ('compare' in key):
             try: input_pars[key] = Config.get('input', key)
             except: pass
         if ('compare-hard' in key) or ('evidence' in key) or ('save-post' in key) or ('include-prior' in key) or ('ds-scaling' in key):
             try: input_pars[key] = Config.getboolean('input', key)
             except: pass
-        else:
-            switch = 0
+        if ('parameters' in key) or ('bounds' in key) or ('modes' in key) or ('ordering' in key) or ('compare-ordering' in key):
             try: input_pars[key] = ast.literal_eval(Config.get('input', key))
-            except:
-                switch += 1
-                pass
+            except: pass
+        if ('corner' in key) or ('violin' in key) or ('ridgeline' in key) or ('TGR-plot' in key) or ('BF-comparison' in key) or ('evidence-top' in key):
+            try: input_pars[key] = Config.getboolean('plots', key)
+            except: pass
+        if ('plot-cpnest' in key) or ('single-prior' in key) or ('prior-color' in key):
+            try: input_pars[key] = Config.getboolean('plots', key)
+            except: pass
+        if ('palette' in key) or ('time-percentiles' in key) or ('corner-settings' in key) or ('violin-settings' in key) or ('ridgeline-settings' in key):
             try: input_pars[key] = ast.literal_eval(Config.get('plots', key))
-            except:
-                pass
-        if 'compare-ordering' in key :
-            try: input_pars[key] = ast.literal_eval(Config.get('input', key))
             except: pass
 
     input_pars['parent-dir'] = pardir_path
@@ -76,7 +76,7 @@ if __name__=='__main__':
     input_pars['samp-dir']   = os.path.join(samp_dir, input_pars['samp-dir'])
     print('\nPosteriors are read from:\n{}'.format(input_pars['samp-dir']))
 
-    res_dir = create_directory(input_pars['parent-dir'], 'results')    
+    res_dir = create_directory(input_pars['parent-dir'], 'results')
     out_dir = create_directory(res_dir                 , input_pars['output'])
 
     # Read the posteriors and create the .txt files with the reduced posteriors
@@ -91,8 +91,8 @@ if __name__=='__main__':
             EvidenceDataFrame.to_csv(evidence_path, sep='\t', index=False)
             print('\nEvidences are saved in:\n{}\n'.format(evidence_path))
 
-    if  input_pars['corner'] or input_pars['violin'] or input_pars['ridgeline']:
-        input_pars['plots-dir'] = create_directory(out_dir, 'plots')
+    if  input_pars['corner'] or input_pars['violin'] or input_pars['ridgeline'] or input_pars['TGR-plot']:
+        input_pars['plots-dir'] = create_directory(out_dir, '')
         Plots(input_pars, SampDataFrame, PriorDataFrame, EvidenceDataFrame)
         print('\nPlots are saved in:\n{}'.format(input_pars['plots-dir']))
     

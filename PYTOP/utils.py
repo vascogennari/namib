@@ -24,7 +24,7 @@ def from_IMR_to_RD_samples(df, pars):
     # Compute remnant pars
     if (set(['Mf', 'af']) <= set(pars['parameters'])) and (set(['m1', 'm2', 'chi1', 'chi2']) <= set(df.keys())):
         df = compute_Mf_af_from_IMR(df)
-    if (set(['f_22', 'tau_22']) <= set(pars['parameters'])) and ((set(['Mf', 'af']) <= set(df.keys())) or (set(['m1', 'm2', 'chi1', 'chi2']) <= set(df.keys()))):
+    if (set(['f_22', 'tau_22']) <= set(pars['parameters'])) and (set(['Mf', 'af']) <= set(df.keys())):
         df = compute_qnms_from_Mf_af(df,  pars['modes'])
     if (set(['f_22', 'tau_22']) <= set(pars['parameters'])) and (set(['m1', 'm2', 'chi1', 'chi2']) <= set(df.keys())) and not (set(['Mf', 'af']) <= set(pars['parameters'])):
         df = compute_Mf_af_from_IMR(df)
@@ -41,7 +41,7 @@ def from_IMR_to_RD_samples(df, pars):
     if 'A2330' in set(pars['parameters']) and 'logA_t_1' in set(df.keys()):
         df['logA_t_1'] = df['logA_t_1'].apply(lambda x: np.exp(x))
         if pars['ds-scaling'] and 'logA_t_1' in set(df.keys()): df.logA_t_1 *= 1e10  # Scale amplitude as [1e-21]
-        df.rename(columns = {'logA_t_1' : 'A2330'}, inplace = True)    
+        df.rename(columns = {'logA_t_1' : 'A2330'}, inplace = True)
 
     # Extrinsic parameters
     if (set(['distance']) <= set(pars['parameters'])) and (set(['logdistance']) <= set(df.keys())):
@@ -56,6 +56,18 @@ def from_IMR_to_RD_samples(df, pars):
         df['chi1'] = df['chi1'].apply(lambda x: np.abs(x))
     if (set(['chi2']) in set(pars['parameters'])):
         df['chi2'] = df['chi2'].apply(lambda x: np.abs(x))
+
+    # TGR analysis
+    if pars['TGR-plot']:
+        if (set(['f_22'])   <= set(pars['parameters'])) and (set(['domega_220']) <= set(df.keys())):
+            try:    df.f_22   *= 1. + df.domega_220
+            except: pass
+        if (set(['f_33'])   <= set(pars['parameters'])) and (set(['domega_330']) <= set(df.keys())):
+            try:    df.f_33   *= 1. + df.domega_330
+            except: pass
+        if (set(['tau_22']) <= set(pars['parameters'])) and (set(['dtau_220'])   <= set(df.keys())):
+            try:    df.tau_22 *= 1. + df.dtau_220
+            except: pass
 
     if not (set(pars['parameters']).difference(df.keys()) == set()):
         additional_pars = set(pars['parameters']).difference(df.keys())
@@ -275,6 +287,7 @@ def save_posteriors_to_txt(pars, path, df):
     print('\nProcessed posteriors and are saved in:\n{}'.format(path))
 
 
+
 class Posteriors:
     '''
     Returns a data frame with all the posterior samples, for a given list of events and models.
@@ -334,3 +347,4 @@ class Plots:
         if pars['corner']:    plots.corner_plots(   pars, SampDataFrame, PriorDataFrame)
         if pars['violin']:    plots.violin_plots(   pars, SampDataFrame, PriorDataFrame, EvidenceDataFrame)
         if pars['ridgeline']: plots.ridgeline_plots(pars, SampDataFrame, PriorDataFrame)
+        if pars['TGR-plot']:  plots.TGR_plots(      pars, SampDataFrame)

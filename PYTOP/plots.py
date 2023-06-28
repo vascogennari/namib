@@ -38,6 +38,15 @@ def bounds_dictionary(pars):
     
     return bounds_dict
 
+def convert_time_percentiles(val, locs, label_x):
+
+    range_1 = max(locs)
+    range_2 = max(label_x) - min(label_x)
+    val = (val - min(label_x)) * range_1 / range_2
+
+    return val
+    
+
 
 def corner_plots(pars, SampDataFrame, PriorDataFrame):
 
@@ -146,7 +155,7 @@ def violin_plots(pars, SampDataFrame, PriorDataFrame, EvidenceDataFrame):
             if ((set(pars['compare-ordering']) <= set(comp_pars))) and (len(pars['compare-ordering']) == len(comp_pars)): comp_pars = pars['compare-ordering']
             else: raise ValueError('Invalid option for {compare} ordering.'.format(compare = pars['compare-ordering']))
     else: comp_pars = 'a'
-    if pars['stack-mode'] == 'time': label_x = sort_times_list(keys, labels = True)
+    if pars['stack-mode'] == 'time': label_x = np.array(sort_times_list(keys, labels = True), dtype = float)
     else:                            label_x = keys
 
     positions = np.arange(len(keys))
@@ -292,21 +301,26 @@ def violin_plots(pars, SampDataFrame, PriorDataFrame, EvidenceDataFrame):
                         ax[pi].scatter(keys, value, s = 50, c = colors[ci], alpha = pars['violin-settings']['alpha'] )
                     ax[pi].set_ylabel(label_evidence)
                     ax[pi].tick_params(labelsize = 8, axis = 'x')
+                if not pars['time-percentiles'] == []:
+                    a = convert_time_percentiles(pars['time-percentiles'][0], ax[pi].get_xticks(), label_x)
+                    b = convert_time_percentiles(pars['time-percentiles'][1], ax[pi].get_xticks(), label_x)
+                    ax[pi].axvspan(a, b, alpha = 0.1, color = '#BA9934')
+
     [l.set_rotation(pars['violin-settings']['rotation']) for l in ax[len(params)-1].get_xticklabels()]
     if pars['stack-mode'] == 'time': plt.xlabel('$Time\ [M_{f}]$')
     if not pars['compare'] == '':
         import matplotlib.patches as mpatches
         patch = [mpatches.Patch(facecolor = colors[ci], edgecolor = 'k', alpha = pars['violin-settings']['alpha'], label = comp_pars[ci]) for ci,c in enumerate(comp_pars)]
         fig.axes[0].legend(handles = patch, loc = 2, frameon = False)
-        for axx in fig.axes: axx.grid(visible = True)
+        for axx in fig.axes:
+            axx.grid(visible = True)
+
     filename = os.path.join(pars['plots-dir'], 'violin_{name}.pdf'.format(name = pars['stack-mode']))
     fig.savefig(filename, bbox_inches = 'tight', transparent = True)
 
 
 
 def ridgeline_plots(pars, SampDataFrame, PriorDataFrame):
-
-    import pandas as pd
 
     keys = pd.unique(SampDataFrame[pars['stack-mode']])
     if pars['stack-mode'] == 'time': keys = sort_times_list(keys)
@@ -396,3 +410,109 @@ def ridgeline_plots(pars, SampDataFrame, PriorDataFrame):
 
     filename = os.path.join(pars['plots-dir'], 'ridgeline_{name}.pdf'.format(name = pars['stack-mode']))
     plt.savefig(filename, bbox_inches = 'tight', transparent = True)
+
+
+
+def TGR_plots(pars, SampDataFrame):
+    '''
+        Similar plots in the literature can be found in:
+        0309007, 1107.0854, 1111.5819, 2301.02267
+    '''
+
+    from matplotlib.lines import Line2D
+    from scipy.optimize import newton
+    from corner import hist2d
+    from tqdm import tqdm
+    import pyRing.waveform as wf
+
+    def compute_QNMs(Mf, af, l, m, par):
+        if af > 1. or af < 0.: return -np.inf
+        if   par=='omg': res = wf.QNM_fit(l, m, 0).f(Mf, af)          #[Hz]
+        elif par=='tau': res = wf.QNM_fit(l, m, 0).tau(Mf, af)*1000   #[ms]
+        return res
+
+    def find_level_curve_mass(level, l, m, par, spins):
+        curve  = np.zeros(len(spins))
+        for i, af in enumerate(spins):
+            curve[i] = find_mass(level, af, l, m, par)
+        return curve
+
+    def find_mass(level, af, l, m, par):
+        if   par=='omg': estimate = 10
+        elif par=='tau': estimate = 10
+        def objective(Mf, level, af, l, m, par):
+            return level - compute_QNMs(Mf, af, l, m, par)
+        return newton(objective, estimate, args=(level, af, l, m, par))
+
+    af_range = [0, 1]
+
+    omg_22 = SampDataFrame['f_22'][SampDataFrame[pars['stack-mode']]   == 'nGR']#[1::num]
+    omg_33 = SampDataFrame['f_33'][SampDataFrame[pars['stack-mode']]   == 'nGR']#[1::num]
+    tau_22 = SampDataFrame['tau_22'][SampDataFrame[pars['stack-mode']] == 'nGR']#[1::num]
+
+    spins  = np.linspace(af_range[0], af_range[1], 200)[:-1]
+
+    print('\nComputing level curves for TGR plot:')
+    masses_omg22 = np.array([find_level_curve_mass(freq, 2, 2, 'omg', spins) for freq in tqdm(omg_22, desc = 'freq 22')])
+    masses_omg33 = np.array([find_level_curve_mass(freq, 3, 3, 'omg', spins) for freq in tqdm(omg_33, desc = 'freq 33')])
+    masses_tau22 = np.array([find_level_curve_mass(freq, 2, 2, 'tau', spins) for freq in tqdm(tau_22, desc = 'tau  22')])
+
+    percentiles = [50, 5, 16, 84, 95]
+    p_f22 = {}
+    p_f33 = {}
+    p_t22 = {}
+    for perc in percentiles:
+        p_f22[perc] = np.percentile(masses_omg22, perc, axis = 0)
+        p_f33[perc] = np.percentile(masses_omg33, perc, axis = 0)
+        p_t22[perc] = np.percentile(masses_tau22, perc, axis = 0)
+    
+    samp_Mf_nGR = np.array(SampDataFrame['Mf'][SampDataFrame[pars['stack-mode']] == 'nGR'])
+    samp_af_nGR = np.array(SampDataFrame['af'][SampDataFrame[pars['stack-mode']] == 'nGR'])
+    samp_Mf     = np.array(SampDataFrame['Mf'][SampDataFrame[pars['stack-mode']] == 'GR'])
+    samp_af     = np.array(SampDataFrame['af'][SampDataFrame[pars['stack-mode']] == 'GR'])
+
+    fig, ax = plt.subplots()
+
+    hist2d(samp_Mf,
+           samp_af, 
+           ax               = ax, 
+           levels           = [0.5,0.9], 
+           plot_datapoints  = False, 
+           plot_density     = False, 
+           no_fill_contours = False, 
+           contour_kwargs   = {'linewidths': 0.6, 'colors': 'k'})
+    hist2d(samp_Mf_nGR, 
+           samp_af_nGR, 
+           ax               = ax, 
+           levels           = [0.5,0.9], 
+           plot_datapoints  = False, 
+           plot_density     = False, 
+           no_fill_contours = False, 
+           contour_kwargs   = {'linewidths': 0.6, 'colors': 'k', 'linestyles': 'dashed', 'alpha': 0.5})
+    # CR
+    ax.fill_betweenx(spins, p_f22[5],  p_f22[95], color = '#0771AB', alpha = 0.25)
+    ax.fill_betweenx(spins, p_f22[16], p_f22[84], color = '#0771AB', alpha = 0.5)
+    ax.plot(p_f22[50], spins, lw = 0.7, color = '#0771AB', label = '$\\omega_{22}$')
+
+    ax.fill_betweenx(spins, p_f33[5],  p_f33[95], color = '#608F3A', alpha = 0.25)
+    ax.fill_betweenx(spins, p_f33[16], p_f33[84], color = '#608F3A', alpha = 0.5)
+    ax.plot(p_f33[50], spins, lw = 0.7, color = '#608F3A', label = '$\\omega_{33}$')
+
+    ax.fill_betweenx(spins, p_t22[5],  p_t22[95], color = '#9C3F5C', alpha = 0.25)
+    ax.fill_betweenx(spins, p_t22[16], p_t22[84], color = '#9C3F5C', alpha = 0.5)
+    ax.plot(p_t22[50], spins, lw = 0.7, color = '#9C3F5C', label = '$\\tau_{22}$')
+
+    ax.set_xlabel('$M_f\ [M_\\odot]$')
+    ax.set_ylabel('$a_f$')
+    ax.set_ylim(af_range)
+    ax.grid(True, dashes=(1,3))
+
+    handles, labels = ax.get_legend_handles_labels()
+    new_object =     Line2D([0],[0], color = 'k', lw = 0.6, label = '$\mathrm{GR\ samples}$')
+    new_object_nGR = Line2D([0],[0], color = 'k', lw = 0.6, label = '$\mathrm{nGR\ samples}$', ls = 'dashed')
+    handles.append(new_object)
+    handles.append(new_object_nGR)
+    ax.legend(handles = handles, loc = 0, frameon = False)
+
+    filename = os.path.join(pars['plots-dir'], 'TGR_plot.pdf')
+    fig.savefig(filename, bbox_inches = 'tight', transparent = True)
