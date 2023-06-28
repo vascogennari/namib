@@ -268,7 +268,6 @@ def violin_plots(pars, SampDataFrame, PriorDataFrame, EvidenceDataFrame):
                     cs = [colors[1] if b > 0 else colors[0] for b in value]
                     ax[pi].scatter(keys, value, s = 50, c = cs, alpha = pars['violin-settings']['alpha'])
                     ax[pi].set_ylabel(label_evidence)
-                    ax[pi].tick_params(labelsize = 8, axis = 'x')
                 elif par == pars['plot-cpnest']:
                     EvidenceDataFrame['ordering'] = pd.Categorical(EvidenceDataFrame[pars['stack-mode']], categories = keys, ordered = True)
                     for c,comp in enumerate(comp_pars):
@@ -300,7 +299,6 @@ def violin_plots(pars, SampDataFrame, PriorDataFrame, EvidenceDataFrame):
                         )
                         ax[pi].scatter(keys, value, s = 50, c = colors[ci], alpha = pars['violin-settings']['alpha'] )
                     ax[pi].set_ylabel(label_evidence)
-                    ax[pi].tick_params(labelsize = 8, axis = 'x')
                 if not pars['time-percentiles'] == []:
                     a = convert_time_percentiles(pars['time-percentiles'][0], ax[pi].get_xticks(), label_x)
                     b = convert_time_percentiles(pars['time-percentiles'][1], ax[pi].get_xticks(), label_x)
@@ -310,7 +308,7 @@ def violin_plots(pars, SampDataFrame, PriorDataFrame, EvidenceDataFrame):
     if pars['stack-mode'] == 'time': plt.xlabel('$Time\ [M_{f}]$')
     if not pars['compare'] == '':
         import matplotlib.patches as mpatches
-        patch = [mpatches.Patch(facecolor = colors[ci], edgecolor = 'k', alpha = pars['violin-settings']['alpha'], label = comp_pars[ci]) for ci,c in enumerate(comp_pars)]
+        patch = [mpatches.Patch(facecolor = colors[ci], edgecolor = 'k', alpha = pars['violin-settings']['alpha'], label = lp.labels_legend(comp_pars[ci])) for ci,c in enumerate(comp_pars)]
         fig.axes[0].legend(handles = patch, loc = 2, frameon = False)
         for axx in fig.axes:
             axx.grid(visible = True)
@@ -329,6 +327,9 @@ def ridgeline_plots(pars, SampDataFrame, PriorDataFrame):
         else: raise ValueError('Invalid option for {stack_mode} ordering.'.format(stack_mode = pars['stack-mode']))
 
     _, labels_dict = lp.labels_parameters(pars['parameters'])
+    if pars['stack-mode'] == 'time': label_y = np.array(sort_times_list(keys, labels = True), dtype = float)
+    else:                            label_y = keys
+
     fig, ax = plt.subplots(len(keys), len(pars['parameters']), figsize = pars['ridgeline-settings']['figsize'])
 
     for pi,par in enumerate(pars['parameters']):
@@ -342,6 +343,10 @@ def ridgeline_plots(pars, SampDataFrame, PriorDataFrame):
             comp_pars = keys
             colors = lp.palettes(pars, colormap = True, number_colors = 0)
             SampDataFrame['ordering'] = pd.Categorical(SampDataFrame[pars['stack-mode']], categories = keys, ordered = True)
+            if pars['stack-mode'] == 'time':
+                SampDataFrame['ordering'] = SampDataFrame['ordering'].map(lambda x: x.replace('M', '$'))
+                SampDataFrame['ordering'] = SampDataFrame['ordering'].map(lambda x: '$'+x)
+
             subset = ax[:,pi]
             joyplot(SampDataFrame.sort_values('ordering'),
                 by        = 'ordering',
@@ -379,6 +384,9 @@ def ridgeline_plots(pars, SampDataFrame, PriorDataFrame):
                 for elems in tmp:
                     SampDataFrame.loc[SampDataFrame[pars['compare']] == comp, [elems]] = np.nan
             SampDataFrame['ordering'] = pd.Categorical(SampDataFrame[pars['stack-mode']], categories = keys, ordered = True)
+            if pars['stack-mode'] == 'time':
+                SampDataFrame['ordering'] = SampDataFrame['ordering'].map(lambda x: x.replace('M', '$'))
+                SampDataFrame['ordering'] = SampDataFrame['ordering'].map(lambda x: '$'+x)
 
             subset = ax[:,pi]
             if pi == 0: flag = True
@@ -400,11 +408,12 @@ def ridgeline_plots(pars, SampDataFrame, PriorDataFrame):
                 xlabels   = labels_dict[par]
             )
         ax[len(keys)-1][pi].xaxis.set_visible(True)
+        ax[len(keys)-1][pi].grid(visible = False)
         ax[len(keys)-1][pi].set_xlabel(labels_dict[par])
 
     if pars['compare'] == '': colors = lp.palettes(pars, colormap = False, number_colors = len(comp_pars))
     import matplotlib.patches as mpatches
-    patch = [mpatches.Patch(facecolor = colors[ci], edgecolor = 'k', alpha = pars['violin-settings']['alpha'], label = comp_pars[ci]) for ci,c in enumerate(comp_pars)]
+    patch = [mpatches.Patch(facecolor = colors[ci], edgecolor = 'k', alpha = pars['violin-settings']['alpha'], label = lp.labels_legend(comp_pars[ci])) for ci,c in enumerate(comp_pars)]
     fig.axes[0].legend(handles = patch, loc = 2, frameon = False)
     if pars['stack-mode'] == 'time': ax[round(len(keys)/2)][0].set_ylabel('$Time\ [M_{f}]$')
 

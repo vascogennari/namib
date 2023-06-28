@@ -9,10 +9,10 @@ rcParams["xtick.labelsize"] = 14
 rcParams["ytick.labelsize"] = 14
 rcParams["xtick.direction"] = "in"
 rcParams["ytick.direction"] = "in"
-rcParams["legend.fontsize"] = 12
+rcParams["legend.fontsize"] = 16
 rcParams["legend.frameon"]  = False
 rcParams["legend.loc"]      = "best"
-rcParams["axes.labelsize"]  = 16
+rcParams["axes.labelsize"]  = 18
 rcParams["axes.grid"]       = True
 rcParams["grid.alpha"]      = 0.6
 rcParams["grid.linestyle"]  = "dotted"
@@ -115,6 +115,8 @@ def labels_parameters(pars_list):
         elif par == 'ell':
             labels.append('$l\ [km]$')
             labels_dict[par] = '$l\ [km]$'
+        else:
+            raise ValueError('At least one of the selected parameters does not have its corresponding label. Please, fix it in labels_palettes.py')
 
     return labels, labels_dict
 
@@ -129,8 +131,23 @@ def labels_parameters_evidence(par):
         label = '$H$'
     elif par == 'likelihood':
         label = '$H$'
+    else:
+        raise ValueError('The selected option for the evidence does not have its corresponding label. Please, fix it in labels_palettes.py')
     
     return label
+
+def labels_legend(par):
+
+    label = ''
+    try:
+        if   par == '22':
+            label = '$(2,2)$'
+        elif par == '22-33':
+            label = '$(2,2),(3,3)$'
+    except: label = par
+
+    return label
+
 
 
 def palettes(pars, colormap, number_colors, corner_plot = False):
