@@ -18,7 +18,6 @@ rcParams["grid.alpha"]      = 0.6
 rcParams["grid.linestyle"]  = "dotted"
 rcParams["lines.linewidth"] = 0.7
 
-
 def labels_parameters(pars_list):
 
     labels      = []
@@ -147,8 +146,6 @@ def labels_legend(par):
     except: label = par
 
     return label
-
-
 
 def palettes(pars, colormap, number_colors, corner_plot = False):
 

@@ -1,3 +1,4 @@
+from cgi import parse_header
 import os
 import h5py, pandas as pd
 import numpy as np
@@ -112,19 +113,18 @@ def read_posteriors_event(file_path, pars):
 
     return df, dfp, nsamp
 
-def read_evidence_event(dir_path, file_path):
+def read_evidence_event(pars, dir_path, file_path):
 
     evt_evidence = {}
 
     # Read the noise evidence
     filename = os.path.basename(os.path.normpath(file_path))
-    if   '.txt' in filename: noise_file = filename.replace('.txt', '')
-    elif '.dat' in filename: noise_file = filename.replace('.dat', '')
-    elif '.h5'  in filename: noise_file = filename.replace('.h5' , '')
-    noise_file = noise_file + '_noise.txt'
+    if   '.txt' in filename: root_file = filename.replace('.txt', '')
+    elif '.dat' in filename: root_file = filename.replace('.dat', '')
+    elif '.h5'  in filename: root_file = filename.replace('.h5' , '')
 
-    noise_path     = os.path.join(dir_path, 'noise_evidences')
-    noise_evt_path = os.path.join(noise_path, noise_file)
+    noise_file = root_file + '_noise.txt'
+    noise_evt_path = os.path.join(dir_path, 'noise_evidences', noise_file)
 
     tmp  = np.genfromtxt(noise_evt_path, names = True)
     evt_evidence['lnZ_noise'] = np.array(tmp['lnZ_noise'])
@@ -146,6 +146,16 @@ def read_evidence_event(dir_path, file_path):
                 evt_evidence['lnZ_error'] = np.array(f['combined']['logZ_error'])
                 evt_evidence['H']         = np.array(f['combined']['information'])
     evt_evidence['lnB'] = evt_evidence['lnZ'] - evt_evidence['lnZ_noise']
+
+    if pars['save-medians']:
+        try:
+            # Read the SNR samples
+            SNR_file = root_file + '_SNR.dat'
+            SNR_evt_path = os.path.join(dir_path, 'SNR_samples', SNR_file)
+            tmp  = np.genfromtxt(SNR_evt_path, names = True)
+            evt_evidence['SNR_net_opt'] = np.array(tmp['Network'])
+        except:
+            raise ValueError('SNR samples have not been found. Exiting.')
 
     df = pd.DataFrame([evt_evidence])
 
@@ -286,6 +296,77 @@ def save_posteriors_to_txt(pars, path, df):
 
     print('\nProcessed posteriors and are saved in:\n{}'.format(path))
 
+    return 0
+
+def save_output_medians(pars, df, df_evidence, out_dir):
+
+    # Median values of the selected parameters
+    output_path_pars = os.path.join(out_dir, 'parameters.txt')
+    if os.path.isfile(output_path_pars): os.remove(output_path_pars)
+    keys = plots.sort_times_list(pd.unique(df[pars['stack-mode']]))
+    if not pars['compare'] == '': comp_pars = pd.unique(df[pars['compare']])
+    else:                         comp_pars = 'rand'
+    pars_header = '{}\t'.format(pars['stack-mode'])
+    for par in pars['parameters']: pars_header += '{}\t\t\t'.format(par)
+
+    with open(output_path_pars, 'a') as f:
+        for comp in comp_pars:
+            if not pars['compare'] == '': df_comp = df[df[pars['compare']] == comp]
+            else:                         df_comp = df
+            if comp == 'rand': tmp = ''
+            else:              tmp = comp
+            f.write('{}\n'.format(tmp))
+            f.write('{}\n'.format(pars_header))
+
+            for key in keys:
+                df_filt = df_comp[df_comp[pars['stack-mode']] == key]
+                pars_line = '{}\t'.format(key)
+                for par in pars['parameters']:
+                    median, low_perc, upp_perc = np.percentile(df_filt[par], np.array([0.5, 0.1, 0.9]))
+                    low_err = median - low_perc
+                    upp_err = upp_perc - median
+                    pars_line += '{1:.{0}f}\t+{2:.{0}f}\t-{3:.{0}f}\t'.format(2, median, upp_err, low_err)
+                f.write('{}\n'.format(pars_line))
+            f.write('\n')
+    print('\nMedian values of the parameters are saved in:\n{}\n'.format(output_path_pars))
+
+    # Bayes factors, informations, median values of the network optimal SNR
+    output_path = os.path.join(out_dir, 'SNR-H-BF.txt')
+    if os.path.isfile(output_path): os.remove(output_path)
+    pars_header  = '{}\t'.format(pars['stack-mode'])
+    pars_header += 'SNR\t\t\tH\tBF\t'.format(pars['stack-mode'])
+
+    with open(output_path, 'a') as f:
+        for comp in comp_pars:
+            if not pars['compare'] == '': df_comp = df_evidence[df_evidence[pars['compare']] == comp]
+            else:                         df_comp = df_evidence
+            if comp == 'rand': tmp = ''
+            else:              tmp = comp
+            f.write('{}\n'.format(tmp))
+            f.write('{}\n'.format(pars_header))
+
+            for key in keys:
+                df_filt = df_comp[df_comp[pars['stack-mode']] == key]
+                median, low_perc, upp_perc = np.percentile(df_filt['SNR_net_opt'].values[0], np.array([0.5, 0.1, 0.9]))
+                low_err = median - low_perc
+                upp_err = upp_perc - median
+                if pars['compare-hard']:
+                    BF     = df_filt['Bayes_factor'].values[0]
+                    BF_err = df_filt['Bayes_factor_error'].values[0]
+                else:
+                    BF     = df_filt['lnB'].values[0]
+                    BF_err = df_filt['lnZ_error'].values[0]
+
+                pars_line =  '{}\t'.format(key)
+                pars_line += '{1:.{0}f}\t+{2:.{0}f}\t-{3:.{0}f}\t'.format(2, median, upp_err, low_err)
+                pars_line += '{1:.{0}f}\t'.format(2, df_filt['H'].values[0])
+                if not pars['compare'] == '' and comp == comp_pars[0]: pass
+                else:                                                  pars_line += '{1:.{0}f}\t+-{2:.{0}f}'.format(2, BF, BF_err)
+                f.write('{}\n'.format(pars_line))
+            f.write('\n')
+    print('Median values of SNR, information and BF are saved in:\n{}\n'.format(output_path))
+
+    return 0
 
 
 class Posteriors:
@@ -304,7 +385,7 @@ class Posteriors:
         single_evt_keys = {'event': str(), 'pipeline': str(), 'model': str(), 'submodel': str(), 'time': str(), 'GR_tag': str()}
 
         for file in tqdm(os.listdir(dir_path), desc = 'Reading Posteriors'):
-            if not ((file == '.DS_Store') or (file == 'noise_evidences') or (file == 'ignore') or (file == 'time_distribution')):
+            if not ((file == '.DS_Store') or (file == 'noise_evidences') or (file == 'ignore') or (file == 'SNR_samples')):
 
                 file_path = os.path.join(dir_path, file)
                 keys = file.split('_')
@@ -327,7 +408,7 @@ class Posteriors:
                 if pars['include-prior']:
                     self.PriorDataFrame = pd.concat([self.PriorDataFrame, EventPriorDataFrame], ignore_index=True)
                 if pars['evidence']:
-                    EventEvidenceDataFrame = read_evidence_event(dir_path, file_path)
+                    EventEvidenceDataFrame = read_evidence_event(pars, dir_path, file_path)
                     EventEvidenceDataFrame.insert(0, pars['stack-mode'], single_evt_keys[pars['stack-mode']])
                     if not pars['compare'] == '': EventEvidenceDataFrame.insert(0, pars['compare'], single_evt_keys[pars['compare']])
                     self.EvidenceDataFrame = pd.concat([self.EvidenceDataFrame, EventEvidenceDataFrame], ignore_index=True)

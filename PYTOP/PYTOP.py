@@ -1,8 +1,8 @@
 import os, configparser, ast
 from optparse import OptionParser
 
-from utils import Posteriors, Plots, save_posteriors_to_txt
-from utils import create_directory
+from utils import Posteriors, Plots
+from utils import create_directory, save_posteriors_to_txt, save_output_medians
 
 
 if __name__=='__main__':
@@ -21,6 +21,7 @@ if __name__=='__main__':
     input_pars = {
         'samp-dir'           : 'samples',
         'output'             : 'posteriors',
+        'save-medians'       : 0,
         'file-path'          : '', 
         'parameters'         : ['m1', 'm2', 'chi1', 'chi2'],
         'bounds'             : [],
@@ -50,12 +51,13 @@ if __name__=='__main__':
         'violin-settings'    : {'figsize': (15, 25), 'alpha': 0.5, 'rotation': 0},
         'ridgeline-settings' : {'figsize': (20, 10), 'alpha': 0.5, 'overlap': 0.5, 'fade': 0},
     }
+    
     for key in input_pars.keys():
 
         if ('samp-dir' in key) or ('output' in key) or ('stack-mode' in key) or ('compare' in key):
             try: input_pars[key] = Config.get('input', key)
             except: pass
-        if ('compare-hard' in key) or ('evidence' in key) or ('save-post' in key) or ('include-prior' in key) or ('ds-scaling' in key):
+        if ('compare-hard' in key) or ('evidence' in key) or ('save-post' in key) or ('include-prior' in key) or ('ds-scaling' in key) or ('screen-medians' in key) or ('save-medians' in key):
             try: input_pars[key] = Config.getboolean('input', key)
             except: pass
         if ('parameters' in key) or ('bounds' in key) or ('modes' in key) or ('ordering' in key) or ('compare-ordering' in key):
@@ -86,10 +88,9 @@ if __name__=='__main__':
     if input_pars['save-post']:
         red_post_dir = create_directory(out_dir, 'reduced_posteriors')
         save_posteriors_to_txt(input_pars, red_post_dir, SampDataFrame)
-        if input_pars['evidence'] == True:
-            evidence_path = os.path.join(out_dir, 'evidence.txt')
-            EvidenceDataFrame.to_csv(evidence_path, sep='\t', index=False)
-            print('\nEvidences are saved in:\n{}\n'.format(evidence_path))
+    if input_pars['evidence'] and input_pars['save-medians']:
+        output_medians_dir = create_directory(out_dir, 'output_medians')
+        save_output_medians(input_pars, SampDataFrame, EvidenceDataFrame, output_medians_dir)
 
     if  input_pars['corner'] or input_pars['violin'] or input_pars['ridgeline'] or input_pars['TGR-plot']:
         input_pars['plots-dir'] = create_directory(out_dir, '')
