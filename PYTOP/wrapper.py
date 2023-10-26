@@ -13,6 +13,7 @@ elements = {
     'GR_tag'   : 'nGR',
 }
 
+sampler    = 'raynest'  # Options: [raynest, cpnest]
 deviations = 1
 # ------------------------- #
 
@@ -47,7 +48,7 @@ for file in os.listdir(input_path):
 
         # Samples
         filename            = filename_tmp + '.h5'
-        input_filename      = os.path.join(nested_sampler_path, 'raynest.h5')
+        input_filename      = os.path.join(nested_sampler_path, '{}.h5'.format(sampler))
         output_filename     = os.path.join(output_path, filename)
 
         # Evidences
