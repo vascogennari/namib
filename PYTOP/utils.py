@@ -1,6 +1,4 @@
-from cgi import parse_header
-import os
-import h5py, pandas as pd
+import os, h5py, pandas as pd
 import numpy as np
 from tqdm import tqdm
 
@@ -21,6 +19,14 @@ def from_IMR_to_RD_samples(df, pars):
         df = compute_progenitors_from_IMR(df)
     if (set(['Mc', 'q']) <= set(pars['parameters'])) or (set(['mc', 'q']) <= set(pars['parameters'])) or (set(['q']) <= set(pars['parameters'])) and (set(['m1', 'm2']) <= set(df.keys())):
         df = compute_progenitors_from_IMR(df, inverse = True)
+
+    # LVK
+    if (set(['distance']) <= set(pars['parameters'])) and (set(['luminosity_dustance']) <= set(df.keys())):
+        df.insert(0, 'distance', df.luminosity_dustance / 1000)     # [Gpc]
+    if (set(['cosiota']) <= set(pars['parameters'])) and (set(['cos_theta_jn']) <= set(df.keys())):
+        df.rename(columns = {'cos_theta_jn' : 'cosiota'}, inplace = True)
+    if (set(['iota']) <= set(pars['parameters'])) and (set(['cos_theta_jn']) <= set(df.keys())):
+        df.insert(0, 'iota', np.arccos(df.cos_theta_jn))
 
     # Compute remnant pars
     if (set(['Mf', 'af']) <= set(pars['parameters'])) and (set(['m1', 'm2', 'chi1', 'chi2']) <= set(df.keys())):
@@ -46,16 +52,16 @@ def from_IMR_to_RD_samples(df, pars):
 
     # Extrinsic parameters
     if (set(['distance']) <= set(pars['parameters'])) and (set(['logdistance']) <= set(df.keys())):
-        df.insert(0, 'distance', np.exp(df.logdistance))
+        df.insert(0, 'distance', np.exp(df.logdistance) / 1000)     # [Gpc]
     if (set(['iota']) <= set(pars['parameters'])) and (set(['costheta_jn']) <= set(df.keys())):
         df.insert(0, 'iota', np.arccos(df.costheta_jn))
     if (set(['iota']) <= set(pars['parameters'])) and (set(['cosiota']) <= set(df.keys())):
         df.insert(0, 'iota', np.arccos(df.cosiota))
 
     # Set positive spins
-    if 'chi1' in set(pars['parameters']):
+    if (set(['chi1']) in set(pars['parameters'])) and (set(['chi1']) <= set(df.keys())):
         df['chi1'] = df['chi1'].apply(lambda x: np.abs(x))
-    if (set(['chi2']) in set(pars['parameters'])):
+    if (set(['chi2']) in set(pars['parameters'])) and (set(['chi2']) <= set(df.keys())):
         df['chi2'] = df['chi2'].apply(lambda x: np.abs(x))
 
     # TGR analysis
@@ -89,7 +95,7 @@ def read_posteriors_event(file_path, pars):
     if '.h5' in filename:
         with h5py.File(file_path, 'r') as f:
             try:
-                tmp = f['EXP1']['posterior_samples']
+                tmp = f['C01:IMRPhenomPv2']['posterior_samples']
             except:
                 tmp = f['combined']['posterior_samples']   # IMPROVE ME: Check the CPNest version
                 if pars['include-prior']:
@@ -141,10 +147,12 @@ def read_evidence_event(pars, dir_path, file_path):
                 evt_evidence['lnZ']       = np.array(f['EXP1']['logZ'])
                 evt_evidence['lnZ_error'] = np.array(f['EXP1']['logZ_error'])
                 evt_evidence['H']         = np.array(f['EXP1']['information'])
+                evt_evidence['max_logL']  = np.max(np.array(f['EXP1']['posterior_samples']['logL']))
             except:
                 evt_evidence['lnZ']       = np.array(f['combined']['logZ'])
                 evt_evidence['lnZ_error'] = np.array(f['combined']['logZ_error'])
                 evt_evidence['H']         = np.array(f['combined']['information'])
+                evt_evidence['max_logL']  = np.max(np.array(f['combined']['posterior_samples']['logL']))
     evt_evidence['lnB'] = evt_evidence['lnZ'] - evt_evidence['lnZ_noise']
 
     if pars['save-medians']:
@@ -231,6 +239,7 @@ def compute_progenitors_from_IMR(df, inverse = False):
     
     if not inverse: df['m1'], df['m2'] = McQ2Masses(df['mc'], df['q'])
     else:           df['mc'], df['q']  = Masses2McQ(df['m1'], df['m2'])
+    #df['q'] = df['q'].apply(lambda x: 1/x)
 
     return df
 
@@ -260,9 +269,26 @@ def create_directory(parent_path, name):
 
     return dir_path
 
+def set_keys_and_comp_pars(pars, df):
+    
+    keys = pd.unique(df[pars['stack-mode']])
+    if pars['stack-mode'] == 'time': keys = plots.sort_times_list(keys)
+    if not pars['ordering'] == []:
+        if ((set(pars['ordering']) <= set(keys))) and (len(pars['ordering']) == len(keys)): keys = pars['ordering']
+        else: raise ValueError('Invalid option for {stack_mode} ordering.'.format(stack_mode = pars['stack-mode']))
+    if not (pars['compare'] == ''):
+        comp_pars = pd.unique(df[pars['compare']])
+        if not pars['compare-ordering'] == []:
+            if ((set(pars['compare-ordering']) <= set(comp_pars))) and (len(pars['compare-ordering']) == len(comp_pars)): comp_pars = pars['compare-ordering']
+            else: raise ValueError('Invalid option for {compare} ordering.'.format(compare = pars['compare-ordering']))
+    else: comp_pars = 'a'
+
+    return keys, comp_pars
+
 def compute_bayes_factor(pars, df):
 
-    keys      = plots.sort_times_list(pd.unique(df[pars['stack-mode']]))
+    keys = pd.unique(df[pars['stack-mode']])
+    if pars['stack-mode'] == 'time': keys = plots.sort_times_list(keys)
     comp_pars = pd.unique(df[pars['compare']])
     if not pars['compare-ordering'] == []:
         if ((set(pars['compare-ordering']) <= set(comp_pars))) and (len(pars['compare-ordering']) == len(comp_pars)): comp_pars = pars['compare-ordering']
@@ -281,7 +307,8 @@ def compute_bayes_factor(pars, df):
 
 def save_posteriors_to_txt(pars, path, df):
 
-    keys = plots.sort_times_list(pd.unique(df[pars['stack-mode']]))
+    keys = pd.unique(df[pars['stack-mode']])
+    if pars['stack-mode'] == 'time': keys = plots.sort_times_list(keys)
     if not pars['compare'] == '': comp_pars = pd.unique(df[pars['compare']])
     else:                         comp_pars = 'rand'
     for comp in comp_pars:
@@ -303,10 +330,9 @@ def save_output_medians(pars, df, df_evidence, out_dir):
     # Median values of the selected parameters
     output_path_pars = os.path.join(out_dir, 'parameters.txt')
     if os.path.isfile(output_path_pars): os.remove(output_path_pars)
-    keys = plots.sort_times_list(pd.unique(df[pars['stack-mode']]))
-    if not pars['compare'] == '': comp_pars = pd.unique(df[pars['compare']])
-    else:                         comp_pars = 'rand'
-    pars_header = '{}\t'.format(pars['stack-mode'])
+    keys, comp_pars = set_keys_and_comp_pars(pars, df)
+
+    pars_header = '{}\t\t'.format(pars['stack-mode'])
     for par in pars['parameters']: pars_header += '{}\t\t\t'.format(par)
 
     with open(output_path_pars, 'a') as f:
@@ -322,10 +348,10 @@ def save_output_medians(pars, df, df_evidence, out_dir):
                 df_filt = df_comp[df_comp[pars['stack-mode']] == key]
                 pars_line = '{}\t'.format(key)
                 for par in pars['parameters']:
-                    median, low_perc, upp_perc = np.percentile(df_filt[par], np.array([0.5, 0.1, 0.9]))
+                    median, low_perc, upp_perc = np.percentile(df_filt[par], np.array([50, 10, 90]))
                     low_err = median - low_perc
                     upp_err = upp_perc - median
-                    pars_line += '{1:.{0}f}\t+{2:.{0}f}\t-{3:.{0}f}\t'.format(2, median, upp_err, low_err)
+                    pars_line += '{1:.{0}f}\t+{2:.{0}f}\t-{3:.{0}f}\t'.format(1, median, upp_err, low_err)
                 f.write('{}\n'.format(pars_line))
             f.write('\n')
     print('\nMedian values of the parameters are saved in:\n{}\n'.format(output_path_pars))
@@ -334,7 +360,7 @@ def save_output_medians(pars, df, df_evidence, out_dir):
     output_path = os.path.join(out_dir, 'SNR-H-BF.txt')
     if os.path.isfile(output_path): os.remove(output_path)
     pars_header  = '{}\t'.format(pars['stack-mode'])
-    pars_header += 'SNR\t\t\tH\tBF\t'.format(pars['stack-mode'])
+    pars_header += '\tSNR\t\t\tH\tmaxL\tBF\t'.format(pars['stack-mode'])
 
     with open(output_path, 'a') as f:
         for comp in comp_pars:
@@ -347,10 +373,10 @@ def save_output_medians(pars, df, df_evidence, out_dir):
 
             for key in keys:
                 df_filt = df_comp[df_comp[pars['stack-mode']] == key]
-                median, low_perc, upp_perc = np.percentile(df_filt['SNR_net_opt'].values[0], np.array([0.5, 0.1, 0.9]))
+                median, low_perc, upp_perc = np.percentile(df_filt['SNR_net_opt'].values[0], np.array([50, 10, 90]))
                 low_err = median - low_perc
                 upp_err = upp_perc - median
-                if pars['compare-hard']:
+                if pars['BF-comparison']:
                     BF     = df_filt['Bayes_factor'].values[0]
                     BF_err = df_filt['Bayes_factor_error'].values[0]
                 else:
@@ -358,8 +384,9 @@ def save_output_medians(pars, df, df_evidence, out_dir):
                     BF_err = df_filt['lnZ_error'].values[0]
 
                 pars_line =  '{}\t'.format(key)
-                pars_line += '{1:.{0}f}\t+{2:.{0}f}\t-{3:.{0}f}\t'.format(2, median, upp_err, low_err)
-                pars_line += '{1:.{0}f}\t'.format(2, df_filt['H'].values[0])
+                pars_line += '{1:.{0}f}\t+{2:.{0}f}\t-{3:.{0}f}\t'.format(1, median, upp_err, low_err)
+                pars_line += '{1:.{0}f}\t'.format(1, df_filt['H'].values[0])
+                pars_line += '{1:.{0}f}\t'.format(0, df_filt['max_logL'].values[0])
                 if not pars['compare'] == '' and comp == comp_pars[0]: pass
                 else:                                                  pars_line += '{1:.{0}f}\t+-{2:.{0}f}'.format(2, BF, BF_err)
                 f.write('{}\n'.format(pars_line))

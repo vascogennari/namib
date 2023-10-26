@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
+from matplotlib import rcParams
 from corner import corner
 import numpy as np, os, pandas as pd
-import matplotlib.lines as mlines
 from statsmodels.graphics.boxplots import violinplot
 from joypy import joyplot
 import utils as utils, labels_palettes as lp
@@ -94,7 +94,7 @@ def corner_plots(pars, SampDataFrame, PriorDataFrame):
                 labels           = labels,
                 color            = colors[i],
                 show_titles      = True,
-                title_kwargs     = {"fontsize":12},
+                title_kwargs     = {"fontsize": 22},
                 use_math_text    = True,
                 no_fill_contours = True,
                 smooth           = pars['corner-settings']['smooth'],
@@ -115,7 +115,7 @@ def corner_plots(pars, SampDataFrame, PriorDataFrame):
                         hist_kwargs      = {'density':True, 'label':'$\mathrm{'+lab+'}$'},
                         color            = pars['prior-color'],
                         show_titles      = False,
-                        title_kwargs     = {"fontsize":12},
+                        title_kwargs     = {"fontsize": 12},
                         use_math_text    = True,
                         no_fill_contours = True,
                         smooth           = pars['corner-settings']['smooth'],
@@ -130,7 +130,7 @@ def corner_plots(pars, SampDataFrame, PriorDataFrame):
                     hist_kwargs      = {'density':True, 'label':'$\mathrm{'+lab+'}$'},
                     color            = pars['prior-color'],
                     show_titles      = False,
-                    title_kwargs     = {"fontsize":12},
+                    title_kwargs     = {"fontsize": 12},
                     use_math_text    = True,
                     no_fill_contours = True,
                     smooth           = pars['corner-settings']['smooth'],
@@ -144,17 +144,7 @@ def corner_plots(pars, SampDataFrame, PriorDataFrame):
 
 def violin_plots(pars, SampDataFrame, PriorDataFrame, EvidenceDataFrame):
 
-    keys = pd.unique(SampDataFrame[pars['stack-mode']])
-    if pars['stack-mode'] == 'time': keys = sort_times_list(keys)
-    if not pars['ordering'] == []:
-        if ((set(pars['ordering']) <= set(keys))) and (len(pars['ordering']) == len(keys)): keys = pars['ordering']
-        else: raise ValueError('Invalid option for {stack_mode} ordering.'.format(stack_mode = pars['stack-mode']))
-    if not (pars['compare'] == ''):
-        comp_pars = pd.unique(SampDataFrame[pars['compare']])
-        if not pars['compare-ordering'] == []:
-            if ((set(pars['compare-ordering']) <= set(comp_pars))) and (len(pars['compare-ordering']) == len(comp_pars)): comp_pars = pars['compare-ordering']
-            else: raise ValueError('Invalid option for {compare} ordering.'.format(compare = pars['compare-ordering']))
-    else: comp_pars = 'a'
+    keys, comp_pars = utils.set_keys_and_comp_pars(pars, SampDataFrame)
     if pars['stack-mode'] == 'time': label_x = np.array(sort_times_list(keys, labels = True), dtype = float)
     else:                            label_x = keys
 
@@ -242,7 +232,7 @@ def violin_plots(pars, SampDataFrame, PriorDataFrame, EvidenceDataFrame):
                             ax           = ax[pi],
                             plot_opts    = plot_opts_R)
                     ax[pi].set_ylabel(labels[par])
-                    if not pars['bounds'] == []: ax[pi].set_ylim(bounds_dict[par])
+                    if not pars['bounds'] == []:   ax[pi].set_ylim(bounds_dict[par])
                     if not (pi == len(params )-1): ax[pi].xaxis.set_visible(False)
             else:
                 if par == 'BF_comparison':
@@ -268,6 +258,7 @@ def violin_plots(pars, SampDataFrame, PriorDataFrame, EvidenceDataFrame):
                     cs = [colors[1] if b > 0 else colors[0] for b in value]
                     ax[pi].scatter(keys, value, s = 50, c = cs, alpha = pars['violin-settings']['alpha'])
                     ax[pi].set_ylabel(label_evidence)
+                    if pars['remove-xticks']:  ax[pi].set_xticklabels([])
                 elif par == pars['plot-cpnest']:
                     EvidenceDataFrame['ordering'] = pd.Categorical(EvidenceDataFrame[pars['stack-mode']], categories = keys, ordered = True)
                     for c,comp in enumerate(comp_pars):
@@ -305,16 +296,22 @@ def violin_plots(pars, SampDataFrame, PriorDataFrame, EvidenceDataFrame):
                     ax[pi].axvspan(a, b, alpha = 0.1, color = '#BA9934')
 
     [l.set_rotation(pars['violin-settings']['rotation']) for l in ax[len(params)-1].get_xticklabels()]
-    if pars['stack-mode'] == 'time': plt.xlabel('$Time\ [M_{f}]$')
+    if not pars['remove-xticks'] and pars['stack-mode'] == 'time': plt.xlabel('$Time\ [M_{f}]$')
     if not pars['compare'] == '':
         import matplotlib.patches as mpatches
         patch = [mpatches.Patch(facecolor = colors[ci], edgecolor = 'k', alpha = pars['violin-settings']['alpha'], label = lp.labels_legend(comp_pars[ci])) for ci,c in enumerate(comp_pars)]
-        fig.axes[0].legend(handles = patch, loc = 2, frameon = False)
+        fig.axes[-1].legend(handles = patch, loc = 'best', frameon = False)
         for axx in fig.axes:
             axx.grid(visible = True)
+    if not pars['event-name'] == '':
+        if not '_' in pars['event-name']: a, b = 0.955, 0.88
+        else:                             a, b = 0.930, 0.88
+        fig.text(a, b, lp.labels_events(pars['event-name']), size = 22, horizontalalignment = 'center', verticalalignment = 'center', transform = fig.axes[0].transAxes)
 
+    #fig.subplots_adjust(hspace = 0)
+    plt.tight_layout(h_pad = pars['violin-settings']['pad'])
     filename = os.path.join(pars['plots-dir'], 'violin_{name}.pdf'.format(name = pars['stack-mode']))
-    fig.savefig(filename, bbox_inches = 'tight', transparent = True)
+    fig.savefig(filename, transparent = True)
 
 
 
@@ -331,11 +328,12 @@ def ridgeline_plots(pars, SampDataFrame, PriorDataFrame):
     else:                            label_y = keys
 
     fig, ax = plt.subplots(len(keys), len(pars['parameters']), figsize = pars['ridgeline-settings']['figsize'])
+    lp.rc_labelsizes(pars)  # Set label sizes of matplotlib RC parameters
 
     for pi,par in enumerate(pars['parameters']):
 
-        if pars['bounds'] == []: range = None
-        else:                    range = pars['bounds'][pi]
+        if pars['bounds'] == []: bounds = None
+        else:                    bounds = pars['bounds'][pi]
         if pi == 0: flag = True
         else:       flag = False
 
@@ -347,7 +345,8 @@ def ridgeline_plots(pars, SampDataFrame, PriorDataFrame):
                 SampDataFrame['ordering'] = SampDataFrame['ordering'].map(lambda x: x.replace('M', '$'))
                 SampDataFrame['ordering'] = SampDataFrame['ordering'].map(lambda x: '$'+x)
 
-            subset = ax[:,pi]
+            if ax.ndim == 1: subset = ax[pi]
+            else:            subset = ax[:,pi]
             joyplot(SampDataFrame.sort_values('ordering'),
                 by        = 'ordering',
                 column    = par,
@@ -360,7 +359,7 @@ def ridgeline_plots(pars, SampDataFrame, PriorDataFrame):
                 overlap   = pars['ridgeline-settings']['overlap'],
                 linewidth = 0.5,
                 linecolor = 'k',
-                x_range   = range,
+                x_range   = bounds,
                 ax        = subset,
                 xlabels   = labels_dict[par]
             )
@@ -388,7 +387,8 @@ def ridgeline_plots(pars, SampDataFrame, PriorDataFrame):
                 SampDataFrame['ordering'] = SampDataFrame['ordering'].map(lambda x: x.replace('M', '$'))
                 SampDataFrame['ordering'] = SampDataFrame['ordering'].map(lambda x: '$'+x)
 
-            subset = ax[:,pi]
+            if ax.ndim == 1: subset = ax[pi]
+            else:            subset = ax[:,pi]
             if pi == 0: flag = True
             else:       flag = False
             joyplot(SampDataFrame.sort_values('ordering'),
@@ -403,19 +403,34 @@ def ridgeline_plots(pars, SampDataFrame, PriorDataFrame):
                 overlap   = pars['ridgeline-settings']['overlap'],
                 linewidth = 0.5,
                 linecolor = 'k',
-                x_range   = range,
+                x_range   = bounds,
                 ax        = subset,
                 xlabels   = labels_dict[par]
             )
-        ax[len(keys)-1][pi].xaxis.set_visible(True)
-        ax[len(keys)-1][pi].grid(visible = False)
-        ax[len(keys)-1][pi].set_xlabel(labels_dict[par])
+
+        if ax.ndim == 1:
+            ax[pi].xaxis.set_visible(True)
+            ax[pi].grid(visible = False)
+            ax[pi].set_xlabel(labels_dict[par])
+        else:
+            ax[len(keys)-1][pi].xaxis.set_visible(True)
+            ax[len(keys)-1][pi].grid(visible = False)
+            ax[len(keys)-1][pi].set_xlabel(labels_dict[par])
+            for ni in range(len(keys)): ax[ni][pi].tick_params(axis = 'both', which = 'major', labelsize = pars['label-sizes']['xtick'])
 
     if pars['compare'] == '': colors = lp.palettes(pars, colormap = False, number_colors = len(comp_pars))
     import matplotlib.patches as mpatches
     patch = [mpatches.Patch(facecolor = colors[ci], edgecolor = 'k', alpha = pars['violin-settings']['alpha'], label = lp.labels_legend(comp_pars[ci])) for ci,c in enumerate(comp_pars)]
-    fig.axes[0].legend(handles = patch, loc = 2, frameon = False)
-    if pars['stack-mode'] == 'time': ax[round(len(keys)/2)][0].set_ylabel('$Time\ [M_{f}]$')
+
+    # Set multiple labels in columns if required
+    if not pars['horizontal-legend']: ncol = 1
+    else:                             ncol = len(comp_pars)
+    fig.axes[0].legend(handles = patch, loc = 2, frameon = False, ncol = ncol)
+
+    if pars['remove-legend']: fig.axes[0].get_legend().remove()
+    if pars['stack-mode'] == 'time' and ax.ndim != 1:
+        if ax.ndim == 1: ax[0].set_ylabel('$Time\ [M_{f}]$')
+        else:            ax[round(len(keys)/2)][0].set_ylabel('$Time\ [M_{f}]$')
 
     filename = os.path.join(pars['plots-dir'], 'ridgeline_{name}.pdf'.format(name = pars['stack-mode']))
     plt.savefig(filename, bbox_inches = 'tight', transparent = True)
@@ -454,10 +469,11 @@ def TGR_plots(pars, SampDataFrame):
         return newton(objective, estimate, args=(level, af, l, m, par))
 
     af_range = [0, 1]
+    num = 100
 
-    omg_22 = SampDataFrame['f_22'][SampDataFrame[pars['stack-mode']]   == 'nGR']#[1::num]
-    omg_33 = SampDataFrame['f_33'][SampDataFrame[pars['stack-mode']]   == 'nGR']#[1::num]
-    tau_22 = SampDataFrame['tau_22'][SampDataFrame[pars['stack-mode']] == 'nGR']#[1::num]
+    omg_22 = SampDataFrame['f_22'][SampDataFrame[pars['stack-mode']]   == 'nGR'][1::num]
+    omg_33 = SampDataFrame['f_33'][SampDataFrame[pars['stack-mode']]   == 'nGR'][1::num]
+    tau_22 = SampDataFrame['tau_22'][SampDataFrame[pars['stack-mode']] == 'nGR'][1::num]
 
     spins  = np.linspace(af_range[0], af_range[1], 200)[:-1]
 
@@ -499,29 +515,36 @@ def TGR_plots(pars, SampDataFrame):
            no_fill_contours = False, 
            contour_kwargs   = {'linewidths': 0.6, 'colors': 'k', 'linestyles': 'dashed', 'alpha': 0.5})
     # CR
-    ax.fill_betweenx(spins, p_f22[5],  p_f22[95], color = '#0771AB', alpha = 0.25)
-    ax.fill_betweenx(spins, p_f22[16], p_f22[84], color = '#0771AB', alpha = 0.5)
-    ax.plot(p_f22[50], spins, lw = 0.7, color = '#0771AB', label = '$\\omega_{22}$')
+    # do (3,3)
+    ax.fill_betweenx(spins, p_f33[5],  p_f33[95], color = '#9C3F5C', alpha = 0.25)
+    ax.fill_betweenx(spins, p_f33[16], p_f33[84], color = '#9C3F5C', alpha = 0.5)
+    ax.plot(p_f33[50], spins, lw = 0.7, color = '#9C3F5C', label = '$\\omega_{33}$')
 
-    ax.fill_betweenx(spins, p_f33[5],  p_f33[95], color = '#608F3A', alpha = 0.25)
-    ax.fill_betweenx(spins, p_f33[16], p_f33[84], color = '#608F3A', alpha = 0.5)
-    ax.plot(p_f33[50], spins, lw = 0.7, color = '#608F3A', label = '$\\omega_{33}$')
+    # dt (2,2)
+    ax.fill_betweenx(spins, p_t22[5],  p_t22[95], color = '#E0AA07', alpha = 0.25)
+    ax.fill_betweenx(spins, p_t22[16], p_t22[84], color = '#E0AA07', alpha = 0.5)
+    ax.plot(p_t22[50], spins, lw = 0.7, color = '#E0AA07', label = '$\\tau_{22}$')
 
-    ax.fill_betweenx(spins, p_t22[5],  p_t22[95], color = '#9C3F5C', alpha = 0.25)
-    ax.fill_betweenx(spins, p_t22[16], p_t22[84], color = '#9C3F5C', alpha = 0.5)
-    ax.plot(p_t22[50], spins, lw = 0.7, color = '#9C3F5C', label = '$\\tau_{22}$')
+    # do (2,2)
+    ax.fill_betweenx(spins, p_f22[5],  p_f22[95], color = '#608F3A', alpha = 0.25)
+    ax.fill_betweenx(spins, p_f22[16], p_f22[84], color = '#608F3A', alpha = 0.5)
+    ax.plot(p_f22[50], spins, lw = 0.7, color = '#608F3A', label = '$\\omega_{22}$')
 
     ax.set_xlabel('$M_f\ [M_\\odot]$')
     ax.set_ylabel('$a_f$')
     ax.set_ylim(af_range)
     ax.grid(True, dashes=(1,3))
 
-    handles, labels = ax.get_legend_handles_labels()
-    new_object =     Line2D([0],[0], color = 'k', lw = 0.6, label = '$\mathrm{GR\ samples}$')
-    new_object_nGR = Line2D([0],[0], color = 'k', lw = 0.6, label = '$\mathrm{nGR\ samples}$', ls = 'dashed')
+    handles, _     = ax.get_legend_handles_labels()
+    new_object     = Line2D([0],[0], color = 'k', lw = 0.6, label = '$\mathrm{GR}$')
+    new_object_nGR = Line2D([0],[0], color = 'k', lw = 0.6, label = '$\mathrm{nGR}$', ls = 'dashed')
     handles.append(new_object)
     handles.append(new_object_nGR)
-    ax.legend(handles = handles, loc = 0, frameon = False)
+    ax.legend(handles = handles, loc = 'lower right', frameon = False)
+    if not pars['event-name'] == '':
+        if not '_' in pars['event-name']: a, b = 0.885, 0.945
+        else:                             a, b = 0.825, 0.945
+        fig.text(a, b, lp.labels_events(pars['event-name']), size = 14, horizontalalignment = 'center', verticalalignment = 'center', transform = fig.axes[0].transAxes)
 
     filename = os.path.join(pars['plots-dir'], 'TGR_plot.pdf')
     fig.savefig(filename, bbox_inches = 'tight', transparent = True)

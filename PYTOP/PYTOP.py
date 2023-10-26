@@ -43,13 +43,18 @@ if __name__=='__main__':
         'plot-cpnest'        : '',
         'BF-comparison'      : 0,
         'evidence-top'       : 0,
+        'event-name'         : '',
+        'remove-xticks'      : 0,
+        'remove-legend'      : 0,
         'time-percentiles'   : [],
+        'horizontal-legend'  : 0,
         'palette'            : 'crest',
         'single-prior'       : '',
         'prior-color'        : '#828F61',
         'corner-settings'    : {'figsize': (15, 15), 'smooth': 0},
-        'violin-settings'    : {'figsize': (15, 25), 'alpha': 0.5, 'rotation': 0},
+        'violin-settings'    : {'figsize': (15, 25), 'alpha': 0.5, 'rotation': 0, 'pad': -0.5},
         'ridgeline-settings' : {'figsize': (20, 10), 'alpha': 0.5, 'overlap': 0.5, 'fade': 0},
+        'label-sizes'        : {'xtick': 15, 'ytick': 15, 'legend': 17, 'axes': 17},
     }
     
     for key in input_pars.keys():
@@ -60,16 +65,16 @@ if __name__=='__main__':
         if ('compare-hard' in key) or ('evidence' in key) or ('save-post' in key) or ('include-prior' in key) or ('ds-scaling' in key) or ('screen-medians' in key) or ('save-medians' in key):
             try: input_pars[key] = Config.getboolean('input', key)
             except: pass
-        if ('parameters' in key) or ('bounds' in key) or ('modes' in key) or ('ordering' in key) or ('compare-ordering' in key):
+        if ('parameters' in key) or ('modes' in key) or ('ordering' in key) or ('bounds' in key) or ('compare-ordering' in key):
             try: input_pars[key] = ast.literal_eval(Config.get('input', key))
             except: pass
-        if ('corner' in key) or ('violin' in key) or ('ridgeline' in key) or ('TGR-plot' in key) or ('BF-comparison' in key) or ('evidence-top' in key):
+        if ('corner' in key) or ('violin' in key) or ('ridgeline' in key) or ('TGR-plot' in key) or ('BF-comparison' in key) or ('evidence-top' in key) or ('remove-xticks' in key) or ('remove-legend' in key) or ('horizontal-legend' in key):
             try: input_pars[key] = Config.getboolean('plots', key)
             except: pass
-        if ('plot-cpnest' in key) or ('single-prior' in key) or ('prior-color' in key):
-            try: input_pars[key] = Config.getboolean('plots', key)
+        if ('plot-cpnest' in key) or ('single-prior' in key) or ('prior-color' in key) or ('event-name' in key):
+            try: input_pars[key] = Config.get('plots', key)
             except: pass
-        if ('palette' in key) or ('time-percentiles' in key) or ('corner-settings' in key) or ('violin-settings' in key) or ('ridgeline-settings' in key):
+        if ('palette' in key) or ('time-percentiles' in key) or ('corner-settings' in key) or ('violin-settings' in key) or ('ridgeline-settings' in key) or ('label-sizes' in key):
             try: input_pars[key] = ast.literal_eval(Config.get('plots', key))
             except: pass
 

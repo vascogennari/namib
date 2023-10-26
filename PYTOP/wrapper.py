@@ -1,8 +1,8 @@
 import os
 
 # ------------------------- #
-input_path  = '/Users/vascogennari/Documents/work/code/python/results/GW190521_074359/PROD2/TEOBPM'
-output_path = '/Users/vascogennari/Documents/work/code/python/PYTOP/samples/GW190521_074359/PROD2/TEOBPM'
+input_path  = '/Users/vascogennari/Documents/work/code/python/results/GWTC-3_TEOBPM_TGR/PROD4'
+output_path = '/Users/vascogennari/Documents/work/code/python/PYTOP/samples/GWTC-3_TEOBPM/GWTC-3_TEOBPM_TGR'
 
 elements = {
     'name'     : '',
@@ -10,8 +10,10 @@ elements = {
     'model'    : '',
     'submodel' : '',
     'time'     : '',
-    'GR_tag'   : 'GR',
+    'GR_tag'   : 'nGR',
 }
+
+deviations = 1
 # ------------------------- #
 
 print('\nCopying samples.\nFrom:\t{input_path}\nTo:\t{output_path}\n'.format(input_path = input_path, output_path = output_path))
@@ -26,7 +28,7 @@ if not os.path.exists(output_SNR_dir): os.makedirs(output_SNR_dir)
 
 # Loop on the different runs
 for file in os.listdir(input_path):
-    if not file == '.DS_Store':
+    if (not file == '.DS_Store') and (not file == 'TGR'):
 
         i = 0
         keys = []
@@ -37,6 +39,8 @@ for file in os.listdir(input_path):
                 i += 1
             else:
                 keys.append(elements[element])
+
+        if deviations: keys[5] = tmp[-1]   # Set deviations as nonGR_tag
 
         filename_tmp = '{}_{}_{}_{}_{}_{}'.format(keys[0], keys[1], keys[2], keys[3], keys[4], keys[5]) # Root filename
         nested_sampler_path = os.path.join(input_path,  file, 'Nested_sampler')                         # Nested Sampler directory path
