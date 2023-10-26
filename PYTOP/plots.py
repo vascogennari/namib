@@ -309,9 +309,12 @@ def violin_plots(pars, SampDataFrame, PriorDataFrame, EvidenceDataFrame):
         fig.text(a, b, lp.labels_events(pars['event-name']), size = 22, horizontalalignment = 'center', verticalalignment = 'center', transform = fig.axes[0].transAxes)
 
     #fig.subplots_adjust(hspace = 0)
-    plt.tight_layout(h_pad = pars['violin-settings']['pad'])
     filename = os.path.join(pars['plots-dir'], 'violin_{name}.pdf'.format(name = pars['stack-mode']))
-    fig.savefig(filename, transparent = True)
+    if not pars['fix-dimensions']:
+        fig.savefig(filename, bbox_inches = 'tight', transparent = True)
+    else:
+        plt.tight_layout(h_pad = pars['violin-settings']['pad'])
+        fig.savefig(filename, transparent = True)
 
 
 
