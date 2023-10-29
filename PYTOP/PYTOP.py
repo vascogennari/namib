@@ -3,59 +3,75 @@ from optparse import OptionParser
 
 from utils import Posteriors, Plots
 from utils import create_directory, save_posteriors_to_txt, save_output_medians
-
+from options import usage
 
 if __name__=='__main__':
 
-    parser = OptionParser()
+    parser = OptionParser(usage)
     parser.add_option('--config-file', type='string', metavar = 'config_file', default = None)
     (opts, args) = parser.parse_args()
 
     cwd = os.getcwd()
     pardir_path = os.path.abspath(os.path.join(cwd, os.pardir))
     config_path = os.path.join(os.path.join(pardir_path, 'config_files'), opts.config_file)
+    if not os.path.exists(config_path): parser.error('Config file {} not found.'.format(config_path))
 
     Config = configparser.ConfigParser()
     Config.read(config_path)
 
     input_pars = {
-        'samp-dir'           : 'samples',
-        'output'             : 'posteriors',
-        'save-medians'       : 0,
-        'file-path'          : '', 
-        'parameters'         : ['m1', 'm2', 'chi1', 'chi2'],
-        'bounds'             : [],
-        'modes'              : [(2,2)],
+
+        # [input]
+
+        'samp-dir'           : '',
+        'output'             : '',
+        'file-path'          : '',
+
         'stack-mode'         : 'event',
         'compare'            : '',
-        'compare-hard'       : 0,
-        'evidence'           : 0,
-        'save-post'          : 0,
+
+        'parameters'         : ['m1', 'm2', 'chi1', 'chi2'],
+        'bounds'             : [],
         'ordering'           : [],
         'compare-ordering'   : [],
+        
+        'compare-hard'       : 0,
+        'evidence'           : 0,
         'include-prior'      : 0,
+
+        'modes'              : [(2,2)],
         'ds-scaling'         : 0,
+
+        'save-post'          : 0,
+        'save-medians'       : 0,
+
+        # [plots]
 
         'corner'             : 0,
         'violin'             : 0,
         'ridgeline'          : 0,
         'TGR-plot'           : 0,
-        'plot-cpnest'        : '',
-        'BF-comparison'      : 0,
-        'evidence-top'       : 0,
-        'event-name'         : '',
-        'remove-xticks'      : 0,
-        'remove-legend'      : 0,
-        'time-percentiles'   : [],
-        'horizontal-legend'  : 0,
-        'fix-dimensions'     : 0,
-        'palette'            : 'crest',
-        'single-prior'       : '',
-        'prior-color'        : '#828F61',
+
         'corner-settings'    : {'figsize': (15, 15), 'smooth': 0},
         'violin-settings'    : {'figsize': (15, 25), 'alpha': 0.5, 'rotation': 0, 'pad': -0.5},
         'ridgeline-settings' : {'figsize': (20, 10), 'alpha': 0.5, 'overlap': 0.5, 'fade': 0},
         'label-sizes'        : {'xtick': 15, 'ytick': 15, 'legend': 17, 'axes': 17},
+        'palette'            : 'crest',
+
+        'plot-cpnest'        : '',
+        'BF-comparison'      : 0,
+        'evidence-top'       : 0,
+        'time-percentiles'   : [],
+
+        'horizontal-legend'  : 0,
+        'event-name'         : '',
+        'remove-xticks'      : 0,
+        'remove-legend'      : 0,
+        'fix-dimensions'     : 0,
+        
+        'single-prior'       : '',
+        'prior-color'        : '#828F61',
+
     }
     
     for key in input_pars.keys():

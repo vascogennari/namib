@@ -105,6 +105,7 @@ def corner_plots(pars, SampDataFrame, PriorDataFrame):
 
         # Plot prior samples if required
         if pars['include-prior']:
+            Warning('The prior option is not fully implemented. Please be careful in using it.')
             if pars['single-prior'] == '':
                 for i,key in enumerate(keys):
                     samp = np.column_stack(PriorDataFrame[par] for par in params)
