@@ -30,4 +30,4 @@ Once the package is installed, you can launch PYTOP as:
 
     PYTOP --config-file config_filename.ini
     
-You can get familiar with PYTOP, try to replicate the above plots by launching the config files in the *examples* directory.
+You can get familiar with PYTOP, try to replicate the above plots by launching the config files in the *config_files/examples* directory.
