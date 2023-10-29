@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
 from matplotlib import rcParams
 from corner import corner
 import numpy as np, os, pandas as pd
@@ -298,7 +299,6 @@ def violin_plots(pars, SampDataFrame, PriorDataFrame, EvidenceDataFrame):
     [l.set_rotation(pars['violin-settings']['rotation']) for l in ax[len(params)-1].get_xticklabels()]
     if not pars['remove-xticks'] and pars['stack-mode'] == 'time': plt.xlabel('$Time\ [M_{f}]$')
     if not pars['compare'] == '':
-        import matplotlib.patches as mpatches
         patch = [mpatches.Patch(facecolor = colors[ci], edgecolor = 'k', alpha = pars['violin-settings']['alpha'], label = lp.labels_legend(comp_pars[ci])) for ci,c in enumerate(comp_pars)]
         fig.axes[-1].legend(handles = patch, loc = 'best', frameon = False)
         for axx in fig.axes:
@@ -422,7 +422,6 @@ def ridgeline_plots(pars, SampDataFrame, PriorDataFrame):
             for ni in range(len(keys)): ax[ni][pi].tick_params(axis = 'both', which = 'major', labelsize = pars['label-sizes']['xtick'])
 
     if pars['compare'] == '': colors = lp.palettes(pars, colormap = False, number_colors = len(comp_pars))
-    import matplotlib.patches as mpatches
     patch = [mpatches.Patch(facecolor = colors[ci], edgecolor = 'k', alpha = pars['violin-settings']['alpha'], label = lp.labels_legend(comp_pars[ci])) for ci,c in enumerate(comp_pars)]
 
     # Set multiple labels in columns if required
