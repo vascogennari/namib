@@ -31,4 +31,4 @@ Once the package is installed, you can launch `namib` from inside the directory 
 
     namib --config-file config_filename.ini
 
-You can get familiar with `namib`, try to replicate the above plots by launching the config files in the *config_files/examples* directory.
+You can get familiar with `namib`, try to replicate the above plots by launching the config files in the `config_files/examples` directory.
