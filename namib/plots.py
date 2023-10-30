@@ -5,7 +5,7 @@ from corner import corner
 import numpy as np, os, pandas as pd
 from statsmodels.graphics.boxplots import violinplot
 from joypy import joyplot
-import utils as utils, labels_palettes as lp
+import namib.utils as utils, namib.labels_palettes as lp
 
 
 def sort_times_list(input_keys, labels = False):

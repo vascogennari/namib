@@ -1,11 +1,12 @@
 import os, configparser, ast
 from optparse import OptionParser
 
-from utils import Posteriors, Plots
-from utils import create_directory, save_posteriors_to_txt, save_output_medians
-from options import usage
+from namib.utils import Posteriors, Plots
+from namib.utils import create_directory, save_posteriors_to_txt, save_output_medians
+from namib.options import usage
 
-if __name__=='__main__':
+
+def main():
 
     parser = OptionParser(usage)
     parser.add_option('--config-file', type='string', metavar = 'config_file', default = None)
@@ -122,3 +123,7 @@ if __name__=='__main__':
         print('\nPlots are saved in:\n{}'.format(input_pars['plots-dir']))
     
     print('\nFinished.\n')
+
+
+if __name__=='__main__':
+    main()

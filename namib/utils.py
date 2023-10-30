@@ -3,7 +3,7 @@ import numpy as np
 from tqdm import tqdm
 
 import pyRing.waveform as wf
-import plots as plots
+import namib.plots as plots
 
 
 def from_IMR_to_RD_samples(df, pars):
