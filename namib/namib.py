@@ -38,6 +38,7 @@ if __name__=='__main__':
         'compare-hard'       : 0,
         'evidence'           : 0,
         'include-prior'      : 0,
+        'truths'             : [],
 
         'modes'              : [(2,2)],
         'ds-scaling'         : 0,
@@ -71,6 +72,7 @@ if __name__=='__main__':
         
         'single-prior'       : '',
         'prior-color'        : '#828F61',
+        'truth-color'        : '#9B280A',
 
     }
     
@@ -82,13 +84,13 @@ if __name__=='__main__':
         if ('compare-hard' in key) or ('evidence' in key) or ('save-post' in key) or ('include-prior' in key) or ('ds-scaling' in key) or ('screen-medians' in key) or ('save-medians' in key):
             try: input_pars[key] = Config.getboolean('input', key)
             except: pass
-        if ('parameters' in key) or ('modes' in key) or ('ordering' in key) or ('bounds' in key) or ('compare-ordering' in key):
+        if ('parameters' in key) or ('modes' in key) or ('ordering' in key) or ('bounds' in key) or ('compare-ordering' in key ) or ('truths' in key):
             try: input_pars[key] = ast.literal_eval(Config.get('input', key))
             except: pass
         if ('corner' in key) or ('violin' in key) or ('ridgeline' in key) or ('TGR-plot' in key) or ('BF-comparison' in key) or ('evidence-top' in key) or ('remove-xticks' in key) or ('remove-legend' in key) or ('horizontal-legend' in key) or ('fix-dimensions' in key):
             try: input_pars[key] = Config.getboolean('plots', key)
             except: pass
-        if ('plot-cpnest' in key) or ('single-prior' in key) or ('prior-color' in key) or ('event-name' in key):
+        if ('plot-cpnest' in key) or ('single-prior' in key) or ('prior-color' in key) or ('event-name' in key) or ('truth-color' in key):
             try: input_pars[key] = Config.get('plots', key)
             except: pass
         if ('palette' in key) or ('time-percentiles' in key) or ('corner-settings' in key) or ('violin-settings' in key) or ('ridgeline-settings' in key) or ('label-sizes' in key):

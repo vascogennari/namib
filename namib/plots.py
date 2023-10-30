@@ -60,6 +60,9 @@ def corner_plots(pars, SampDataFrame, PriorDataFrame):
         if ((set(pars['ordering']) <= set(keys))) and (len(pars['ordering']) == len(keys)): keys = pars['ordering']
         else: raise ValueError('Invalid option for {stack_mode} ordering.'.format(stack_mode = pars['stack-mode']))
 
+    if pars['truths'] == []: truths = None
+    else:                    truths = pars['truths']
+
     levels = [0.5, 0.68, 0.90]
     colors = lp.palettes(pars, colormap = False, number_colors = len(keys), corner_plot = True)
     
@@ -99,6 +102,8 @@ def corner_plots(pars, SampDataFrame, PriorDataFrame):
                 use_math_text    = True,
                 no_fill_contours = True,
                 smooth           = pars['corner-settings']['smooth'],
+                truths           = truths,
+                truth_color      = pars['truth-color'],
             )
         fig.axes[np.shape(samp)[-1]-1].legend(*fig.axes[0].get_legend_handles_labels(), loc = 'center', frameon = False)
         for axx in fig.axes: axx.grid(visible = True)
@@ -121,6 +126,8 @@ def corner_plots(pars, SampDataFrame, PriorDataFrame):
                         use_math_text    = True,
                         no_fill_contours = True,
                         smooth           = pars['corner-settings']['smooth'],
+                        truths           = truths,
+                        truth_color      = pars['truth-color'],
                     )
             else:
                 samp = np.column_stack(PriorDataFrame[PriorDataFrame[pars['stack-mode']] == pars['single-prior']][par] for par in params)
@@ -136,6 +143,8 @@ def corner_plots(pars, SampDataFrame, PriorDataFrame):
                     use_math_text    = True,
                     no_fill_contours = True,
                     smooth           = pars['corner-settings']['smooth'],
+                    truths           = truths,
+                    truth_color      = pars['truth-color'],
                 )
         
         if not pars['compare'] == '': filename = os.path.join(pars['plots-dir'], 'corner_{name}_{comp}.pdf'.format(name = pars['stack-mode'], comp = comp))
@@ -309,7 +318,15 @@ def violin_plots(pars, SampDataFrame, PriorDataFrame, EvidenceDataFrame):
         else:                             a, b = 0.930, 0.88
         fig.text(a, b, lp.labels_events(pars['event-name']), size = 22, horizontalalignment = 'center', verticalalignment = 'center', transform = fig.axes[0].transAxes)
 
-    #fig.subplots_adjust(hspace = 0)
+    # Plot the truth values
+    if not pars['truths'] == []:
+        if not pars['evidence-top']:
+            for xi, axx in enumerate(fig.axes):
+                if not xi == len(params)-1: axx.axhline(pars['truths'][xi], ls = '--', lw = 1.5, alpha = 0.5, color = pars['truth-color'])
+        else:
+            for xi, axx in enumerate(fig.axes):
+                if not xi == 0:             axx.axhline(pars['truths'][xi], ls = '--', lw = 1.5, alpha = 0.5, color = pars['truth-color'])
+
     filename = os.path.join(pars['plots-dir'], 'violin_{name}.pdf'.format(name = pars['stack-mode']))
     if not pars['fix-dimensions']:
         fig.savefig(filename, bbox_inches = 'tight', transparent = True)
@@ -420,7 +437,9 @@ def ridgeline_plots(pars, SampDataFrame, PriorDataFrame):
             ax[len(keys)-1][pi].xaxis.set_visible(True)
             ax[len(keys)-1][pi].grid(visible = False)
             ax[len(keys)-1][pi].set_xlabel(labels_dict[par])
-            for ni in range(len(keys)): ax[ni][pi].tick_params(axis = 'both', which = 'major', labelsize = pars['label-sizes']['xtick'])
+            for ni in range(len(keys)):
+                ax[ni][pi].tick_params(axis = 'both', which = 'major', labelsize = pars['label-sizes']['xtick'])
+                if not pars['truths'] == []: ax[ni][pi].axvline(pars['truths'][pi], ls = '--', lw = 1.5, alpha = 0.5, color = pars['truth-color'])  # Plot truth values
 
     if pars['compare'] == '': colors = lp.palettes(pars, colormap = False, number_colors = len(comp_pars))
     patch = [mpatches.Patch(facecolor = colors[ci], edgecolor = 'k', alpha = pars['violin-settings']['alpha'], label = lp.labels_legend(comp_pars[ci])) for ci,c in enumerate(comp_pars)]

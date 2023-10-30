@@ -22,6 +22,7 @@ usage = """
         compare-hard       Flag to activate a hard comparison in case only two options are compared. This parameter is used only in violin and ridgeline plots. Default: 0
         evidence           Flag to read the evidence from the samples. Default: 0
         include-prior      Flag to plot the prior. Option currently implemented only in corner plot and not fully implemented. Default: 0
+        truths             List of true values of the selected parameters. Default: []
 
         modes              List of modes for which the QNMs are computed. This option is used only when QNMs are computed from {Mf, af}. Default: [(2,2)]
         ds-scaling         Flag to convert the damping time in [ms] and scale amplitudes as [1e-21]. The option is used to compare samples from Damped Sinusoids with other models. Default: 0
@@ -57,5 +58,6 @@ usage = """
 
         single-prior       Option to select the key from which the prior is read. Default: ''
         prior-color        Color used to plot the prior. Default: '#828F61'
+        truth-color        Color used to plot the truth values. Default: '#9B280A'
 
 """
