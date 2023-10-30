@@ -27,10 +27,8 @@ To install `namib`, follow the instructions:
     pip install -r requirements.txt
     python setup.py install
     
-Once the package is installed, you can launch `namib` as:
+Once the package is installed, you can launch `namib` from inside the directory `namib/namib` as:
 
     namib --config-file config_filename.ini
-    
-You can get familiar with `namib`, try to replicate the above plots by launching the config files in the *config_files/examples* directory.
 
-Please note that, currently, namib needs to be lauched from the `namib/namib` directory.
+You can get familiar with `namib`, try to replicate the above plots by launching the config files in the *config_files/examples* directory.
