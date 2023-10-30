@@ -8,15 +8,15 @@ with open("requirements.txt") as requires_file:
     requirements = requires_file.read().split("\n")
 
 setup(
-    name             = 'PYTOP',
+    name             = 'namib',
     version          = '1.0.0',
     description      = 'Python package for handling and displaying multiple posterior distributions.',
     author           = 'Vasco Gennari',
     author_email     = 'vasco.gennari@gmail.com',
-    url              = 'https://github.com/vascogennari/PYTOP',
+    url              = 'https://github.com/vascogennari/namib',
     long_description = long_description,
-    packages         = ['PYTOP'],
+    packages         = ['namib'],
     python_requires  = '>=3',
     install_requires = requirements,
-    entry_points     = {'console_scripts': ['PYTOP = PYTOP.PYTOP:main']}
+    entry_points     = {'console_scripts': ['namib = namib.namib:main']}
 )

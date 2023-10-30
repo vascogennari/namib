@@ -2,7 +2,7 @@ import os
 
 # ------------------------- #
 input_path  = '/Users/vascogennari/Documents/work/code/python/results/GWTC-3_TEOBPM_TGR/PROD4'
-output_path = '/Users/vascogennari/Documents/work/code/python/PYTOP/samples/GWTC-3_TEOBPM/GWTC-3_TEOBPM_TGR'
+output_path = '/Users/vascogennari/Documents/work/code/python/namib/samples/GWTC-3_TEOBPM/GWTC-3_TEOBPM_TGR'
 
 elements = {
     'name'     : '',
