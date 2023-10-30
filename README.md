@@ -23,7 +23,7 @@ To install `namib`, follow the instructions:
 
     git clone https://github.com/vascogennari/namib.git
     cd namib
-    conda install -c conda-forge hdf5 gwsurrogate --ignore-cache
+    conda install -c conda-forge hdf5 gwsurrogate
     pip install -r requirements.txt
     python setup.py install
     
