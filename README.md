@@ -4,7 +4,7 @@
 
 Given a set of input files with samples, `namib` filters the samples for the selected parameters and displays them through different plots: ***corner***, ***violin***, ***ridgeline***.
 
-We show two possible applications as an example.
+For example, these are two possible applications.
 #### Comparing different pipelines on a set of GW events
 <img src="https://github.com/vascogennari/namib/assets/62053184/0753647d-03e0-4592-bfd6-5670b8614656" alt="drawing" width="750"/>
 
