@@ -195,9 +195,9 @@ def violin_plots(pars, SampDataFrame, PriorDataFrame, EvidenceDataFrame):
             if pars['evidence-top']: params = ['BF_comparison'] + params
             else:                    params = params + ['BF_comparison']
         else:
-            if not pars['plot-cpnest'] == '':
-                if pars['evidence-top']: params = [pars['plot-cpnest']] + params
-                else:                    params = params + [pars['plot-cpnest']]
+            if not pars['extra-row'] == '':
+                if pars['evidence-top']: params = [pars['extra-row']] + params
+                else:                    params = params + [pars['extra-row']]
 
     if (not pars['compare'] == '') and pars['compare-hard']: comp_pars_loop = 'A'
     else:                                                    comp_pars_loop = comp_pars
@@ -220,7 +220,7 @@ def violin_plots(pars, SampDataFrame, PriorDataFrame, EvidenceDataFrame):
             SampDataFrameComp_R = SampDataFrame[SampDataFrame[pars['compare']] == comp_pars[1]]
 
         for pi,par in enumerate(params):
-            if (not par == 'BF_comparison') and (not par == pars['plot-cpnest']):
+            if (not par == 'BF_comparison') and (not par == pars['extra-row']):
                 SampDataFrameFilt_L = SampDataFrameComp_L[par]
                 SampDataFrameFilt_R = SampDataFrameComp_R[par]
                 if (not (SampDataFrameFilt_L == 0).all()) or (not (SampDataFrameFilt_R == 0).all()):
@@ -270,16 +270,16 @@ def violin_plots(pars, SampDataFrame, PriorDataFrame, EvidenceDataFrame):
                     ax[pi].scatter(keys, value, s = 50, c = cs, alpha = pars['violin-settings']['alpha'])
                     ax[pi].set_ylabel(label_evidence)
                     if pars['remove-xticks']:  ax[pi].set_xticklabels([])
-                elif par == pars['plot-cpnest']:
+                elif par == pars['extra-row']:
                     EvidenceDataFrame['ordering'] = pd.Categorical(EvidenceDataFrame[pars['stack-mode']], categories = keys, ordered = True)
                     for c,comp in enumerate(comp_pars):
-                        if   pars['plot-cpnest'] == 'bayes-factor':
+                        if   pars['extra-row'] == 'bayes-factor':
                             value     = EvidenceDataFrame[EvidenceDataFrame[pars['compare']] == comp].sort_values('ordering').lnB
                             value_err = EvidenceDataFrame[EvidenceDataFrame[pars['compare']] == comp].sort_values('ordering').lnZ_error
-                        elif pars['plot-cpnest'] == 'information':
+                        elif pars['extra-row'] == 'information':
                             value     = EvidenceDataFrame[EvidenceDataFrame[pars['compare']] == comp].sort_values('ordering').H
                             value_err = 0
-                        elif pars['plot-cpnest'] == 'likelihood':
+                        elif pars['extra-row'] == 'likelihood':
                             raise ValueError('Maximum likelihood is not currently implemented.')
                             value     = EvidenceDataFrame[EvidenceDataFrame[pars['compare']] == comp].sort_values('ordering').maxL
                             value_err = 0

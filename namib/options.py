@@ -45,7 +45,7 @@ usage = """
         label-sizes        Dictionary to set labels size. Options: {'xtick', 'ytick', 'legend', 'axes'}. Default: {'xtick': 15, 'ytick': 15, 'legend': 17, 'axes': 17},
         palette            Option to set the colors used in the plots. If string is passed colors are read from that colormap, otherwise a list of colors needs to be passed. Syntax: 'cmap_name' or ['#AB3507', '#0771AB', ...]. Default: 'crest'
         
-        plot-cpnest        Option to include additional parameter in violin plot. Available options: ['bayes-factor', 'information', 'likelihood']. Default: ''
+        extra-row          Option to include extra row with additional parameter in violin plot. Available options: ['bayes-factor', 'information', 'likelihood']. Default: ''
         BF-comparison      Flag to compute the Bayes factor between two competing compare options. The option is available only for violin plot. Default: 0
         evidence-top       Flag to insert the additional parameter as the top row. If 0, the parameter is inserted as the bottom row. This option follows both 'plot-cpnest' and 'BF-comparison'. Default: 0
         time-percentiles   Option to include a shaded region in the additional row of violin plot. This option follows both 'plot-cpnest' and 'BF-comparison'. Syntax: [-3.5, 3.0]. Default: []

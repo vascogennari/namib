@@ -60,7 +60,7 @@ def main():
         'label-sizes'        : {'xtick': 15, 'ytick': 15, 'legend': 17, 'axes': 17},
         'palette'            : 'crest',
 
-        'plot-cpnest'        : '',
+        'extra-row'          : '',
         'BF-comparison'      : 0,
         'evidence-top'       : 0,
         'time-percentiles'   : [],
@@ -91,7 +91,7 @@ def main():
         if ('corner' in key) or ('violin' in key) or ('ridgeline' in key) or ('TGR-plot' in key) or ('BF-comparison' in key) or ('evidence-top' in key) or ('remove-xticks' in key) or ('remove-legend' in key) or ('horizontal-legend' in key) or ('fix-dimensions' in key):
             try: input_pars[key] = Config.getboolean('plots', key)
             except: pass
-        if ('plot-cpnest' in key) or ('single-prior' in key) or ('prior-color' in key) or ('event-name' in key) or ('truth-color' in key):
+        if ('extra-row' in key) or ('single-prior' in key) or ('prior-color' in key) or ('event-name' in key) or ('truth-color' in key):
             try: input_pars[key] = Config.get('plots', key)
             except: pass
         if ('palette' in key) or ('time-percentiles' in key) or ('corner-settings' in key) or ('violin-settings' in key) or ('ridgeline-settings' in key) or ('label-sizes' in key):
