@@ -299,7 +299,7 @@ def violin_plots(pars, SampDataFrame, PriorDataFrame, EvidenceDataFrame):
                             mec        = 'k'      ,
                             alpha      = pars['violin-settings']['alpha'],
                         )
-                        ax[pi].scatter(keys, value, s = 50, c = colors[ci], alpha = pars['violin-settings']['alpha'] )
+                        ax[pi].scatter(keys, value, s = 50, c = colors[ci], alpha = pars['violin-settings']['alpha'])
                     ax[pi].set_ylabel(label_evidence)
                 if not pars['time-percentiles'] == []:
                     a = convert_time_percentiles(pars['time-percentiles'][0], ax[pi].get_xticks(), label_x)

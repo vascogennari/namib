@@ -98,6 +98,10 @@ def labels_legend(par):
         elif par == '22-21':     label = '$(2,2),(2,1)$'
         elif par == '22-21-33':  label = '$(2,2),(2,1),(3,3)$'
 
+        elif par == '220':       label = '$(2,2,0)$'
+        elif par == '220-330':   label = '$(2,2,0),(3,3,0)$'
+        elif par == '220-221':   label = '$(2,2,0),(2,2,1)$'
+
         elif par == 'GR':        label = '$\mathrm{GR}$'
         elif par == 'nGR':       label = '$\mathrm{nGR}$'
         elif par == 'do22':      label = '$\\delta\\omega_{22}$'
