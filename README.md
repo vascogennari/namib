@@ -17,6 +17,8 @@ To run `namib`, you only need a set of samples (input files) and a config file.
 - Select the types of plots and customize bounds, dimensions and colors of the figures.
 - Enjoy the results.
 
+### Guide
+You can find detailed instructions on `namib` usage in the [`namib` guide](https://github.com/vascogennari/namib/files/13241016/namib_guide.pdf).
 
 ## Installing and running the code
 To install `namib`, follow the instructions:
