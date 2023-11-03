@@ -134,7 +134,7 @@ def read_evidence_event(pars, dir_path, file_path):
 
     tmp  = np.genfromtxt(noise_evt_path, names = True)
     evt_evidence['lnZ_noise'] = np.array(tmp['lnZ_noise'])
-    if '.dat' in filename:
+    if ('.dat' in filename) or ('.txt' in filename):
         evt_evidence['lnZ'] = np.array(tmp['lnZ_signal'])
 
     # Read the signal evidence
@@ -440,7 +440,9 @@ class Posteriors:
                     if not pars['compare'] == '': EventEvidenceDataFrame.insert(0, pars['compare'], single_evt_keys[pars['compare']])
                     self.EvidenceDataFrame = pd.concat([self.EvidenceDataFrame, EventEvidenceDataFrame], ignore_index=True)
 
-        if (not pars['compare'] == '') and pars['BF-comparison']: self.EvidenceDataFrame = compute_bayes_factor(pars, self.EvidenceDataFrame)
+        if (not pars['compare'] == '') and pars['BF-comparison']:
+            if not pars['evidence']: raise ValueError('Please activate the evidence option to compute the Bayes factor.')
+            self.EvidenceDataFrame = compute_bayes_factor(pars, self.EvidenceDataFrame)
 
     def return_samples_dict(self):
         return self.SampDataFrame, self.PriorDataFrame, self.EvidenceDataFrame
