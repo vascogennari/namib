@@ -111,11 +111,13 @@ def labels_legend(par):
 
         elif par == 'EdGB':       label = '$\mathrm{EdGB}$'
 
+        elif par == 'DS':        label = '$\mathrm{DS}$'
         elif par == 'TEOBPM':    label = '$\mathrm{TEOBPM}$'
-        elif par == 'LVK-IMR':   label = '$\mathrm{LVK\ IMR}$'
-        elif par == 'LVK-RD':    label = '$\mathrm{LVK\ RD}$'
-        elif par == 'Kerr-221':  label = '$\mathrm{Kerr\ 221}$'
         elif par == 'Kerr-220':  label = '$\mathrm{Kerr\ 220}$'
+        elif par == 'Kerr-221':  label = '$\mathrm{Kerr\ 221}$'
+        elif par == 'MMRDNP':    label = '$\mathrm{MMRDNP}$'
+        elif par == 'LVK-RD':    label = '$\mathrm{LVK\ RD}$'
+        elif par == 'LVK-IMR':   label = '$\mathrm{LVK\ IMR}$'
 
         else:
             raise ValueError('Unknown legend parameter.')
@@ -150,7 +152,7 @@ def palettes(pars, colormap, number_colors, corner_plot = False):
 
     if type(pars['palette']) == str:
         try:
-            if colormap: colors = sns.color_palette(pars['palette'], as_cmap=True)
+            if colormap: colors = sns.color_palette(pars['palette'], as_cmap = True)
             else:        colors = sns.color_palette(pars['palette'], number_colors)
         except:
             if colormap: colors = cm.get_cmap(pars['palette'])
@@ -158,8 +160,8 @@ def palettes(pars, colormap, number_colors, corner_plot = False):
     else:
         colors = pars['palette']
     
-    if corner_plot:
-        try:    colors = sns.color_palette(pars['palette'], number_colors)
-        except: colors = mcp.gen_color(cmap = pars['palette'], n = number_colors)
+    # if corner_plot:
+    #     try:    colors = sns.color_palette(pars['palette'], number_colors)
+    #     except: colors = mcp.gen_color(cmap = pars['palette'], n = number_colors)
 
     return colors
