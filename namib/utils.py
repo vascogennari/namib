@@ -1,6 +1,7 @@
 import os, h5py, pandas as pd
 import numpy as np
 from tqdm import tqdm
+import qnm, lal
 
 import pyRing.waveform as wf
 import namib.plots as plots
@@ -208,21 +209,37 @@ def compute_Mf_af_from_IMR(df):
 
 def compute_qnms_from_Mf_af(df, modes):
     '''
-    Compute QNMs frequency and damping time from Mf and af for one mode (l,m), using the Berti's fits implemented in pyRing.
+    Compute QNMs frequency and damping time from Mf and af for one mode (l,m)
+    using the qnm python package [https://github.com/duetosymmetry/qnm]
     '''
     nsamp = len(df)
+
     for mode in modes:
         l, m = mode[0], mode[1]
         omg = np.zeros(nsamp)
         tau = np.zeros(nsamp)
         for i in range(nsamp):
             Mf, af = df.Mf[i], df.af[i]
-            omg[i] = wf.QNM_fit(l, m, 0).f(Mf, af)            # [Hz]
-            tau[i] = wf.QNM_fit(l, m, 0).tau(Mf, af) * 1000   # [ms]
+            omg[i], tau[i] = get_qnms(Mf, af, l, m)
+
         df.insert(0, 'f_{}{}'.format(l,m),   omg)
         df.insert(0, 'tau_{}{}'.format(l,m), tau)
 
     return df
+
+def get_qnms(Mf, af, l, m, n = 0):
+    '''
+        Return frequency f [Hz] and damping time tau [ms] of the QNM
+    '''
+    T_MSUN = lal.MSUN_SI * lal.G_SI / lal.C_SI**3
+
+    qnms = qnm.modes_cache(-2, l, m, n)
+    tmp, _, _ = qnms(a = af)
+    f     =     np.real(tmp) /( 2*np.pi) / (Mf * T_MSUN)
+    gamma = abs(np.imag(tmp)) / (Mf * T_MSUN)
+    tau   = 1./gamma * 1000
+
+    return f, tau
 
 def compute_progenitors_from_IMR(df, inverse = False):
 
