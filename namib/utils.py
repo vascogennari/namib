@@ -1,7 +1,8 @@
 import os, h5py, pandas as pd
 import numpy as np
 from tqdm import tqdm
-import qnm, lal
+import surfinBH, qnm
+from astropy import constants as const
 
 import pyRing.waveform as wf
 import namib.plots as plots
@@ -199,13 +200,33 @@ def compute_Mf_af_from_IMR(df):
     af = np.zeros(nsamp)
     for i in range(nsamp):
         m1, m2, chi1, chi2 = df.m1[i], df.m2[i], df.chi1[i], df.chi2[i]
+        #Mf[i], af[i] = get_remnant(m1, m2, chi1, chi2)
+
+        print('surfin', Mf[i], af[i])
+
         tmp   = wf.TEOBPM(0, m1, m2, chi1, chi2, {}, 100, 0, 0, [], {})
-        Mf[i] = tmp.JimenezFortezaRemnantMass()   # [M_\odot]
-        af[i] = tmp.JimenezFortezaRemnantSpin()   # []
+        Mf[i] = tmp.JimenezFortezaRemnantMass()
+        af[i] = tmp.JimenezFortezaRemnantSpin()
+
+        print('JF', Mf[i], af[i])
+        exit()
+
     df.insert(0, 'Mf', Mf)
     df.insert(0, 'af', af)
     
     return df
+
+def get_remnant(m1, m2, chi1, chi2):
+    '''
+        Return remnant mass Mf [M_\odot] and spin af []
+        using the python package surfinBH [https://github.com/vijayvarma392/surfinBH]
+    '''
+    q = m1 / m2
+    fit = surfinBH.LoadFits('NRSur7dq4Remnant')
+    Mf, _ = fit.mf(  q, chi1, chi2)
+    af, _ = fit.chif(q, chi1, chi2)
+
+    return Mf, af
 
 def compute_qnms_from_Mf_af(df, modes):
     '''
@@ -231,7 +252,7 @@ def get_qnms(Mf, af, l, m, n = 0):
     '''
         Return frequency f [Hz] and damping time tau [ms] of the QNM
     '''
-    T_MSUN = lal.MSUN_SI * lal.G_SI / lal.C_SI**3
+    T_MSUN = const.M_sun.value * const.G.value / const.c.value**3
 
     qnms = qnm.modes_cache(-2, l, m, n)
     tmp, _, _ = qnms(a = af)
