@@ -1,7 +1,8 @@
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
-from matplotlib import rcParams
+from matplotlib import rcParams, colors
 from corner import corner
+import seaborn as sns
 import numpy as np, os, pandas as pd
 from statsmodels.graphics.boxplots import violinplot
 from joypy import joyplot
@@ -46,10 +47,89 @@ def convert_time_percentiles(val, locs, label_x):
     val = (val - min(label_x)) * range_1 / range_2
 
     return val
+
+def hex_to_RGB(hex, alpha):
+
+    RGB = colors.to_rgb(hex)
+    RGB += (alpha,)
+
+    return RGB
     
+# --------------------------------------------------------- #
 
 
 def corner_plots(pars, SampDataFrame, PriorDataFrame):
+
+    keys = pd.unique(SampDataFrame[pars['stack-mode']])
+    if pars['stack-mode'] == 'time': keys = sort_times_list(keys)
+    if not pars['ordering'] == []:
+        if ((set(pars['ordering']) <= set(keys))) and (len(pars['ordering']) == len(keys)): keys = pars['ordering']
+        else: raise ValueError('Invalid option for {stack_mode} ordering.'.format(stack_mode = pars['stack-mode']))
+
+    _, labels_dict = lp.labels_parameters(pars['parameters'])
+
+    comp_pars = keys
+    colors = lp.palettes(pars, colormap = False, number_colors = len(comp_pars))
+    SampDataFrame['ordering'] = pd.Categorical(SampDataFrame[pars['stack-mode']], categories = keys, ordered = True)
+
+
+    lp.rc_labelsizes(pars)    # Set label sizes of matplotlib RC parameters
+    height = pars['corner-settings']['figsize'] / len(pars['parameters'])    # The figure size in seaborn is controlled by that of individual plots
+
+    if pars['corner-settings']['black-edge']:
+        edgecolor = (0, 0, 0, pars['corner-settings']['alpha'])
+
+        fig = sns.pairplot(SampDataFrame.sort_values('ordering'),
+        corner    = True,
+        hue       = 'ordering',
+        kind      = 'scatter',
+        diag_kind = 'kde',
+        vars      = labels_dict,
+        palette   = colors,
+        height    = height,
+        dropna    = 1,
+        plot_kws  = dict(alpha = 0),
+        diag_kws  = dict(alpha = pars['corner-settings']['alpha'], edgecolor = edgecolor),
+    )
+    else:
+        fig = sns.pairplot(SampDataFrame.sort_values('ordering'),
+            corner    = True,
+            hue       = 'ordering',
+            kind      = 'scatter',
+            diag_kind = 'kde',
+            vars      = labels_dict,
+            palette   = colors,
+            height    = height,
+            dropna    = 1,
+            plot_kws  = dict(alpha = 0),
+            diag_kws  = dict(alpha = pars['corner-settings']['alpha']),
+        )
+    # Add 2D levels
+    if pars['corner-settings']['black-edge']: fig.map_lower(sns.kdeplot, levels = 2, fill = False, palette = ((edgecolor,) * len(keys)))
+    else:                                     fig.map_lower(sns.kdeplot, levels = 2, fill = False)
+    fig.map_lower(sns.kdeplot, levels = 2, fill = True, alpha = pars['corner-settings']['alpha'])
+    # ((edgecolor,) * len(keys))
+    # Add legend
+    fig._legend.remove()    # Remove default legend
+    if pars['corner-settings']['black-edge']: patch = [mpatches.Patch(facecolor = hex_to_RGB(colors[ci], pars['corner-settings']['alpha']), edgecolor = edgecolor,  label = lp.labels_legend(comp_pars[ci])) for ci,c in enumerate(comp_pars)]
+    else:                                     patch = [mpatches.Patch(facecolor = hex_to_RGB(colors[ci], pars['corner-settings']['alpha']), edgecolor = colors[ci], label = lp.labels_legend(comp_pars[ci])) for ci,c in enumerate(comp_pars)]
+    fig.axes[0, 0].legend(handles = patch, loc = 'center', frameon = False, bbox_to_anchor = (len(pars['parameters'])-0.5, 0.5))
+
+    # Set the bounds
+    if not pars['bounds'] == []:
+        for pi,par in enumerate(pars['parameters']):
+            fig.axes[pi, pi].set_xlim(pars['bounds'][pi])
+            fig.axes[pi, pi].set_ylim(pars['bounds'][pi])
+            fig.axes[len(pars['parameters'])-1, pi].set_xlabel(labels_dict[par])
+            if not pi==0: fig.axes[pi, 0].set_ylabel(labels_dict[par])
+
+        if not pars['compare'] == '': filename = os.path.join(pars['plots-dir'], 'corner_{name}_{comp}.pdf'.format(name = pars['stack-mode'], comp = comp))
+        else:                         filename = os.path.join(pars['plots-dir'], 'corner_{name}.pdf'.format(name = pars['stack-mode']))
+        fig.savefig(filename, bbox_inches = 'tight', transparent = True)
+
+
+
+def corner_plots_old(pars, SampDataFrame, PriorDataFrame):
 
     if not pars['compare'] == '': comp_pars = pd.unique(SampDataFrame[pars['compare']])
     else:                         comp_pars = 'a'
