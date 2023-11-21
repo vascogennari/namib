@@ -1,10 +1,10 @@
+from multiprocessing import Value
 import os, h5py, pandas as pd
 import numpy as np
 from tqdm import tqdm
 import surfinBH, qnm
 from astropy import constants as const
 
-import pyRing.waveform as wf
 import namib.plots as plots
 
 
@@ -34,10 +34,10 @@ def from_IMR_to_RD_samples(df, pars):
     if (set(['Mf', 'af']) <= set(pars['parameters'])) and (set(['m1', 'm2', 'chi1', 'chi2']) <= set(df.keys())):
         df = compute_Mf_af_from_IMR(df)
     if (set(['f_22', 'tau_22']) <= set(pars['parameters'])) and (set(['Mf', 'af']) <= set(df.keys())):
-        df = compute_qnms_from_Mf_af(df,  pars['modes'])
+        df = compute_qnms_from_Mf_af(df,  pars['modes'], pars)
     if (set(['f_22', 'tau_22']) <= set(pars['parameters'])) and (set(['m1', 'm2', 'chi1', 'chi2']) <= set(df.keys())) and not (set(['Mf', 'af']) <= set(pars['parameters'])):
         df = compute_Mf_af_from_IMR(df)
-        df = compute_qnms_from_Mf_af(df, pars['modes'])
+        df = compute_qnms_from_Mf_af(df, pars['modes'], pars)
 
     # Damped-sinusoids
     if (set(['f_22', 'tau_22']) <= set(pars['parameters'])) and (set(['f_t_0', 'tau_t_0']) <= set(df.keys())):
@@ -191,7 +191,7 @@ def add_parameters_to_event(evt_df, new_params_list, new_params_samps):
     
     return df
 
-def compute_Mf_af_from_IMR(df):
+def compute_Mf_af_from_IMR(df, pars):
     '''
     Compute Mf and af of the remnant BH from IMR parameters, using the Jimenez-Forteza fits implemented in pyRing.
     '''
@@ -199,16 +199,22 @@ def compute_Mf_af_from_IMR(df):
     Mf = np.zeros(nsamp)
     af = np.zeros(nsamp)
     for i in range(nsamp):
+
         m1, m2, chi1, chi2 = df.m1[i], df.m2[i], df.chi1[i], df.chi2[i]
-        #Mf[i], af[i] = get_remnant(m1, m2, chi1, chi2)
-
-        print('surfin', Mf[i], af[i])
-
-        tmp   = wf.TEOBPM(0, m1, m2, chi1, chi2, {}, 100, 0, 0, [], {})
-        Mf[i] = tmp.JimenezFortezaRemnantMass()
-        af[i] = tmp.JimenezFortezaRemnantSpin()
-
-        print('JF', Mf[i], af[i])
+        
+        if not pars['remnant-pyRing']:
+            Mf[i], af[i] = get_remnant(m1, m2, chi1, chi2)
+            print('surfin', Mf[i], af[i])
+        else:
+            try:
+                import pyRing.waveform as wf
+                print('Using pyRing fits to compute the remnant samples [Mf, af].')
+            except:
+                raise ValueError('Unable to find the pyRing installation for the remnant fits. Please either install pyRing or disactivate the option "remnant-pyRing".')
+            tmp   = wf.TEOBPM(0, m1, m2, chi1, chi2, {}, 100, 0, 0, [], {})
+            Mf[i] = tmp.JimenezFortezaRemnantMass()
+            af[i] = tmp.JimenezFortezaRemnantSpin()
+            print('JF', Mf[i], af[i])
         exit()
 
     df.insert(0, 'Mf', Mf)
@@ -228,7 +234,7 @@ def get_remnant(m1, m2, chi1, chi2):
 
     return Mf, af
 
-def compute_qnms_from_Mf_af(df, modes):
+def compute_qnms_from_Mf_af(df, modes, pars):
     '''
     Compute QNMs frequency and damping time from Mf and af for one mode (l,m)
     using the qnm python package [https://github.com/duetosymmetry/qnm]
@@ -241,7 +247,16 @@ def compute_qnms_from_Mf_af(df, modes):
         tau = np.zeros(nsamp)
         for i in range(nsamp):
             Mf, af = df.Mf[i], df.af[i]
-            omg[i], tau[i] = get_qnms(Mf, af, l, m)
+            if not pars['qnms-pyRing']:
+                omg[i], tau[i] = get_qnms(Mf, af, l, m)
+            else:
+                try:
+                    import pyRing.waveform as wf
+                    print('Using pyRing fits to compute the QNMs samples.')
+                except:
+                    raise ValueError('Unable to find the pyRing installation for the QNMs fits. Please either install pyRing or disactivate the option "qnms-pyRing".')
+                omg[i] = wf.QNM_fit(l, m, 0).f(Mf, af)            # [Hz]
+                tau[i] = wf.QNM_fit(l, m, 0).tau(Mf, af) * 1000   # [ms]
 
         df.insert(0, 'f_{}{}'.format(l,m),   omg)
         df.insert(0, 'tau_{}{}'.format(l,m), tau)

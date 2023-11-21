@@ -43,6 +43,8 @@ def main():
 
         'modes'              : [(2,2)],
         'ds-scaling'         : 0,
+        'qnms-pyRing'        : 0,
+        'remnant-pyRing'     : 0,
 
         'save-post'          : 0,
         'save-medians'       : 0,
@@ -82,7 +84,7 @@ def main():
         if ('samp-dir' in key) or ('output' in key) or ('stack-mode' in key) or ('compare' in key):
             try: input_pars[key] = Config.get('input', key)
             except: pass
-        if ('compare-hard' in key) or ('evidence' in key) or ('save-post' in key) or ('include-prior' in key) or ('ds-scaling' in key) or ('screen-medians' in key) or ('save-medians' in key):
+        if ('compare-hard' in key) or ('evidence' in key) or ('save-post' in key) or ('include-prior' in key) or ('ds-scaling' in key) or ('screen-medians' in key) or ('save-medians' in key) or ('qnms-pyRing' in key) or ('remnant-pyRing' in key):
             try: input_pars[key] = Config.getboolean('input', key)
             except: pass
         if ('parameters' in key) or ('modes' in key) or ('ordering' in key) or ('bounds' in key) or ('compare-ordering' in key ) or ('truths' in key):
