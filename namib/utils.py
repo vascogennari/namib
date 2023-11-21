@@ -1,3 +1,4 @@
+from ast import Raise
 import os, h5py, pandas as pd
 import numpy as np
 from tqdm import tqdm
@@ -105,9 +106,11 @@ def read_posteriors_event(file_path, pars):
             if pars['include-prior']: loadp = np.array(tmpp)
 
     df = pd.DataFrame(load)
+    df = downsampling(df, pars)    # Downsample the df if required
     df = from_IMR_to_RD_samples(df, pars)
     df = df.filter(items = pars['parameters'])
 
+    # Prior option
     if pars['include-prior']:
         dfp = pd.DataFrame(loadp)
         dfp = from_IMR_to_RD_samples(dfp, pars)
@@ -166,6 +169,21 @@ def read_evidence_event(pars, dir_path, file_path):
             raise ValueError('SNR samples have not been found. Exiting.')
 
     df = pd.DataFrame([evt_evidence])
+
+    return df
+
+def downsampling(df, pars):
+    '''
+    Return the data frame downsampled according to the required probability.
+    downsample = 1 takes the 100% of the data, i.e. no downsampling
+    '''
+    if not pars['downsample'] == 1:
+        if (pars['downsample'] <= 0) or (pars['downsample'] > 1):
+            raise ValueError('Invalid option for the downsampling. Its value needs to be in the interval [0, 1].')
+        
+        new_nsamp = int(len(df.index) * pars['downsample'])
+        df = df.sample(new_nsamp)
+        df = df.reset_index()
 
     return df
 
