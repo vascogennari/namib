@@ -129,110 +129,6 @@ def corner_plots(pars, SampDataFrame, PriorDataFrame):
 
 
 
-def corner_plots_old(pars, SampDataFrame, PriorDataFrame):
-
-    if not pars['compare'] == '': comp_pars = pd.unique(SampDataFrame[pars['compare']])
-    else:                         comp_pars = 'a'
-
-    keys = pd.unique(SampDataFrame[pars['stack-mode']])
-    if pars['stack-mode'] == 'time': keys = sort_times_list(keys)
-    if not pars['ordering'] == []:
-        if ((set(pars['ordering']) <= set(keys))) and (len(pars['ordering']) == len(keys)): keys = pars['ordering']
-        else: raise ValueError('Invalid option for {stack_mode} ordering.'.format(stack_mode = pars['stack-mode']))
-
-    if pars['truths'] == []: truths = None
-    else:                    truths = pars['truths']
-
-    levels = [0.5, 0.68, 0.90]
-    colors = lp.palettes(pars, colormap = False, number_colors = len(keys), corner_plot = True)
-    
-    for comp in comp_pars:
-        if not pars['compare'] == '': SampDataFrameComp = SampDataFrame[SampDataFrame[pars['compare']] == comp]
-        else:                         SampDataFrameComp = SampDataFrame
-
-        range = None
-        if not pars['bounds'] == []: range = pars['bounds']
-        labels, _ = lp.labels_parameters(pars['parameters'])
-
-        flag = [(SampDataFrameComp[par] == 0).all() for par in pars['parameters']]
-        if any(flag):
-            params = [par for par,f in zip(pars['parameters'], flag) if f == False]
-            labels = [lab for lab,f in zip(labels,             flag) if f == False]
-            if not pars['bounds'] == []:
-                range = [ran for ran,f in zip(range,           flag) if f == False]
-        else: params = pars['parameters']
-
-        fig = plt.figure(figsize = pars['corner-settings']['figsize'])
-        for i,key in enumerate(keys):
-            SampDataFrameFilt = SampDataFrameComp[SampDataFrameComp[pars['stack-mode']] == key]
-            samp = np.column_stack(SampDataFrameFilt[par] for par in params)
-            samp = utils.clean_empty_keys_corner(samp)  # FIXME: This is a hardfix that should be changed
-
-            lab = key.replace('_', '\_')
-            fig = corner(
-                samp,
-                fig              = fig,
-                range            = range,
-                levels           = levels,
-                hist_kwargs      = {'density':True, 'label':'$\mathrm{'+lab+'}$'},
-                labels           = labels,
-                color            = colors[i],
-                show_titles      = True,
-                title_kwargs     = {"fontsize": 22},
-                use_math_text    = True,
-                no_fill_contours = True,
-                smooth           = pars['corner-settings']['smooth'],
-                truths           = truths,
-                truth_color      = pars['truth-color'],
-            )
-        fig.axes[np.shape(samp)[-1]-1].legend(*fig.axes[0].get_legend_handles_labels(), loc = 'center', frameon = False)
-        for axx in fig.axes: axx.grid(visible = True)
-
-        # Plot prior samples if required
-        if pars['include-prior']:
-            Warning('The prior option is not fully implemented. Please be careful in using it.')
-            if pars['single-prior'] == '':
-                for i,key in enumerate(keys):
-                    samp = np.column_stack(PriorDataFrame[par] for par in params)
-                    fig = corner(
-                        samp,
-                        fig              = fig,
-                        range            = range,
-                        levels           = levels,
-                        hist_kwargs      = {'density':True, 'label':'$\mathrm{'+lab+'}$'},
-                        color            = pars['prior-color'],
-                        show_titles      = False,
-                        title_kwargs     = {"fontsize": 12},
-                        use_math_text    = True,
-                        no_fill_contours = True,
-                        smooth           = pars['corner-settings']['smooth'],
-                        truths           = truths,
-                        truth_color      = pars['truth-color'],
-                    )
-            else:
-                samp = np.column_stack(PriorDataFrame[PriorDataFrame[pars['stack-mode']] == pars['single-prior']][par] for par in params)
-                fig = corner(
-                    samp,
-                    fig              = fig,
-                    range            = range,
-                    levels           = levels,
-                    hist_kwargs      = {'density':True, 'label':'$\mathrm{'+lab+'}$'},
-                    color            = pars['prior-color'],
-                    show_titles      = False,
-                    title_kwargs     = {"fontsize": 12},
-                    use_math_text    = True,
-                    no_fill_contours = True,
-                    smooth           = pars['corner-settings']['smooth'],
-                    truths           = truths,
-                    truth_color      = pars['truth-color'],
-                )
-        
-        if not pars['compare'] == '': filename = os.path.join(pars['plots-dir'], 'corner_{name}_{comp}.pdf'.format(name = pars['stack-mode'], comp = comp))
-        else:                         filename = os.path.join(pars['plots-dir'], 'corner_{name}.pdf'.format(name = pars['stack-mode']))
-        fig.savefig(filename, bbox_inches = 'tight', transparent = True)
-
-
-
 def violin_plots(pars, SampDataFrame, PriorDataFrame, EvidenceDataFrame):
 
     keys, comp_pars = utils.set_keys_and_comp_pars(pars, SampDataFrame)
@@ -650,3 +546,110 @@ def TGR_plots(pars, SampDataFrame):
 
     filename = os.path.join(pars['plots-dir'], 'TGR_plot.pdf')
     fig.savefig(filename, bbox_inches = 'tight', transparent = True)
+
+
+
+# ----------------------------------------------------------------------- #
+# OLD functions
+
+# def corner_plots_old(pars, SampDataFrame, PriorDataFrame):
+
+#     if not pars['compare'] == '': comp_pars = pd.unique(SampDataFrame[pars['compare']])
+#     else:                         comp_pars = 'a'
+
+#     keys = pd.unique(SampDataFrame[pars['stack-mode']])
+#     if pars['stack-mode'] == 'time': keys = sort_times_list(keys)
+#     if not pars['ordering'] == []:
+#         if ((set(pars['ordering']) <= set(keys))) and (len(pars['ordering']) == len(keys)): keys = pars['ordering']
+#         else: raise ValueError('Invalid option for {stack_mode} ordering.'.format(stack_mode = pars['stack-mode']))
+
+#     if pars['truths'] == []: truths = None
+#     else:                    truths = pars['truths']
+
+#     levels = [0.5, 0.68, 0.90]
+#     colors = lp.palettes(pars, colormap = False, number_colors = len(keys), corner_plot = True)
+    
+#     for comp in comp_pars:
+#         if not pars['compare'] == '': SampDataFrameComp = SampDataFrame[SampDataFrame[pars['compare']] == comp]
+#         else:                         SampDataFrameComp = SampDataFrame
+
+#         range = None
+#         if not pars['bounds'] == []: range = pars['bounds']
+#         labels, _ = lp.labels_parameters(pars['parameters'])
+
+#         flag = [(SampDataFrameComp[par] == 0).all() for par in pars['parameters']]
+#         if any(flag):
+#             params = [par for par,f in zip(pars['parameters'], flag) if f == False]
+#             labels = [lab for lab,f in zip(labels,             flag) if f == False]
+#             if not pars['bounds'] == []:
+#                 range = [ran for ran,f in zip(range,           flag) if f == False]
+#         else: params = pars['parameters']
+
+#         fig = plt.figure(figsize = pars['corner-settings']['figsize'])
+#         for i,key in enumerate(keys):
+#             SampDataFrameFilt = SampDataFrameComp[SampDataFrameComp[pars['stack-mode']] == key]
+#             samp = np.column_stack(SampDataFrameFilt[par] for par in params)
+#             samp = utils.clean_empty_keys_corner(samp)  # FIXME: This is a hardfix that should be changed
+
+#             lab = key.replace('_', '\_')
+#             fig = corner(
+#                 samp,
+#                 fig              = fig,
+#                 range            = range,
+#                 levels           = levels,
+#                 hist_kwargs      = {'density':True, 'label':'$\mathrm{'+lab+'}$'},
+#                 labels           = labels,
+#                 color            = colors[i],
+#                 show_titles      = True,
+#                 title_kwargs     = {"fontsize": 22},
+#                 use_math_text    = True,
+#                 no_fill_contours = True,
+#                 smooth           = pars['corner-settings']['smooth'],
+#                 truths           = truths,
+#                 truth_color      = pars['truth-color'],
+#             )
+#         fig.axes[np.shape(samp)[-1]-1].legend(*fig.axes[0].get_legend_handles_labels(), loc = 'center', frameon = False)
+#         for axx in fig.axes: axx.grid(visible = True)
+
+#         # Plot prior samples if required
+#         if pars['include-prior']:
+#             Warning('The prior option is not fully implemented. Please be careful in using it.')
+#             if pars['single-prior'] == '':
+#                 for i,key in enumerate(keys):
+#                     samp = np.column_stack(PriorDataFrame[par] for par in params)
+#                     fig = corner(
+#                         samp,
+#                         fig              = fig,
+#                         range            = range,
+#                         levels           = levels,
+#                         hist_kwargs      = {'density':True, 'label':'$\mathrm{'+lab+'}$'},
+#                         color            = pars['prior-color'],
+#                         show_titles      = False,
+#                         title_kwargs     = {"fontsize": 12},
+#                         use_math_text    = True,
+#                         no_fill_contours = True,
+#                         smooth           = pars['corner-settings']['smooth'],
+#                         truths           = truths,
+#                         truth_color      = pars['truth-color'],
+#                     )
+#             else:
+#                 samp = np.column_stack(PriorDataFrame[PriorDataFrame[pars['stack-mode']] == pars['single-prior']][par] for par in params)
+#                 fig = corner(
+#                     samp,
+#                     fig              = fig,
+#                     range            = range,
+#                     levels           = levels,
+#                     hist_kwargs      = {'density':True, 'label':'$\mathrm{'+lab+'}$'},
+#                     color            = pars['prior-color'],
+#                     show_titles      = False,
+#                     title_kwargs     = {"fontsize": 12},
+#                     use_math_text    = True,
+#                     no_fill_contours = True,
+#                     smooth           = pars['corner-settings']['smooth'],
+#                     truths           = truths,
+#                     truth_color      = pars['truth-color'],
+#                 )
+        
+#         if not pars['compare'] == '': filename = os.path.join(pars['plots-dir'], 'corner_{name}_{comp}.pdf'.format(name = pars['stack-mode'], comp = comp))
+#         else:                         filename = os.path.join(pars['plots-dir'], 'corner_{name}.pdf'.format(name = pars['stack-mode']))
+#         fig.savefig(filename, bbox_inches = 'tight', transparent = True)
