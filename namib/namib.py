@@ -56,7 +56,7 @@ def main():
 
         'corner-settings'    : {'figsize':  8,       'alpha': 0.5, 'smooth': 0},
         'violin-settings'    : {'figsize': (15, 25), 'alpha': 0.5, 'rotation': 0, 'pad': -0.5},
-        'ridgeline-settings' : {'figsize': (20, 10), 'alpha': 0.5, 'overlap': 0.5, 'fade': 0},
+        'ridgeline-settings' : {'figsize': (20, 10), 'alpha': 0.5, 'overlap': 0.5, 'fade': 0, 'borderaxespad': 0.5},
         'label-sizes'        : {'xtick': 15, 'ytick': 15, 'legend': 17, 'axes': 17},
         'palette'            : 'crest',
 

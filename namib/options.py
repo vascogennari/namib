@@ -40,9 +40,9 @@ usage = """
         TGR-plot           Flag to produce TGR plot. Default: 0
 
         corner-settings    Dictionary for additional corner settings. Options: {'figsize', 'smooth'}. Default: {'figsize': (15, 15), 'smooth': 0}
-        violin-settings    Dictionary for additional violin settings. Options: {'figsize', 'alpha', 'rotation', 'pad'}. Default: {'figsize': (15, 25), 'alpha': 0.5, 'rotation': 0, 'pad': -0.5},
-        ridgeline-settings Dictionary for additional ridgeline settings. Options: {'figsize', 'alpha', 'overlap', 'fade'}. Default: {'figsize': (20, 10), 'alpha': 0.5, 'overlap': 0.5, 'fade': 0},
-        label-sizes        Dictionary to set labels size. Options: {'xtick', 'ytick', 'legend', 'axes'}. Default: {'xtick': 15, 'ytick': 15, 'legend': 17, 'axes': 17},
+        violin-settings    Dictionary for additional violin settings. Options: {'figsize', 'alpha', 'rotation', 'pad'}. Default: {'figsize': (15, 25), 'alpha': 0.5, 'rotation': 0, 'pad': -0.5}
+        ridgeline-settings Dictionary for additional ridgeline settings. Options: {'figsize', 'alpha', 'overlap', 'fade', 'borderaxespad'}. Default: {'figsize': (20, 10), 'alpha': 0.5, 'overlap': 0.5, 'fade': 0, 'borderaxespad': 0.5}
+        label-sizes        Dictionary to set labels size. Options: {'xtick', 'ytick', 'legend', 'axes'}. Default: {'xtick': 15, 'ytick': 15, 'legend': 17, 'axes': 17}
         palette            Option to set the colors used in the plots. If string is passed colors are read from that colormap, otherwise a list of colors needs to be passed. Syntax: 'cmap_name' or ['#AB3507', '#0771AB', ...]. Default: 'crest'
         
         extra-row          Option to include extra row with additional parameter in violin plot. Available options: ['bayes-factor', 'information', 'likelihood']. Default: ''

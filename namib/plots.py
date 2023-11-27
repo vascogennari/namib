@@ -497,12 +497,12 @@ def ridgeline_plots(pars, SampDataFrame, PriorDataFrame):
                 if not pars['truths'] == []: ax[ni][pi].axvline(pars['truths'][pi], ls = '--', lw = 1.5, alpha = 0.5, color = pars['truth-color'])  # Plot truth values
 
     if pars['compare'] == '': colors = lp.palettes(pars, colormap = False, number_colors = len(comp_pars))
-    patch = [mpatches.Patch(facecolor = colors[ci], edgecolor = 'k', alpha = pars['violin-settings']['alpha'], label = lp.labels_legend(comp_pars[ci])) for ci,c in enumerate(comp_pars)]
+    patch = [mpatches.Patch(facecolor = colors[ci], edgecolor = 'k', alpha = pars['ridgeline-settings']['alpha'], label = lp.labels_legend(comp_pars[ci])) for ci,c in enumerate(comp_pars)]
 
     # Set multiple labels in columns if required
     if not pars['horizontal-legend']: ncol = 1
     else:                             ncol = len(comp_pars)
-    fig.axes[0].legend(handles = patch, loc = 2, frameon = False, ncol = ncol)
+    fig.axes[0].legend(handles = patch, loc = 2, frameon = False, ncol = ncol, borderaxespad = pars['ridgeline-settings']['borderaxespad'])
 
     if pars['remove-legend']: fig.axes[0].get_legend().remove()
     if pars['stack-mode'] == 'time' and ax.ndim != 1:
