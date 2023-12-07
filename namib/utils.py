@@ -7,6 +7,9 @@ from astropy import constants as const
 
 import namib.plots as plots
 
+import warnings
+warnings.filterwarnings('ignore')
+
 
 def from_IMR_to_RD_samples(df, pars):
 
@@ -32,11 +35,11 @@ def from_IMR_to_RD_samples(df, pars):
 
     # Compute remnant pars
     if (set(['Mf', 'af']) <= set(pars['parameters'])) and (set(['m1', 'm2', 'chi1', 'chi2']) <= set(df.keys())):
-        df = compute_Mf_af_from_IMR(df)
+        df = compute_Mf_af_from_IMR(df, pars)
     if (set(['f_22', 'tau_22']) <= set(pars['parameters'])) and (set(['Mf', 'af']) <= set(df.keys())):
         df = compute_qnms_from_Mf_af(df,  pars['modes'], pars)
     if (set(['f_22', 'tau_22']) <= set(pars['parameters'])) and (set(['m1', 'm2', 'chi1', 'chi2']) <= set(df.keys())) and not (set(['Mf', 'af']) <= set(pars['parameters'])):
-        df = compute_Mf_af_from_IMR(df)
+        df = compute_Mf_af_from_IMR(df, pars)
         df = compute_qnms_from_Mf_af(df, pars['modes'], pars)
 
     # Damped-sinusoids
@@ -107,6 +110,7 @@ def read_posteriors_event(file_path, pars):
             if pars['include-prior']: loadp = np.array(tmpp)
 
     df = pd.DataFrame(load)
+    df = downsampling(df, pars)    # Downsample the df if required
     df = from_IMR_to_RD_samples(df, pars)
     df = df.filter(items = pars['parameters'])
 
@@ -171,6 +175,21 @@ def read_evidence_event(pars, dir_path, file_path):
 
     return df
 
+def downsampling(df, pars):
+    '''
+    Return the data frame downsampled according to the required probability.
+    downsample = 1 takes the 100% of the data, i.e. no downsampling
+    '''
+    if not pars['downsample'] == 1:
+        if (pars['downsample'] <= 0) or (pars['downsample'] > 1):
+            raise ValueError('Invalid option for the downsampling. Its value needs to be in the interval [0, 1].')
+        
+        new_nsamp = int(len(df.index) * pars['downsample'])
+        df = df.sample(new_nsamp)
+        df = df.reset_index()
+
+    return df
+
 def stack_posteriors(stack_list, post_list):
     '''
     Stack the posteriors DF into a single dictionary.
@@ -204,7 +223,6 @@ def compute_Mf_af_from_IMR(df, pars):
         
         if not pars['remnant-pyRing']:
             Mf[i], af[i] = get_remnant(m1, m2, chi1, chi2)
-            print('surfin', Mf[i], af[i])
         else:
             try:
                 import pyRing.waveform as wf
@@ -214,8 +232,6 @@ def compute_Mf_af_from_IMR(df, pars):
             tmp   = wf.TEOBPM(0, m1, m2, chi1, chi2, {}, 100, 0, 0, [], {})
             Mf[i] = tmp.JimenezFortezaRemnantMass()
             af[i] = tmp.JimenezFortezaRemnantSpin()
-            print('JF', Mf[i], af[i])
-        exit()
 
     df.insert(0, 'Mf', Mf)
     df.insert(0, 'af', af)
@@ -228,11 +244,12 @@ def get_remnant(m1, m2, chi1, chi2):
         using the python package surfinBH [https://github.com/vijayvarma392/surfinBH]
     '''
     q = m1 / m2
-    fit = surfinBH.LoadFits('NRSur7dq4Remnant')
-    Mf, _ = fit.mf(  q, chi1, chi2)
-    af, _ = fit.chif(q, chi1, chi2)
+    fit = surfinBH.LoadFits('NRSur7dq4EmriRemnant')
 
-    return Mf, af
+    Mf, _ = fit.mf(  q, (0.0, 0.0, chi1), (0.0, 0.0, chi2))
+    af, _ = fit.chif(q, (0.0, 0.0, chi1), (0.0, 0.0, chi2))
+
+    return Mf * (m1+m2), af[2]
 
 def compute_qnms_from_Mf_af(df, modes, pars):
     '''

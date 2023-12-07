@@ -48,6 +48,7 @@ def main():
 
         'save-post'          : 0,
         'save-medians'       : 0,
+        'downsample'         : 1,
 
         # [plots]
 
@@ -86,6 +87,9 @@ def main():
             except: pass
         if ('compare-hard' in key) or ('evidence' in key) or ('save-post' in key) or ('include-prior' in key) or ('ds-scaling' in key) or ('screen-medians' in key) or ('save-medians' in key) or ('qnms-pyRing' in key) or ('remnant-pyRing' in key):
             try: input_pars[key] = Config.getboolean('input', key)
+            except: pass
+        if ('downsample' in key):
+            try: input_pars[key] = Config.getfloat('input', key)
             except: pass
         if ('parameters' in key) or ('modes' in key) or ('ordering' in key) or ('bounds' in key) or ('compare-ordering' in key ) or ('truths' in key):
             try: input_pars[key] = ast.literal_eval(Config.get('input', key))

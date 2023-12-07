@@ -26,9 +26,12 @@ usage = """
 
         modes              List of modes for which the QNMs are computed. This option is used only when QNMs are computed from {Mf, af}. Default: [(2,2)]
         ds-scaling         Flag to convert the damping time in [ms] and scale amplitudes as [1e-21]. The option is used to compare samples from Damped Sinusoids with other models. Default: 0
+        qnms-pyRing        Flag to use pyRing fits to compute the QNMs. Default: 0
+        remnant-pyRing     Flag to use pyRing fits to compute the remnant parameters. Default: 0
 
         save-post          Flag to save the imput samples filtered on the selected parameters. They are saved in 'output/reduced_posteriors'. Default: 0
         save-medians       Flag to save the medians of the selected parameters. They are saved in 'output/output_medians'. Default: 0
+        downsample         Option to downsample the input samples, taking the corresponding percent value (downsampling=1, 100% of initial samples). Default: 1
 
     # ----- #
     # plots #
