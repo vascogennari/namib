@@ -6,7 +6,7 @@ Given a set of input files with samples, `namib` filters the samples for the sel
 
 For example, these are possible applications.
 #### Comparing multidimensional posterior distributions from different models
-<img src="https://github.com/vascogennari/namib/assets/62053184/73deb9b2-a7a8-4ea0-adfd-df3f25d82c24" alt="drawing" width="350"/>
+<img src="https://github.com/vascogennari/namib/assets/62053184/73deb9b2-a7a8-4ea0-adfd-df3f25d82c24" alt="drawing" width="400"/>
 
 #### Comparing different pipelines on a set of GW events
 <img src="https://github.com/vascogennari/namib/assets/62053184/0753647d-03e0-4592-bfd6-5670b8614656" alt="drawing" width="750"/>
