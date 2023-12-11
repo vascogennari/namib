@@ -1,12 +1,6 @@
 from setuptools import setup, find_packages
 import pathlib, re
 
-# here = pathlib.Path(__file__).parent.resolve()
-# long_description = (here / "README.md").read_text(encoding="utf-8")
-
-# with open("requirements.txt") as requires_file:
-#     requirements = requires_file.read().split("\n")
-
 def find_version(path, varname="__version__"):
     """Parse the version metadata variable in the given file.
     """

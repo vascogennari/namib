@@ -22,12 +22,12 @@ usage = """
         compare-hard       Flag to activate a hard comparison in case only two options are compared. This parameter is used only in violin and ridgeline plots. Default: 0
         evidence           Flag to read the evidence from the samples. Default: 0
         include-prior      Flag to plot the prior. Option currently implemented only in corner plot and not fully implemented. Default: 0
-        truths             List of true values of the selected parameters. Default: []
+        truths             List of true values of the selected parameters. Currently implemented only with corner-sns=0. Default: []
 
         modes              List of modes for which the QNMs are computed. This option is used only when QNMs are computed from {Mf, af}. Default: [(2,2)]
         ds-scaling         Flag to convert the damping time in [ms] and scale amplitudes as [1e-21]. The option is used to compare samples from Damped Sinusoids with other models. Default: 0
-        qnms-pyRing        Flag to use pyRing fits to compute the QNMs. Default: 0
-        remnant-pyRing     Flag to use pyRing fits to compute the remnant parameters. Default: 0
+        qnms-pyRing        Flag to use pyRing fits to compute the QNMs. Default: 1
+        remnant-pyRing     Flag to use pyRing fits to compute the remnant parameters. Default: 1
 
         save-post          Flag to save the imput samples filtered on the selected parameters. They are saved in 'output/reduced_posteriors'. Default: 0
         save-medians       Flag to save the medians of the selected parameters. They are saved in 'output/output_medians'. Default: 0
@@ -41,8 +41,9 @@ usage = """
         violin             Flag to produce violin plot. Default: 0
         ridgeline          Flag to produce ridgeline plot. Default: 0
         TGR-plot           Flag to produce TGR plot. Default: 0
+        corner-sns         Flag to produce corner plot with seaborn. Default: 1
 
-        corner-settings    Dictionary for additional corner settings. Options: {'figsize', 'smooth'}. Default: {'figsize': (15, 15), 'smooth': 0}
+        corner-settings    Dictionary for additional corner settings. Options with seaborn: {'figsize', 'alpha'}. Options with corner: {'figsize', 'smooth'}. Default: {'figsize': 8, 'alpha': 0.5, 'smooth': 0}
         violin-settings    Dictionary for additional violin settings. Options: {'figsize', 'alpha', 'rotation', 'pad'}. Default: {'figsize': (15, 25), 'alpha': 0.5, 'rotation': 0, 'pad': -0.5}
         ridgeline-settings Dictionary for additional ridgeline settings. Options: {'figsize', 'alpha', 'overlap', 'fade', 'borderaxespad'}. Default: {'figsize': (20, 10), 'alpha': 0.5, 'overlap': 0.5, 'fade': 0, 'borderaxespad': 0.5}
         label-sizes        Dictionary to set labels size. Options: {'xtick', 'ytick', 'legend', 'axes'}. Default: {'xtick': 15, 'ytick': 15, 'legend': 17, 'axes': 17}

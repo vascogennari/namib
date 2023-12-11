@@ -12,13 +12,12 @@ def main():
     parser.add_option('--config-file', type='string', metavar = 'config_file', default = None)
     (opts, args) = parser.parse_args()
 
-    cwd = os.getcwd()
-    pardir_path = os.path.abspath(os.path.join(cwd, os.pardir))
-    config_path = os.path.join(os.path.join(pardir_path, 'config_files'), opts.config_file)
-    if not os.path.exists(config_path): parser.error('Config file {} not found.'.format(config_path))
+    config_file = opts.config_file
+    if not config_file: parser.error('Please specify a config file.\n')
+    if not os.path.exists(config_file): parser.error('Config file {} not found.\n'.format(config_file))
 
     Config = configparser.ConfigParser()
-    Config.read(config_path)
+    Config.read(config_file)
 
     input_pars = {
 
@@ -43,8 +42,8 @@ def main():
 
         'modes'              : [(2,2)],
         'ds-scaling'         : 0,
-        'qnms-pyRing'        : 0,
-        'remnant-pyRing'     : 0,
+        'qnms-pyRing'        : 1,
+        'remnant-pyRing'     : 1,
 
         'save-post'          : 0,
         'save-medians'       : 0,
@@ -56,6 +55,7 @@ def main():
         'violin'             : 0,
         'ridgeline'          : 0,
         'TGR-plot'           : 0,
+        'corner-sns'         : 1,
 
         'corner-settings'    : {'figsize':  8,       'alpha': 0.5, 'smooth': 0},
         'violin-settings'    : {'figsize': (15, 25), 'alpha': 0.5, 'rotation': 0, 'pad': -0.5},
@@ -94,7 +94,7 @@ def main():
         if ('parameters' in key) or ('modes' in key) or ('ordering' in key) or ('bounds' in key) or ('compare-ordering' in key ) or ('truths' in key):
             try: input_pars[key] = ast.literal_eval(Config.get('input', key))
             except: pass
-        if ('corner' in key) or ('violin' in key) or ('ridgeline' in key) or ('TGR-plot' in key) or ('BF-comparison' in key) or ('evidence-top' in key) or ('remove-xticks' in key) or ('remove-legend' in key) or ('horizontal-legend' in key) or ('fix-dimensions' in key):
+        if ('corner' in key) or ('violin' in key) or ('ridgeline' in key) or ('TGR-plot' in key) or ('BF-comparison' in key) or ('evidence-top' in key) or ('remove-xticks' in key) or ('remove-legend' in key) or ('horizontal-legend' in key) or ('fix-dimensions' in key) or ('corner-sns' in key):
             try: input_pars[key] = Config.getboolean('plots', key)
             except: pass
         if ('extra-row' in key) or ('single-prior' in key) or ('prior-color' in key) or ('event-name' in key) or ('truth-color' in key):
@@ -104,27 +104,23 @@ def main():
             try: input_pars[key] = ast.literal_eval(Config.get('plots', key))
             except: pass
 
-    input_pars['parent-dir'] = pardir_path
-    samp_dir                 = create_directory(input_pars['parent-dir'], 'samples')
-    input_pars['samp-dir']   = os.path.join(samp_dir, input_pars['samp-dir'])
-    print('\nPosteriors are read from:\n{}'.format(input_pars['samp-dir']))
-
-    res_dir = create_directory(input_pars['parent-dir'], 'results')
-    out_dir = create_directory(res_dir                 , input_pars['output'])
+    if not os.path.exists(input_pars['samp-dir']):
+        raise ValueError('\nSamples directory {} not found.\n'.format(input_pars['samp-dir']))
+    else: print('\nPosteriors are read from:\n{}'.format(input_pars['samp-dir']))
 
     # Read the posteriors and create the .txt files with the reduced posteriors
     PostOutput = Posteriors(input_pars)
     SampDataFrame, PriorDataFrame, EvidenceDataFrame = PostOutput.return_samples_dict()
 
     if input_pars['save-post']:
-        red_post_dir = create_directory(out_dir, 'reduced_posteriors')
+        red_post_dir = create_directory(input_pars['output'], 'reduced_posteriors')
         save_posteriors_to_txt(input_pars, red_post_dir, SampDataFrame)
     if input_pars['evidence'] and input_pars['save-medians']:
-        output_medians_dir = create_directory(out_dir, 'output_medians')
+        output_medians_dir = create_directory(input_pars['output'], 'output_medians')
         save_output_medians(input_pars, SampDataFrame, EvidenceDataFrame, output_medians_dir)
 
     if  input_pars['corner'] or input_pars['violin'] or input_pars['ridgeline'] or input_pars['TGR-plot']:
-        input_pars['plots-dir'] = create_directory(out_dir, '')
+        input_pars['plots-dir'] = create_directory(input_pars['output'], '')
         Plots(input_pars, SampDataFrame, PriorDataFrame, EvidenceDataFrame)
         print('\nPlots are saved in:\n{}'.format(input_pars['plots-dir']))
     

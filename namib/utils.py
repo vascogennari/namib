@@ -222,11 +222,12 @@ def compute_Mf_af_from_IMR(df, pars):
         m1, m2, chi1, chi2 = df.m1[i], df.m2[i], df.chi1[i], df.chi2[i]
         
         if not pars['remnant-pyRing']:
+            Warning('Using surfinBH fits to compute the remnant samples [Mf, af]. This option is still experimental and it is currently very slow: we suggest to use the option "remnant-pyRing".')
             Mf[i], af[i] = get_remnant(m1, m2, chi1, chi2)
         else:
             try:
                 import pyRing.waveform as wf
-                print('Using pyRing fits to compute the remnant samples [Mf, af].')
+                #print('Using pyRing fits to compute the remnant samples [Mf, af].')
             except:
                 raise ValueError('Unable to find the pyRing installation for the remnant fits. Please either install pyRing or disactivate the option "remnant-pyRing".')
             tmp   = wf.TEOBPM(0, m1, m2, chi1, chi2, {}, 100, 0, 0, [], {})
@@ -265,11 +266,12 @@ def compute_qnms_from_Mf_af(df, modes, pars):
         for i in range(nsamp):
             Mf, af = df.Mf[i], df.af[i]
             if not pars['qnms-pyRing']:
+                Warning('Using qnm fits to compute the remnant samples [Mf, af]. This option is still experimental and it is currently very slow: we suggest to use the option "qnms-pyRing".')
                 omg[i], tau[i] = get_qnms(Mf, af, l, m)
             else:
                 try:
                     import pyRing.waveform as wf
-                    print('Using pyRing fits to compute the QNMs samples.')
+                    #print('Using pyRing fits to compute the QNMs samples.')
                 except:
                     raise ValueError('Unable to find the pyRing installation for the QNMs fits. Please either install pyRing or disactivate the option "qnms-pyRing".')
                 omg[i] = wf.QNM_fit(l, m, 0).f(Mf, af)            # [Hz]
@@ -524,7 +526,9 @@ class Plots:
     '''
     def __init__(self, pars, SampDataFrame, PriorDataFrame, EvidenceDataFrame):
         
-        if pars['corner']:    plots.corner_plots(   pars, SampDataFrame, PriorDataFrame)
-        if pars['violin']:    plots.violin_plots(   pars, SampDataFrame, PriorDataFrame, EvidenceDataFrame)
-        if pars['ridgeline']: plots.ridgeline_plots(pars, SampDataFrame, PriorDataFrame)
-        if pars['TGR-plot']:  plots.TGR_plots(      pars, SampDataFrame)
+        if pars['corner']:
+            if pars['corner-sns']: plots.corner_plots_sns(pars, SampDataFrame, PriorDataFrame)
+            else:                  plots.corner_plots(    pars, SampDataFrame, PriorDataFrame)
+        if pars['violin']:         plots.violin_plots(    pars, SampDataFrame, PriorDataFrame, EvidenceDataFrame)
+        if pars['ridgeline']:      plots.ridgeline_plots( pars, SampDataFrame, PriorDataFrame)
+        if pars['TGR-plot']:       plots.TGR_plots(       pars, SampDataFrame)
