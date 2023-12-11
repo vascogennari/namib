@@ -21,7 +21,7 @@ To run `namib`, you only need a set of samples (input files) and a config file.
 - Enjoy the results.
 
 ### Guide
-You can find detailed instructions on `namib` usage in the [`namib` guide](https://github.com/vascogennari/namib/files/13249153/namib_guide.pdf).
+You can find detailed instructions on `namib` usage in the [`namib` guide](https://github.com/vascogennari/namib/files/13635307/namib_guide.pdf).
 
 
 ## Installing and running the code
