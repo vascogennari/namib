@@ -4,7 +4,10 @@
 
 Given a set of input files with samples, `namib` filters the samples for the selected parameters and displays them through different plots: ***corner***, ***violin***, ***ridgeline***.
 
-For example, these are two possible applications.
+For example, these are possible applications.
+#### Comparing multidimensional posterior distributions from different models
+<img src="https://github.com/vascogennari/namib/assets/62053184/73deb9b2-a7a8-4ea0-adfd-df3f25d82c24" alt="drawing" width="350"/>
+
 #### Comparing different pipelines on a set of GW events
 <img src="https://github.com/vascogennari/namib/assets/62053184/0753647d-03e0-4592-bfd6-5670b8614656" alt="drawing" width="750"/>
 
@@ -30,8 +33,8 @@ To install `namib`, follow the instructions:
     pip install -r requirements.txt
     python setup.py install
     
-Once the package is installed, you can launch `namib` from inside the directory `namib/namib` as:
+Once the package is installed, you can easily launch `namib` as:
 
-    namib --config-file config_filename.ini
+    namib --config-file config_path/config_filename.ini
 
-You can get familiar with `namib`, try to replicate the above plots by launching the config files in the `config_files/examples` directory.
+To get familiar with `namib`, try to replicate the above plots by launching the config files in the `config_files/examples` directory. Remember to change the `~namib_path/` for the `samples` and `output` keys within the config files.
