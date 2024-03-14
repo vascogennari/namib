@@ -91,7 +91,7 @@ def corner_plots(pars, SampDataFrame, PriorDataFrame):
                 range = [ran for ran,f in zip(range,           flag) if f == False]
         else: params = pars['parameters']
 
-        fig = plt.figure(figsize = pars['corner-settings']['figsize'])
+        fig = plt.figure(figsize = (pars['corner-settings']['figsize'], pars['corner-settings']['figsize']))
         for i,key in enumerate(keys):
             SampDataFrameFilt = SampDataFrameComp[SampDataFrameComp[pars['stack-mode']] == key]
             samp = np.column_stack(SampDataFrameFilt[par] for par in params)
@@ -178,7 +178,6 @@ def corner_plots_sns(pars, SampDataFrame, PriorDataFrame):
     colors = lp.palettes(pars, colormap = False, number_colors = len(comp_pars))
     SampDataFrame['ordering'] = pd.Categorical(SampDataFrame[pars['stack-mode']], categories = keys, ordered = True)
 
-
     lp.rc_labelsizes(pars)    # Set label sizes of matplotlib RC parameters
     height = pars['corner-settings']['figsize'] / len(pars['parameters'])    # The figure size in seaborn is controlled by that of individual plots
 
@@ -192,7 +191,7 @@ def corner_plots_sns(pars, SampDataFrame, PriorDataFrame):
         height    = height,
         dropna    = 1,
         plot_kws  = dict(alpha = 0),
-        diag_kws  = dict(alpha = pars['corner-settings']['alpha']),
+        diag_kws  = dict(alpha = pars['corner-settings']['alpha'], linewidth = pars['corner-settings']['linewidth']),
     )
     # Add 2D levels
     fig.map_lower(sns.kdeplot, levels = 2, fill = False)
@@ -214,6 +213,9 @@ def corner_plots_sns(pars, SampDataFrame, PriorDataFrame):
 
         if not pars['compare'] == '': filename = os.path.join(pars['plots-dir'], 'corner_{name}_{comp}.pdf'.format(name = pars['stack-mode'], comp = comp))
         else:                         filename = os.path.join(pars['plots-dir'], 'corner_{name}.pdf'.format(name = pars['stack-mode']))
+        fig.savefig(filename, bbox_inches = 'tight', transparent = True)
+        if not pars['compare'] == '': filename = os.path.join(pars['plots-dir'], 'corner_{name}_{comp}.png'.format(name = pars['stack-mode'], comp = comp))
+        else:                         filename = os.path.join(pars['plots-dir'], 'corner_{name}.png'.format(name = pars['stack-mode']))
         fig.savefig(filename, bbox_inches = 'tight', transparent = True)
 
 
@@ -520,6 +522,8 @@ def ridgeline_plots(pars, SampDataFrame, PriorDataFrame):
         else:            ax[round(len(keys)/2)][0].set_ylabel('$Time\ [M_{f}]$')
 
     filename = os.path.join(pars['plots-dir'], 'ridgeline_{name}.pdf'.format(name = pars['stack-mode']))
+    plt.savefig(filename, bbox_inches = 'tight', transparent = True)
+    filename = os.path.join(pars['plots-dir'], 'ridgeline_{name}.png'.format(name = pars['stack-mode']))
     plt.savefig(filename, bbox_inches = 'tight', transparent = True)
 
 

@@ -43,7 +43,7 @@ usage = """
         TGR-plot           Flag to produce TGR plot. Default: 0
         corner-sns         Flag to produce corner plot with seaborn. Default: 1
 
-        corner-settings    Dictionary for additional corner settings. Options with seaborn: {'figsize', 'alpha'}. Options with corner: {'figsize', 'smooth'}. Default: {'figsize': 8, 'alpha': 0.5, 'smooth': 0}
+        corner-settings    Dictionary for additional corner settings. Options with seaborn: {'figsize', 'alpha', 'linewidth'}. Options with corner: {'figsize', 'smooth'}. Default: {'figsize': 8, 'alpha': 0.5, 'smooth': 0, 'linewidth': 1}
         violin-settings    Dictionary for additional violin settings. Options: {'figsize', 'alpha', 'rotation', 'pad'}. Default: {'figsize': (15, 25), 'alpha': 0.5, 'rotation': 0, 'pad': -0.5}
         ridgeline-settings Dictionary for additional ridgeline settings. Options: {'figsize', 'alpha', 'overlap', 'fade', 'borderaxespad'}. Default: {'figsize': (20, 10), 'alpha': 0.5, 'overlap': 0.5, 'fade': 0, 'borderaxespad': 0.5}
         label-sizes        Dictionary to set labels size. Options: {'xtick', 'ytick', 'legend', 'axes'}. Default: {'xtick': 15, 'ytick': 15, 'legend': 17, 'axes': 17}

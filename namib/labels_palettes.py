@@ -6,7 +6,7 @@ rcParams["xtick.labelsize"] = 15
 rcParams["ytick.labelsize"] = 15
 rcParams["xtick.direction"] = "in"
 rcParams["ytick.direction"] = "in"
-rcParams["legend.fontsize"] = 17
+rcParams["legend.fontsize"] = 8
 rcParams["legend.frameon"]  = False
 rcParams["legend.loc"]      = "best"
 rcParams["axes.labelsize"]  = 20
@@ -93,7 +93,10 @@ def labels_legend(par):
 
     label = ''
     try:
-        if   par == '22':        label = '$(2,2)$'
+        if   par == '1DS':       label = '$1 \mathrm{DS}$'
+        elif par == '2DS':       label = '$2 \mathrm{DS}$'
+
+        elif par == '22':        label = '$(2,2)$'
         elif par == '22-33':     label = '$(2,2),(3,3)$'
         elif par == '22-21':     label = '$(2,2),(2,1)$'
         elif par == '22-21-33':  label = '$(2,2),(2,1),(3,3)$'
@@ -101,6 +104,10 @@ def labels_legend(par):
         elif par == '220':       label = '$(2,2,0)$'
         elif par == '220-330':   label = '$(2,2,0),(3,3,0)$'
         elif par == '220-221':   label = '$(2,2,0),(2,2,1)$'
+        elif par == '220-210':   label = '$(2,2,0),(2,1,0)$'
+        elif par == '220-200':   label = '$(2,2,0),(2,0,0)$'
+        elif par == '220-320':   label = '$(2,2,0),(3,2,0)$'
+        elif par == '220-440':   label = '$(2,2,0),(4,4,0)$'
 
         elif par == 'GR':        label = '$\mathrm{GR}$'
         elif par == 'nGR':       label = '$\mathrm{nGR}$'
@@ -118,6 +125,9 @@ def labels_legend(par):
         elif par == 'MMRDNP':    label = '$\mathrm{MMRDNP}$'
         elif par == 'LVK-RD':    label = '$\mathrm{LVK\ RD}$'
         elif par == 'LVK-IMR':   label = '$\mathrm{LVK\ IMR}$'
+
+        elif par == 'NRSur7dq4':   label = '$\mathrm{NRSur7dq4}$'
+        elif par == 'SEOBv5PHM':   label = '$\mathrm{SEOBv5PHM}$'
 
         else:
             raise ValueError('Unknown legend parameter.')
