@@ -69,6 +69,18 @@ def labels_parameters(pars_list):
         elif par == 'dtau_220':    string = '$\\delta\\tau_{22}$'
         elif par == 'ell':         string = '$l\ [km]$'
 
+        # Cosmology
+        elif par == 'alpha':       string = '$\\alpha$'
+        elif par == 'mmin':        string = '$m_{min}\ [M_{\odot}]$'
+        elif par == 'mmax':        string = '$m_{max}\ [M_{\odot}]$'
+        elif par == 'mu_g':        string = '$\\mu_{g}\ [M_{\odot}]$'
+        elif par == 'sigma_g':     string = '$\\sigma_{g}\ [M_{\odot}]$'
+        elif par == 'mu_z0':       string = '$\\mu_{z_0}\ [M_{\odot}]$'
+        elif par == 'sigma_z0':    string = '$\\sigma_{z_0}\ [M_{\odot}]$'
+        elif par == 'mu_q':        string = '$\\mu_{q}$'
+        elif par == 'sigma_q':     string = '$\\sigma_{q}$'
+        elif par == 'R0':          string = '$R_0\ [Gpc^{-3}yr^{-1}]$'
+
         else:
             raise ValueError('At least one of the selected parameters does not have its corresponding label. Please, fix it in labels_palettes.py')
         
@@ -118,6 +130,10 @@ def labels_legend(par):
         elif par == 'MMRDNP':    label = '$\mathrm{MMRDNP}$'
         elif par == 'LVK-RD':    label = '$\mathrm{LVK\ RD}$'
         elif par == 'LVK-IMR':   label = '$\mathrm{LVK\ IMR}$'
+
+        # Cosmology
+        elif par == 'beta':      label = '$\\beta\ \mathrm{function}$'
+        elif par == 'MD':        label = '$\mathrm{Madau-Dickinson}$'
 
         else:
             raise ValueError('Unknown legend parameter.')

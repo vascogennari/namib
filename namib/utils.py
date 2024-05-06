@@ -1,5 +1,5 @@
 from multiprocessing import Value
-import os, h5py, pandas as pd
+import os, h5py, pandas as pd, json
 import numpy as np
 from tqdm import tqdm
 import surfinBH, qnm
@@ -124,6 +124,20 @@ def read_posteriors_event(file_path, pars):
     nsamp = len(df)
 
     return df, dfp, nsamp
+
+def read_posterriors_hierarchical(file_path, pars):
+
+    with open(file_path) as f:
+        tmp = json.load(f)
+        df  = pd.DataFrame(tmp['posterior']['content'])
+
+    if (set(['mu_z0']) <= set(pars['parameters'])) and (set(['mu_g']) <= set(df.keys())):
+        df.rename(columns = {'mu_g' : 'mu_z0'}, inplace = True)
+    if (set(['sigma_z0']) <= set(pars['parameters'])) and (set(['sigma_g']) <= set(df.keys())):
+        df.rename(columns = {'sigma_g' : 'sigma_z0'}, inplace = True)
+
+    return df
+
 
 def read_evidence_event(pars, dir_path, file_path):
 
@@ -491,8 +505,9 @@ class Posteriors:
                 keys[-1] = keys[-1].split('.')[0]
                 for i,key in enumerate(single_evt_keys.keys()):
                     single_evt_keys[key] = keys[i]
-
-                EventDataFrame, EventPriorDataFrame, _ = read_posteriors_event(file_path, pars)
+                
+                if not pars['hierarchical']: EventDataFrame, EventPriorDataFrame, _ = read_posteriors_event(file_path, pars)
+                else:                        EventDataFrame                         = read_posterriors_hierarchical(file_path, pars)
                 if not pars['stack-mode'] == '':
                     EventDataFrame = EventDataFrame.assign(par = single_evt_keys[pars['stack-mode']])
                     EventDataFrame.rename(columns={'par': pars['stack-mode']}, inplace = True)
