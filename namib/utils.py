@@ -530,8 +530,6 @@ class Posteriors:
     def __init__(self, pars):
 
         dir_path = pars['samp-dir']
-        if not (pars['file-path'] == ''): dir_path = pars['file-path']
-
         self.SampDataFrame     = pd.DataFrame(columns = pars['parameters'])
         self.PriorDataFrame    = pd.DataFrame(columns = pars['parameters'])
         self.EvidenceDataFrame = pd.DataFrame()

@@ -1,5 +1,6 @@
-import os, configparser, ast
+import os, sys, configparser, ast
 from optparse import OptionParser
+import namib
 
 from namib.utils import Posteriors, Plots
 from namib.utils import create_directory, save_posteriors_to_txt, save_output_medians
@@ -25,7 +26,7 @@ def main():
 
         'samp-dir'           : '',
         'output'             : '',
-        'file-path'          : '',
+        'screen-output'      : 0,
 
         'stack-mode'         : 'event',
         'compare'            : '',
@@ -85,7 +86,7 @@ def main():
         if ('samp-dir' in key) or ('output' in key) or ('stack-mode' in key) or ('compare' in key):
             try: input_pars[key] = Config.get('input', key)
             except: pass
-        if ('compare-hard' in key) or ('evidence' in key) or ('save-post' in key) or ('include-prior' in key) or ('ds-scaling' in key) or ('screen-medians' in key) or ('save-medians' in key) or ('qnms-pyRing' in key) or ('remnant-pyRing' in key):
+        if ('screen-output' in key) or ('compare-hard' in key) or ('evidence' in key) or ('save-post' in key) or ('include-prior' in key) or ('ds-scaling' in key) or ('screen-medians' in key) or ('save-medians' in key) or ('qnms-pyRing' in key) or ('remnant-pyRing' in key):
             try: input_pars[key] = Config.getboolean('input', key)
             except: pass
         if ('downsample' in key):
@@ -103,6 +104,14 @@ def main():
         if ('palette' in key) or ('time-percentiles' in key) or ('corner-settings' in key) or ('violin-settings' in key) or ('ridgeline-settings' in key) or ('label-sizes' in key):
             try: input_pars[key] = ast.literal_eval(Config.get('plots', key))
             except: pass
+
+    # Deviate stdout and stderr to file
+    if input_pars['screen-output']:
+        sys.stdout = open(os.path.join(input_pars['output'], 'stdout_namib.txt'), 'w')
+        sys.stderr = open(os.path.join(input_pars['output'], 'stderr_namib.txt'), 'w')
+    else: pass
+    print('\nn a m i b\n')
+    print(('Reading config file:\n{}'.format(config_file)))
 
     if not os.path.exists(input_pars['samp-dir']):
         raise ValueError('\nSamples directory {} not found.\n'.format(input_pars['samp-dir']))

@@ -9,7 +9,7 @@ usage = """
 
         samp-dir           Directory from which input samples are read. The path is relative to the 'samples' namib directory. Default: ''
         output             Directory in which the output is saved. The path is relative to the 'results' namib directory. Default: ''
-        file-path          Option to pass a global path for the input samples that is non relative to the 'samples' namib directory. Default: ''
+        screen-output      Flag to deviate the standard output and error to file. Default: 0
 
         stack-mode         Name of the key used to collect the input files. The value is read directly from the file names. Options: {'event', 'pipeline', 'model', 'submodel', 'time', 'GR_tag'}
         compare            Name of the key used to compare the input files filtered on stack-mode. The value is read directly from the file names. Options: {'event', 'pipeline', 'model', 'submodel', 'time', 'GR_tag'}
