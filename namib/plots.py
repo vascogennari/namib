@@ -159,6 +159,9 @@ def corner_plots(pars, SampDataFrame, PriorDataFrame):
         if not pars['compare'] == '': filename = os.path.join(pars['plots-dir'], 'corner_{name}_{comp}.pdf'.format(name = pars['stack-mode'], comp = comp))
         else:                         filename = os.path.join(pars['plots-dir'], 'corner_{name}.pdf'.format(name = pars['stack-mode']))
         fig.savefig(filename, bbox_inches = 'tight', transparent = True)
+        if not pars['compare'] == '': filename = os.path.join(pars['plots-dir'], 'corner_{name}_{comp}.png'.format(name = pars['stack-mode'], comp = comp))
+        else:                         filename = os.path.join(pars['plots-dir'], 'corner_{name}.png'.format(name = pars['stack-mode']))
+        fig.savefig(filename, bbox_inches = 'tight', transparent = True)
 
 
 
@@ -211,12 +214,12 @@ def corner_plots_sns(pars, SampDataFrame, PriorDataFrame):
             fig.axes[len(pars['parameters'])-1, pi].set_xlabel(labels_dict[par])
             if not pi==0: fig.axes[pi, 0].set_ylabel(labels_dict[par])
 
-        if not pars['compare'] == '': filename = os.path.join(pars['plots-dir'], 'corner_{name}_{comp}.pdf'.format(name = pars['stack-mode'], comp = comp))
-        else:                         filename = os.path.join(pars['plots-dir'], 'corner_{name}.pdf'.format(name = pars['stack-mode']))
-        fig.savefig(filename, bbox_inches = 'tight', transparent = True)
-        if not pars['compare'] == '': filename = os.path.join(pars['plots-dir'], 'corner_{name}_{comp}.png'.format(name = pars['stack-mode'], comp = comp))
-        else:                         filename = os.path.join(pars['plots-dir'], 'corner_{name}.png'.format(name = pars['stack-mode']))
-        fig.savefig(filename, bbox_inches = 'tight', transparent = True)
+    if not pars['compare'] == '': filename = os.path.join(pars['plots-dir'], 'corner_{name}_{comp}_sns.pdf'.format(name = pars['stack-mode'], comp = comp))
+    else:                         filename = os.path.join(pars['plots-dir'], 'corner_{name}_sns.pdf'.format(name = pars['stack-mode']))
+    fig.savefig(filename, bbox_inches = 'tight', transparent = True)
+    if not pars['compare'] == '': filename = os.path.join(pars['plots-dir'], 'corner_{name}_{comp}_sns.png'.format(name = pars['stack-mode'], comp = comp))
+    else:                         filename = os.path.join(pars['plots-dir'], 'corner_{name}_sns.png'.format(name = pars['stack-mode']))
+    fig.savefig(filename, bbox_inches = 'tight', transparent = True)
 
 
 
