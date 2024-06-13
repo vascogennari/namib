@@ -38,15 +38,20 @@ def labels_parameters(pars_list):
         elif par == 'f_t_1':       string = '$f_{2}\ [Hz]$'
         elif par == 'tau_t_1':     string = '$\\tau_{2}\ [ms]$'
         elif par == 'logA_t_1':    string = '$lnA_{2}$'
+        elif par == 'f_t_2':       string = '$f_{3}\ [Hz]$'
+        elif par == 'tau_t_2':     string = '$\\tau_{3}\ [ms]$'
 
         elif par == 'Mf':          string = '$M_f\ [M_{\odot}]$'
         elif par == 'af':          string = '$a_f$'
         elif par == 'A2220':       string = '$A_{220}$'
         elif par == 'A2330':       string = '$A_{330}$'
+        elif par == 'A2210':       string = '$A_{210}$'
         elif par == 'f_22':        string = '$f_{22}\ [Hz]$'
         elif par == 'tau_22':      string = '$\\tau_{22}\ [ms]$'
         elif par == 'f_33':        string = '$f_{33}\ [Hz]$'
         elif par == 'tau_33':      string = '$\\tau_{33}\ [ms]$'
+        elif par == 'f_44':        string = '$f_{44}\ [Hz]$'
+        elif par == 'tau_44':      string = '$\\tau_{4}\ [ms]$'
 
         elif par == 'm1':          string = '$m_1\ [M_{\odot}]$'
         elif par == 'm2':          string = '$m_2\ [M_{\odot}]$'
@@ -66,7 +71,10 @@ def labels_parameters(pars_list):
 
         elif par == 'domega_220':  string = '$\\delta\\omega_{22}$'
         elif par == 'domega_330':  string = '$\\delta\\omega_{33}$'
+        elif par == 'domega_221':  string = '$\\delta\\omega_{221}$'
         elif par == 'dtau_220':    string = '$\\delta\\tau_{22}$'
+        elif par == 'dtau_330':    string = '$\\delta\\tau_{33}$'
+        elif par == 'domega_220':  string = '$\\delta\\omega_{22}$'
         elif par == 'ell':         string = '$l\ [km]$'
 
         else:
