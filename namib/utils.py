@@ -37,6 +37,8 @@ def from_IMR_to_RD_samples(df, pars):
         df.insert(0, 'iota', np.arccos(df.cos_theta_jn))
 
     # Compute remnant pars
+    if (set(['Mf', 'af']) <= set(pars['parameters'])) and (set(['m1', 'm2', 'chi1', 'chi2']) <= set(df.keys())):
+        df = compute_Mf_af_from_IMR(df, pars)
     if (set(['Mf', 'af']) <= set(pars['parameters'])) and (set(['m1', 'm2', 'a_1', 'a_2', 'tilt_1', 'tilt_2', 'phi_12', 'phi_jl', 'theta_jn', 'phase']) <= set(df.keys())):
         df = compute_Mf_af_from_IMR_precessing(df, pars)
     if (set(['f_22', 'tau_22']) <= set(pars['parameters'])) and (set(['Mf', 'af']) <= set(df.keys())):
@@ -219,45 +221,45 @@ def add_parameters_to_event(evt_df, new_params_list, new_params_samps):
     
     return df
 
-# def compute_Mf_af_from_IMR(df, pars):
-#     '''
-#     Compute Mf and af of the remnant BH from IMR parameters, using the Jimenez-Forteza fits implemented in pyRing.
-#     '''
-#     nsamp = len(df)
-#     Mf = np.zeros(nsamp)
-#     af = np.zeros(nsamp)
-#     for i in range(nsamp):
+def compute_Mf_af_from_IMR(df, pars):
+    '''
+    Compute Mf and af of the remnant BH from IMR parameters, using the Jimenez-Forteza fits implemented in pyRing.
+    '''
+    nsamp = len(df)
+    Mf = np.zeros(nsamp)
+    af = np.zeros(nsamp)
+    for i in range(nsamp):
 
-#         m1, m2, chi1, chi2 = df.m1[i], df.m2[i], df.chi1[i], df.chi2[i]
+        m1, m2, chi1, chi2 = df.m1[i], df.m2[i], df.chi1[i], df.chi2[i]
         
-#         if not pars['remnant-pyRing']:
-#             Warning('Using surfinBH fits to compute the remnant samples [Mf, af]. This option is still experimental and it is currently very slow: we suggest to use the option "remnant-pyRing".')
-#             Mf[i], af[i] = get_remnant(m1, m2, chi1, chi2)
-#         else:
-#             try:
-#                 import pyRing.waveform as wf
-#                 #print('Using pyRing fits to compute the remnant samples [Mf, af].')
-#             except:
-#                 raise ValueError('Unable to find the pyRing installation for the remnant fits. Please either install pyRing or disactivate the option "remnant-pyRing".')
-#             tmp   = wf.TEOBPM(0, m1, m2, chi1, chi2, {}, 100, 0, 0, [], {})
-#             Mf[i] = tmp.JimenezFortezaRemnantMass()
-#             af[i] = tmp.JimenezFortezaRemnantSpin()
-#         # else:
-#         #     from lalinference.imrtgr.nrutils import bbh_final_mass_projected_spins, bbh_final_spin_projected_spins, bbh_Kerr_trunc_opts
+        if not pars['remnant-pyRing']:
+            Warning('Using surfinBH fits to compute the remnant samples [Mf, af]. This option is still experimental and it is currently very slow: we suggest to use the option "remnant-pyRing".')
+            Mf[i], af[i] = get_remnant(m1, m2, chi1, chi2)
+        else:
+            try:
+                import pyRing.waveform as wf
+                #print('Using pyRing fits to compute the remnant samples [Mf, af].')
+            except:
+                raise ValueError('Unable to find the pyRing installation for the remnant fits. Please either install pyRing or disactivate the option "remnant-pyRing".')
+            tmp   = wf.TEOBPM(0, m1, m2, chi1, chi2, {}, 100, 0, 0, [], {})
+            Mf[i] = tmp.JimenezFortezaRemnantMass()
+            af[i] = tmp.JimenezFortezaRemnantSpin()
+        # else:
+        #     from lalinference.imrtgr.nrutils import bbh_final_mass_projected_spins, bbh_final_spin_projected_spins, bbh_Kerr_trunc_opts
 
-#         #     if(df['chi1'][i] < 0): tilt1 = np.pi
-#         #     else: tilt1 = 0.0
-#         #     if(df['chi2'][i] < 0): tilt2 = np.pi
-#         #     else: tilt2 = 0.0
-#         #     chi1  = np.abs(df['chi1'][i])
-#         #     chi2  = np.abs(df['chi2'][i])
-#         #     Mf[i] = bbh_final_mass_projected_spins(m1, m2, chi1, chi2, tilt1, tilt2, 'UIB2016')
-#         #     af[i] = bbh_final_spin_projected_spins(m1, m2, chi1, chi2, tilt1, tilt2, 'UIB2016', truncate = bbh_Kerr_trunc_opts.trunc)
+        #     if(df['chi1'][i] < 0): tilt1 = np.pi
+        #     else: tilt1 = 0.0
+        #     if(df['chi2'][i] < 0): tilt2 = np.pi
+        #     else: tilt2 = 0.0
+        #     chi1  = np.abs(df['chi1'][i])
+        #     chi2  = np.abs(df['chi2'][i])
+        #     Mf[i] = bbh_final_mass_projected_spins(m1, m2, chi1, chi2, tilt1, tilt2, 'UIB2016')
+        #     af[i] = bbh_final_spin_projected_spins(m1, m2, chi1, chi2, tilt1, tilt2, 'UIB2016', truncate = bbh_Kerr_trunc_opts.trunc)
 
-#     df.insert(0, 'Mf', Mf)
-#     df.insert(0, 'af', af)
+    df.insert(0, 'Mf', Mf)
+    df.insert(0, 'af', af)
     
-#     return df
+    return df
 
 def compute_Mf_af_from_IMR_precessing(df, pars):
     '''
@@ -296,6 +298,19 @@ def compute_Mf_af_from_IMR_precessing(df, pars):
     df.insert(0, 'af', af)
     
     return df
+
+def get_remnant(m1, m2, chi1, chi2):
+    '''
+        Return remnant mass Mf [M_\odot] and spin af []
+        using the python package surfinBH [https://github.com/vijayvarma392/surfinBH]
+    '''
+    q = m1 / m2
+    fit = surfinBH.LoadFits('NRSur7dq4Remnant')
+
+    Mf, _ = fit.mf(  q, (0.0, 0.0, chi1), (0.0, 0.0, chi2))
+    af, _ = fit.chif(q, (0.0, 0.0, chi1), (0.0, 0.0, chi2))
+
+    return Mf * (m1+m2), af[2]
 
 def get_remnant_PESummary(m1, m2, chi1, chi2, tilt1, tilt2, phi_12, phi_jl, theta_jn, phase):
     '''
