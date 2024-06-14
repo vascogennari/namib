@@ -103,6 +103,10 @@ def labels_legend(par):
     try:
         if   par == '1DS':       label = '$1 \mathrm{DS}$'
         elif par == '2DS':       label = '$2 \mathrm{DS}$'
+        elif par == '3DS':       label = '$3 \mathrm{DS}$' 
+        elif par == '1mode':     label = '$1 \mathrm{DS}$'
+        elif par == '2mode':     label = '$2 \mathrm{DS}$'
+        elif par == '3mode':     label = '$3 \mathrm{DS}$'
 
         elif par == '22':        label = '$(2,2)$'
         elif par == '22-33':     label = '$(2,2),(3,3)$'

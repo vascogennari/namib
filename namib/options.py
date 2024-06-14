@@ -9,7 +9,7 @@ usage = """
 
         samp-dir           Directory from which input samples are read. The path is relative to the 'samples' namib directory. Default: ''
         output             Directory in which the output is saved. The path is relative to the 'results' namib directory. Default: ''
-        file-path          Option to pass a global path for the input samples that is non relative to the 'samples' namib directory. Default: ''
+        screen-output      Flag to deviate the standard output and error to file. Default: 0
 
         stack-mode         Name of the key used to collect the input files. The value is read directly from the file names. Options: {'event', 'pipeline', 'model', 'submodel', 'time', 'GR_tag'}
         compare            Name of the key used to compare the input files filtered on stack-mode. The value is read directly from the file names. Options: {'event', 'pipeline', 'model', 'submodel', 'time', 'GR_tag'}
@@ -43,9 +43,9 @@ usage = """
         TGR-plot           Flag to produce TGR plot. Default: 0
         corner-sns         Flag to produce corner plot with seaborn. Default: 1
 
-        corner-settings    Dictionary for additional corner settings. Options with seaborn: {'figsize', 'alpha', 'linewidth'}. Options with corner: {'figsize', 'smooth'}. Default: {'figsize': 8, 'alpha': 0.5, 'smooth': 0, 'linewidth': 1}
-        violin-settings    Dictionary for additional violin settings. Options: {'figsize', 'alpha', 'rotation', 'pad'}. Default: {'figsize': (15, 25), 'alpha': 0.5, 'rotation': 0, 'pad': -0.5}
-        ridgeline-settings Dictionary for additional ridgeline settings. Options: {'figsize', 'alpha', 'overlap', 'fade', 'borderaxespad'}. Default: {'figsize': (20, 10), 'alpha': 0.5, 'overlap': 0.5, 'fade': 0, 'borderaxespad': 0.5}
+        corner-settings    Dictionary for additional corner settings. Options with seaborn: {'figsize', 'figname', 'alpha', 'linewidth'}. Options with corner: {'figsize', 'figname', 'smooth'}. Default: {'figsize': 8, 'figname': 'corner', 'alpha': 0.5, 'smooth': 0, 'linewidth': 1}
+        violin-settings    Dictionary for additional violin settings. Options: {'figsize', 'figname', 'alpha', 'rotation', 'pad'}. Default: {'figsize': (15, 25), 'figname': 'violin', 'alpha': 0.5, 'rotation': 0, 'pad': -0.5}
+        ridgeline-settings Dictionary for additional ridgeline settings. Options: {'figsize', 'figname', 'alpha', 'overlap', 'fade', 'borderaxespad'}. Default: {'figsize': (20, 10), 'figname': 'ridgeline', 'alpha': 0.5, 'overlap': 0.5, 'fade': 0, 'borderaxespad': 0.5}
         label-sizes        Dictionary to set labels size. Options: {'xtick', 'ytick', 'legend', 'axes'}. Default: {'xtick': 15, 'ytick': 15, 'legend': 17, 'axes': 17}
         palette            Option to set the colors used in the plots. If string is passed colors are read from that colormap, otherwise a list of colors needs to be passed. Syntax: 'cmap_name' or ['#AB3507', '#0771AB', ...]. Default: 'crest'
         
