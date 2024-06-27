@@ -1,9 +1,11 @@
 from multiprocessing import Value
 import os, h5py, pandas as pd
+import fnmatch
 import numpy as np
 from tqdm import tqdm
 import surfinBH, qnm
 from astropy import constants as const
+from pesummary.gw.conversions.nrutils import NRSur_fit
 
 import namib.plots as plots
 
@@ -38,14 +40,11 @@ def from_IMR_to_RD_samples(df, pars):
     # Compute remnant pars
     if (set(['Mf', 'af']) <= set(pars['parameters'])) and (set(['m1', 'm2', 'chi1', 'chi2']) <= set(df.keys())):
         df = compute_Mf_af_from_IMR(df, pars)
-    if (set(['Mf', 'af']) <= set(pars['parameters'])) and (set(['m1', 'm2', 'spin_1x', 'spin_1y', 'spin_1z', 'spin_2x', 'spin_2y', 'spin_2z']) <= set(df.keys())):
+    if (set(['Mf', 'af']) <= set(pars['parameters'])) and (set(['m1', 'm2', 'a_1', 'a_2', 'tilt_1', 'tilt_2', 'phi_12', 'phi_jl', 'theta_jn', 'phase']) <= set(df.keys())):
         df = compute_Mf_af_from_IMR_precessing(df, pars)
     if (set(['f_22', 'tau_22']) <= set(pars['parameters'])) and (set(['Mf', 'af']) <= set(df.keys())):
         df = compute_qnms_from_Mf_af(df,  pars['modes'], pars)
-    if (set(['f_22', 'tau_22']) <= set(pars['parameters'])) and (set(['m1', 'm2', 'chi1', 'chi2']) <= set(df.keys())) and not (set(['Mf', 'af']) <= set(pars['parameters'])):
-        df = compute_Mf_af_from_IMR(df, pars)
-        df = compute_qnms_from_Mf_af(df, pars['modes'], pars)
-    if (set(['f_22', 'tau_22']) <= set(pars['parameters'])) and (set(['m1', 'm2', 'spin_1x', 'spin_1y', 'spin_1z', 'spin_2x', 'spin_2y', 'spin_2z']) <= set(df.keys())) and not (set(['Mf', 'af']) <= set(pars['parameters'])):
+    if (set(['f_22', 'tau_22']) <= set(pars['parameters'])) and (set(['m1', 'm2', 'a_1', 'a_2', 'tilt_1', 'tilt_2', 'phi_12', 'phi_jl', 'theta_jn', 'phase']) <= set(df.keys())) and not (set(['Mf', 'af']) <= set(pars['parameters'])):
         df = compute_Mf_af_from_IMR_precessing(df, pars)
         df = compute_qnms_from_Mf_af(df, pars['modes'], pars)
 
@@ -265,15 +264,36 @@ def compute_Mf_af_from_IMR(df, pars):
 
 def compute_Mf_af_from_IMR_precessing(df, pars):
     '''
-    Compute Mf and af of the remnant BH from IMR parameters, using the Jimenez-Forteza fits implemented in pyRing.
+    Compute Mf and af of the remnant BH from IMR parameters, using the PESummary remnant fits.
     '''
     nsamp = len(df)
+    m1 = np.zeros(nsamp)
+    m2 = np.zeros(nsamp)
+    chi1 = np.zeros(nsamp)
+    chi2 = np.zeros(nsamp)
+    tilt1 = np.zeros(nsamp)
+    tilt2 = np.zeros(nsamp)
+    phi_12 = np.zeros(nsamp)
+    phi_jl = np.zeros(nsamp)
+    theta_jn = np.zeros(nsamp)
+    phase = np.zeros(nsamp)
     Mf = np.zeros(nsamp)
     af = np.zeros(nsamp)
+    
     for i in range(nsamp):
 
-        m1, m2, chi1_x, chi1_y, chi1_z, chi2_x, chi2_y, chi2_z = df.m1[i], df.m2[i], df.spin_1x[i], df.spin_1y[i], df.spin_1z[i], df.spin_2x[i], df.spin_2y[i], df.spin_2z[i]
-        Mf[i], af[i] = get_remnant_precessing(m1, m2, chi1_x, chi1_y, chi1_z, chi2_x, chi2_y, chi2_z)
+       m1[i], m2[i], chi1[i], chi2[i], tilt1[i], tilt2[i], phi_12[i], phi_jl[i], theta_jn[i], phase[i] = df.m1[i], df.m2[i], df.a_1[i], df.a_2[i], df.tilt_1[i], df.tilt_2[i], df.phi_12[i], df.phi_jl[i], df.theta_jn[i], df.phase[i]
+        
+    Mf, af = get_remnant_PESummary(m1, 
+                                   m2, 
+                                   chi1, 
+                                   chi2, 
+                                   tilt1, 
+                                   tilt2, 
+                                   phi_12, phi_jl, 
+                                   theta_jn, 
+                                   phase                   
+                                    )
 
     df.insert(0, 'Mf', Mf)
     df.insert(0, 'af', af)
@@ -292,6 +312,33 @@ def get_remnant(m1, m2, chi1, chi2):
     af, _ = fit.chif(q, (0.0, 0.0, chi1), (0.0, 0.0, chi2))
 
     return Mf * (m1+m2), af[2]
+
+def get_remnant_PESummary(m1, m2, chi1, chi2, tilt1, tilt2, phi_12, phi_jl, theta_jn, phase):
+    '''
+        Return remnant mass Mf [M_\odot] and spin af [] using the PESummary remnant fits
+    '''
+
+    fits = NRSur_fit(
+                        m1,
+                        m2,
+                        chi1,
+                        chi2,
+                        tilt1,
+                        tilt2,
+                        phi_12,
+                        phi_jl,
+                        theta_jn,
+                        phase,
+                        20.0,
+                        np.full_like(m1, 20.0),
+                        model="NRSur7dq4Remnant",
+                        approximant="IMRPhenomXPHM"
+                        )
+
+    Mf_d        = fits["final_mass"]
+    af_d        = fits["final_spin"]
+
+    return Mf_d, af_d
 
 def get_remnant_precessing(m1, m2, chi1_x, chi1_y, chi1_z, chi2_x, chi2_y, chi2_z):
     '''
@@ -534,9 +581,20 @@ class Posteriors:
         self.PriorDataFrame    = pd.DataFrame(columns = pars['parameters'])
         self.EvidenceDataFrame = pd.DataFrame()
         single_evt_keys = {'event': str(), 'pipeline': str(), 'model': str(), 'submodel': str(), 'time': str(), 'GR_tag': str()}
+        IMR_keys        = {'event': str(), 'pipeline': str(), 'model': str()}
+        stack_mode_keys = list()
 
+        if not (pars['include-IMR'] == '' and pars['stack-mode'] in IMR_keys.keys()) and pars['ridgeline'] == 1:
+            for file in os.listdir(dir_path):
+                if not ((file == '.DS_Store') or (file == 'noise_evidences') or (file == 'ignore') or (file == 'SNR_samples') or (fnmatch.fnmatch(file, '*IMR*'))):
+                    keys = file.split('_')
+                    keys[-1] = keys[-1].split('.')[0]
+                    for i,key in enumerate(single_evt_keys.keys()):
+                        if (key == pars['stack-mode'] and (keys[i] not in stack_mode_keys)):
+                            stack_mode_keys.append(keys[i])
+                    
         for file in tqdm(os.listdir(dir_path), desc = 'Reading Posteriors'):
-            if not ((file == '.DS_Store') or (file == 'noise_evidences') or (file == 'ignore') or (file == 'SNR_samples')):
+            if not ((file == '.DS_Store') or (file == 'noise_evidences') or (file == 'ignore') or (file == 'SNR_samples') or (fnmatch.fnmatch(file, '*IMR*'))):
 
                 file_path = os.path.join(dir_path, file)
                 keys = file.split('_')
@@ -553,8 +611,8 @@ class Posteriors:
                         EventPriorDataFrame.rename(columns={'par': pars['stack-mode']}, inplace = True)
                 if not pars['compare'] == '':
                     EventDataFrame = EventDataFrame.assign(par = single_evt_keys[pars['compare']])
-                    EventDataFrame.rename(columns={'par': pars['compare']}, inplace = True)                
-
+                    EventDataFrame.rename(columns={'par': pars['compare']}, inplace = True)
+                    
                 self.SampDataFrame      = pd.concat([self.SampDataFrame,  EventDataFrame],      ignore_index=True)
                 if pars['include-prior']:
                     self.PriorDataFrame = pd.concat([self.PriorDataFrame, EventPriorDataFrame], ignore_index=True)
@@ -563,6 +621,70 @@ class Posteriors:
                     EventEvidenceDataFrame.insert(0, pars['stack-mode'], single_evt_keys[pars['stack-mode']])
                     if not pars['compare'] == '': EventEvidenceDataFrame.insert(0, pars['compare'], single_evt_keys[pars['compare']])
                     self.EvidenceDataFrame = pd.concat([self.EvidenceDataFrame, EventEvidenceDataFrame], ignore_index=True)
+
+            if  (fnmatch.fnmatch(file, '*IMR*') and not pars['include-IMR'] == ''):
+
+                file_path = os.path.join(dir_path, file)
+                keys = file.split('_')
+                keys[-1] = keys[-1].split('.')[0]
+                for i,key in enumerate(IMR_keys.keys()):
+                    IMR_keys[key] = keys[i]
+
+                EventDataFrame0, EventPriorDataFrame, _ = read_posteriors_event(file_path, pars)
+                if not pars['stack-mode'] == '':
+                    if pars['stack-mode'] in IMR_keys.keys():
+                        EventDataFrame = EventDataFrame0.assign(par = IMR_keys[pars['stack-mode']])
+                        EventDataFrame.rename(columns={'par': pars['stack-mode']}, inplace = True)
+                        if not pars['compare'] == '':
+                            if pars['compare'] in IMR_keys.keys():
+                                EventDataFrame = EventDataFrame.assign(par = IMR_keys[pars['compare']])
+                            else:
+                                EventDataFrame = EventDataFrame.assign(par = 'IMR')
+                            EventDataFrame.rename(columns={'par': pars['compare']}, inplace = True)         
+                        self.SampDataFrame = pd.concat([self.SampDataFrame,  EventDataFrame],      ignore_index=True)
+                    else:
+                        if pars['ridgeline'] == 1:
+                            for key in stack_mode_keys:
+                                EventDataFrame = EventDataFrame0.assign(par = key)
+                                EventDataFrame.rename(columns={'par': pars['stack-mode']}, inplace = True)
+                                if not pars['compare'] == '':
+                                    if pars['compare'] in IMR_keys.keys():
+                                        EventDataFrame = EventDataFrame.assign(par = IMR_keys[pars['compare']])
+                                    else:
+                                        EventDataFrame = EventDataFrame.assign(par = 'IMR')
+                                    EventDataFrame.rename(columns={'par': pars['compare']}, inplace = True) 
+                                self.SampDataFrame = pd.concat([self.SampDataFrame,  EventDataFrame],      ignore_index=True)
+                        else:
+                            EventDataFrame = EventDataFrame0.assign(par = 'IMR')
+                            EventDataFrame.rename(columns={'par': pars['stack-mode']}, inplace = True)
+                            if not pars['compare'] == '':
+                                if pars['compare'] in IMR_keys.keys():
+                                    EventDataFrame = EventDataFrame.assign(par = IMR_keys[pars['compare']])
+                                else:
+                                    EventDataFrame = EventDataFrame.assign(par = 'IMR')
+                                EventDataFrame.rename(columns={'par': pars['compare']}, inplace = True)         
+                            self.SampDataFrame = pd.concat([self.SampDataFrame,  EventDataFrame],      ignore_index=True)
+                else:
+                    if not pars['compare'] == '':
+                        if pars['compare'] in IMR_keys.keys():
+                            EventDataFrame = EventDataFrame0.assign(par = IMR_keys[pars['compare']])
+                        else:
+                            EventDataFrame = EventDataFrame0.assign(par = 'IMR')
+                        EventDataFrame.rename(columns={'par': pars['compare']}, inplace = True)         
+                    self.SampDataFrame = pd.concat([self.SampDataFrame,  EventDataFrame],      ignore_index=True)
+##################### NICOLA: What do we do with priors for IMR??? I just commented this part for now
+                    # if pars['include-prior']:
+                    #     EventPriorDataFrame = EventPriorDataFrame.assign(par = single_evt_keys[pars['stack-mode']])
+                    #     EventPriorDataFrame.rename(columns={'par': pars['stack-mode']}, inplace = True)
+
+
+                # if pars['include-prior']:
+                #     self.PriorDataFrame = pd.concat([self.PriorDataFrame, EventPriorDataFrame], ignore_index=True)
+                # if pars['evidence']:
+                #     EventEvidenceDataFrame = read_evidence_event(pars, dir_path, file_path)
+                #     EventEvidenceDataFrame.insert(0, pars['stack-mode'], single_evt_keys[pars['stack-mode']])
+                #     if not pars['compare'] == '': EventEvidenceDataFrame.insert(0, pars['compare'], single_evt_keys[pars['compare']])
+                #     self.EvidenceDataFrame = pd.concat([self.EvidenceDataFrame, EventEvidenceDataFrame], ignore_index=True)
 
         if (not pars['compare'] == '') and pars['BF-comparison']:
             if not pars['evidence']: raise ValueError('Please activate the evidence option to compute the Bayes factor.')

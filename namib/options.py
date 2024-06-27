@@ -22,6 +22,7 @@ usage = """
         compare-hard       Flag to activate a hard comparison in case only two options are compared. This parameter is used only in violin and ridgeline plots. Default: 0
         evidence           Flag to read the evidence from the samples. Default: 0
         include-prior      Flag to plot the prior. Option currently implemented only in corner plot and not fully implemented. Default: 0
+        include-IMR        Flag to plot the IMR posteriors. They must be in the samples folder with name "event_pipeline_IMR.format". Default: 0
         truths             List of true values of the selected parameters. Currently implemented only with corner-sns=0. Default: []
 
         modes              List of modes for which the QNMs are computed. This option is used only when QNMs are computed from {Mf, af}. Default: [(2,2)]

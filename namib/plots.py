@@ -15,7 +15,10 @@ def sort_times_list(input_keys, labels = False):
     # Convert the list into a numpy array and sort it
     tmp = np.empty(num_keys)
     for i, key in enumerate(input_keys):
-        tmp[i] = float(key.strip('M'))
+        if not key == 'IMR':
+            tmp[i] = float(key.strip('M'))
+        else:
+            tmp[i] = 999
     sorted_array = np.sort(tmp)
 
     # Clean the array and re-add the M
@@ -24,11 +27,14 @@ def sort_times_list(input_keys, labels = False):
         if '.' in key: switch = True
     keys = [0] * num_keys
     for i, key in enumerate(sorted_array):
-        tmp = str(key)
-        if not switch:
-            if tmp.endswith('.0'): tmp = tmp[:-2]
-        keys[i] = tmp
-        if not labels: keys[i] += 'M'
+        if not key == 999:
+            tmp = str(key)
+            if not switch:
+                if tmp.endswith('.0'): tmp = tmp[:-2]
+            keys[i] = tmp
+            if not labels: keys[i] += 'M'
+        else:
+            keys[i] = 'IMR'
 
     return keys
 

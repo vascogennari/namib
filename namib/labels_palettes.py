@@ -116,6 +116,7 @@ def labels_legend(par):
         elif par == '220':       label = '$(2,2,0)$'
         elif par == '220-330':   label = '$(2,2,0),(3,3,0)$'
         elif par == '220-221':   label = '$(2,2,0),(2,2,1)$'
+        elif par == '221':       label = '$(2,2,0),(2,2,1)$'
         elif par == '220-210':   label = '$(2,2,0),(2,1,0)$'
         elif par == '220-200':   label = '$(2,2,0),(2,0,0)$'
         elif par == '220-320':   label = '$(2,2,0),(3,2,0)$'
