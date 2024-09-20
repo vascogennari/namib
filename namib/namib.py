@@ -68,6 +68,7 @@ def main():
         'BF-comparison'      : 0,
         'evidence-top'       : 0,
         'time-percentiles'   : [],
+        'automatic-bounds'   : 0,
 
         'horizontal-legend'  : 0,
         'event-name'         : '',
@@ -77,7 +78,7 @@ def main():
         
         'single-prior'       : '',
         'prior-color'        : '#828F61',
-        'truth-color'        : '#9B280A',
+        'truth-color'        : 'k',
 
     }
     
@@ -95,7 +96,7 @@ def main():
         if ('parameters' in key) or ('modes' in key) or ('ordering' in key) or ('bounds' in key) or ('compare-ordering' in key ) or ('truths' in key):
             try: input_pars[key] = ast.literal_eval(Config.get('input', key))
             except: pass
-        if ('corner' in key) or ('violin' in key) or ('ridgeline' in key) or ('TGR-plot' in key) or ('BF-comparison' in key) or ('evidence-top' in key) or ('remove-xticks' in key) or ('remove-legend' in key) or ('horizontal-legend' in key) or ('fix-dimensions' in key) or ('corner-sns' in key):
+        if ('corner' in key) or ('violin' in key) or ('ridgeline' in key) or ('TGR-plot' in key) or ('BF-comparison' in key) or ('evidence-top' in key) or ('remove-xticks' in key) or ('remove-legend' in key) or ('horizontal-legend' in key) or ('fix-dimensions' in key) or ('corner-sns' in key) or ('automatic-bounds' in key):
             try: input_pars[key] = Config.getboolean('plots', key)
             except: pass
         if ('extra-row' in key) or ('single-prior' in key) or ('prior-color' in key) or ('event-name' in key) or ('truth-color' in key):

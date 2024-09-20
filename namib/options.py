@@ -53,6 +53,7 @@ usage = """
         BF-comparison      Flag to compute the Bayes factor between two competing compare options. The option is available only for violin plot. Default: 0
         evidence-top       Flag to insert the additional parameter as the top row. If 0, the parameter is inserted as the bottom row. This option follows both 'plot-cpnest' and 'BF-comparison'. Default: 0
         time-percentiles   Option to include a shaded region in the additional row of violin plot. This option follows both 'plot-cpnest' and 'BF-comparison'. Syntax: [-3.5, 3.0]. Default: []
+        automatic-bounds   Flag to automatically set the bounds on the parameters plot from the width of the posteriors. The option is currently implemeted only for the ridgeline plot. Default: 0
 
         horizontal-legend  Flag to set the legend horizontally in ridgeline plot. Default: 0
         event-name         Option to add string to the top corner of the plot. The option is implemented only in violin and TGR plots. Default: ''
@@ -62,6 +63,6 @@ usage = """
 
         single-prior       Option to select the key from which the prior is read. Default: ''
         prior-color        Color used to plot the prior. Default: '#828F61'
-        truth-color        Color used to plot the truth values. Default: '#9B280A'
+        truth-color        Color used to plot the truth values. Default: 'k'
 
 """
