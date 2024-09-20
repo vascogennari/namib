@@ -70,15 +70,21 @@ def labels_parameters(pars_list):
         elif par == 'ell':         string = '$l\ [km]$'
 
         # Cosmology
+        elif par == 'H0':          string = '$H_{0}\ [km/s/Mpc]$'
+        elif par == 'Om0':         string = '$\\Omega_{m_0}$'
         elif par == 'alpha':       string = '$\\alpha$'
         elif par == 'mmin':        string = '$m_{min}\ [M_{\odot}]$'
         elif par == 'mmax':        string = '$m_{max}\ [M_{\odot}]$'
         elif par == 'mu_g':        string = '$\\mu_{g}\ [M_{\odot}]$'
         elif par == 'sigma_g':     string = '$\\sigma_{g}\ [M_{\odot}]$'
         elif par == 'mu_z0':       string = '$\\mu_{z_0}\ [M_{\odot}]$'
+        elif par == 'mu_z1':       string = '$\\mu_{z_1}\ [M_{\odot}]$'
         elif par == 'sigma_z0':    string = '$\\sigma_{z_0}\ [M_{\odot}]$'
+        elif par == 'mix_z0':      string = '$mix_{z_0}$'
+        elif par == 'delta_m':     string = '$\\delta_{m}$'
         elif par == 'mu_q':        string = '$\\mu_{q}$'
         elif par == 'sigma_q':     string = '$\\sigma_{q}$'
+        elif par == 'gamma':       string = '$\\gamma$'
         elif par == 'R0':          string = '$R_0\ [Gpc^{-3}yr^{-1}]$'
 
         else:
