@@ -79,7 +79,7 @@ elif cosmology:
         'pipeline' : '',
         'model'    : '',
         'submodel' : '',
-        'time'     : '',
+        'time'     : 'NN',
         'GR_tag'   : '',
     }
     # ------------------------- #
