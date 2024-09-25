@@ -71,8 +71,8 @@ if  ringdown:
 
 elif cosmology:
  # ------------------------- #
-    input_path  = '/Users/vgennari/Documents/work/code/python/icarogw/results/simulations/evolving_population/PROD1/low_SNR/inj-NNN'
-    output_path = '/Users/vgennari/Documents/work/code/python/namib/samples/cosmology/simulations_evolving_population_PROD1_inj-NNN'
+    input_path  = '/Users/vgennari/Documents/work/code/python/icarogw/results/simulations/evolving_population/PROD2/high_SNR/inj-NEE'
+    output_path = '/Users/vgennari/Documents/work/code/python/namib/samples/cosmology/simulations_evolving_population_PROD2_inj-NEE_high-SNR'
 
     elements = {
         'name'     : '',
