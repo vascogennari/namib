@@ -81,12 +81,16 @@ def labels_parameters(pars_list):
         elif par == 'mu_z1':       string = '$\\mu_{z_1}$'
         elif par == 'sigma_z0':    string = '$\\sigma_{z_0}\ [M_{\odot}]$'
         elif par == 'sigma_z1':    string = '$\\sigma_{z_1}$'
+        elif par == 'lambda_peak': string = '$\\lambda_{p}$'
         elif par == 'mix_z0':      string = '$mix_{z_0}$'
         elif par == 'mix_z1':      string = '$mix_{z_1}$'
         elif par == 'delta_m':     string = '$\\delta_{m}$'
         elif par == 'mu_q':        string = '$\\mu_{q}$'
         elif par == 'sigma_q':     string = '$\\sigma_{q}$'
+        elif par == 'alpha_q':     string = '$\\alpha_{q}$'
         elif par == 'gamma':       string = '$\\gamma$'
+        elif par == 'kappa':       string = '$\\kappa$'
+        elif par == 'zp':          string = '$z_{p}$'
         elif par == 'R0':          string = '$R_0\ [Gpc^{-3}yr^{-1}]$'
 
         else:
