@@ -71,8 +71,8 @@ if  ringdown:
 
 elif cosmology:
  # ------------------------- #
-    input_path  = '/Users/vgennari/Documents/work/code/python/icarogw/results/simulations/evolving_population/PROD2/high_SNR/inj-NEE'
-    output_path = '/Users/vgennari/Documents/work/code/python/namib/samples/cosmology/simulations_evolving_population_PROD2_inj-NEE_high-SNR'
+    input_path  = '/Users/vgennari/Documents/work/code/python/icarogw/results/evolution_study/PROD/non-evolving_population/PROD1'
+    output_path = '/Users/vgennari/Documents/work/code/python/namib/samples/cosmology/LVK_O3/stationary_models_PROD1'
 
     elements = {
         'name'     : '',
@@ -89,6 +89,10 @@ elif cosmology:
     # Create output directory
     if not os.path.exists(output_path): os.makedirs(output_path)
 
+    # Create output Evidences directory
+    output_evidence_dir = os.path.join(output_path, 'noise_evidences')
+    if not os.path.exists(output_evidence_dir): os.makedirs(output_evidence_dir)
+
     # Loop on the different runs
     for file in os.listdir(input_path):
         if (not file == '.DS_Store'):
@@ -98,20 +102,26 @@ elif cosmology:
             tmp = file.split('_')
             for element in elements:
                 if elements[element] == '':
-                    keys.append(tmp[i+1])
+                    keys.append(tmp[i])
                     i += 1
                 else:
                     keys.append(elements[element])
 
-            filename_tmp = '{}_{}_{}_{}_{}_{}'.format(keys[0], keys[1], keys[2], keys[3], keys[4], keys[5]) # Root filename
-            nested_sampler_path = os.path.join(input_path,  file, 'sampler')                                # Samples directory path
+            filename_tmp  = '{}_{}_{}_{}_{}_{}'.format(keys[0], keys[1], keys[2], keys[3], keys[4], keys[5]) # Root filename
+            sampler_path  = os.path.join(input_path,  file, 'sampler')                                # Samples directory path
+            evidence_path = os.path.join(input_path,  file)
 
             # Samples
             filename            = filename_tmp + '.json'
-            input_filename      = os.path.join(nested_sampler_path, 'label_result.json')
+            input_filename      = os.path.join(sampler_path, 'label_result.json')
             output_filename     = os.path.join(output_path, filename)
 
-            os.system('scp -r {input_filename} {output_filename}'.format(input_filename = input_filename, output_filename = output_filename))
+            # Evidences
+            filename_evidence   = filename_tmp + '_evidence.txt'
+            input_evidence      = os.path.join(evidence_path, 'log_evidence.txt')
+            output_evidence     = os.path.join(output_evidence_dir, filename_evidence)
 
+            os.system('scp -r {input_filename} {output_filename}'.format(input_filename = input_filename, output_filename = output_filename))
+            os.system('scp -r {input_evidence} {output_evidence}'.format(input_evidence = input_evidence, output_evidence = output_evidence))
 
 print('Finished.\n')

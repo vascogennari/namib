@@ -144,8 +144,13 @@ def labels_legend(par):
         elif par == 'LVK-IMR':   label = '$\mathrm{LVK\ IMR}$'
 
         # Cosmology
-        elif par == 'beta':      label = '$\\beta\ \mathrm{function}$'
-        elif par == 'MD':        label = '$\mathrm{Madau-Dickinson}$'
+        elif par == 'beta':               label = '$\\beta\ \mathrm{function}$'
+        elif par == 'MD':                 label = '$\mathrm{Madau-Dickinson}$'
+        elif par == 'Mass2-PowerLaw':     label = '$m_2\sim\mathrm{PL}$'
+        elif par == 'MassRatio-Gaussian': label = '$q\sim\mathrm{G}$'
+        elif par == 'MassRatio-PowerLaw': label = '$q\sim\mathrm{PL}$'
+        elif par == 'PowerLaw':           label = '$\mathrm{PL\:\:rate}$'
+        elif par == 'MadauDickinson':     label = '$\mathrm{MD\:\:rate}$'
 
         else:
             raise ValueError('Unknown legend parameter.')

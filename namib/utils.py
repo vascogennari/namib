@@ -138,7 +138,6 @@ def read_posterriors_hierarchical(file_path, pars):
 
     return df
 
-
 def read_evidence_event(pars, dir_path, file_path):
 
     evt_evidence = {}
@@ -184,6 +183,29 @@ def read_evidence_event(pars, dir_path, file_path):
             evt_evidence['SNR_net_opt'] = np.array(tmp['Network'])
         except:
             raise ValueError('SNR samples have not been found. Exiting.')
+
+    df = pd.DataFrame([evt_evidence])
+
+    return df
+
+def read_evidence_hierarchical(dir_path, file_path):
+
+    evt_evidence = {}
+
+    # Read the evidence
+    filename = os.path.basename(os.path.normpath(file_path))
+    if   '.txt'  in filename: root_file = filename.replace('.txt' , '')
+    elif '.dat'  in filename: root_file = filename.replace('.dat' , '')
+    elif '.h5'   in filename: root_file = filename.replace('.h5'  , '')
+    elif '.json' in filename: root_file = filename.replace('.json', '')
+
+    noise_file     = root_file + '_evidence.txt'
+    noise_evt_path = os.path.join(dir_path, 'noise_evidences', noise_file)
+    tmp            = np.genfromtxt(noise_evt_path, names = True)
+
+    evt_evidence['lnZ']       = np.array(tmp['log_Z_base_e'])
+    evt_evidence['lnZ_error'] = np.array(tmp['log_Z_err'])
+    evt_evidence['max_logL']  = np.array(tmp['max_log_L'])
 
     df = pd.DataFrame([evt_evidence])
 
@@ -506,7 +528,7 @@ class Posteriors:
                 for i,key in enumerate(single_evt_keys.keys()):
                     single_evt_keys[key] = keys[i]
                 
-                if not pars['hierarchical']: EventDataFrame, EventPriorDataFrame, _ = read_posteriors_event(file_path, pars)
+                if not pars['hierarchical']: EventDataFrame, EventPriorDataFrame, _ = read_posteriors_event(        file_path, pars)
                 else:                        EventDataFrame                         = read_posterriors_hierarchical(file_path, pars)
                 if not pars['stack-mode'] == '':
                     EventDataFrame = EventDataFrame.assign(par = single_evt_keys[pars['stack-mode']])
@@ -522,7 +544,8 @@ class Posteriors:
                 if pars['include-prior']:
                     self.PriorDataFrame = pd.concat([self.PriorDataFrame, EventPriorDataFrame], ignore_index=True)
                 if pars['evidence']:
-                    EventEvidenceDataFrame = read_evidence_event(pars, dir_path, file_path)
+                    if not pars['hierarchical']: EventEvidenceDataFrame = read_evidence_event( pars, dir_path, file_path)
+                    else:                        EventEvidenceDataFrame = read_evidence_hierarchical(dir_path, file_path)
                     EventEvidenceDataFrame.insert(0, pars['stack-mode'], single_evt_keys[pars['stack-mode']])
                     if not pars['compare'] == '': EventEvidenceDataFrame.insert(0, pars['compare'], single_evt_keys[pars['compare']])
                     self.EvidenceDataFrame = pd.concat([self.EvidenceDataFrame, EventEvidenceDataFrame], ignore_index=True)
