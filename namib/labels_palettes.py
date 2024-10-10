@@ -74,7 +74,7 @@ def labels_parameters(pars_list):
         elif par == 'domega_221':  string = '$\\delta\\omega_{221}$'
         elif par == 'dtau_220':    string = '$\\delta\\tau_{22}$'
         elif par == 'dtau_330':    string = '$\\delta\\tau_{33}$'
-        elif par == 'domega_220':  string = '$\\delta\\omega_{22}$'
+        elif par == 'dtau_221':    string = '$\\delta\\tau_{221}$'
         elif par == 'ell':         string = '$l\ [km]$'
 
         else:
