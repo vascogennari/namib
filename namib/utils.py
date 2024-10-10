@@ -30,6 +30,8 @@ def from_IMR_to_RD_samples(df, pars):
     # LVK
     if (set(['mass_1', 'mass_2']) <= set(df.keys())):
         df.rename(columns = {'mass_1' : 'm1', 'mass_2' : 'm2'}, inplace = True)
+    if (set(['a_1', 'a_2']) <= set(df.keys())):
+        df.rename(columns = {'a_1' : 'chi1', 'a_2' : 'chi2'}, inplace = True)
     if (set(['distance']) <= set(pars['parameters'])) and (set(['luminosity_dustance']) <= set(df.keys())):
         df.insert(0, 'distance', df.luminosity_dustance / 1000)     # [Gpc]
     if (set(['cosiota']) <= set(pars['parameters'])) and (set(['cos_theta_jn']) <= set(df.keys())):
@@ -38,9 +40,9 @@ def from_IMR_to_RD_samples(df, pars):
         df.insert(0, 'iota', np.arccos(df.cos_theta_jn))
 
     # Compute remnant pars
-    if (set(['Mf', 'af']) <= set(pars['parameters'])) and (set(['m1', 'm2', 'chi1', 'chi2']) <= set(df.keys())):
-        df = compute_Mf_af_from_IMR(df, pars)
-    if (set(['Mf', 'af']) <= set(pars['parameters'])) and (set(['m1', 'm2', 'a_1', 'a_2', 'tilt_1', 'tilt_2', 'phi_12', 'phi_jl', 'theta_jn', 'phase']) <= set(df.keys())):
+    # if (set(['Mf', 'af']) <= set(pars['parameters'])) and (set(['m1', 'm2', 'chi1', 'chi2']) <= set(df.keys())):
+    #     df = compute_Mf_af_from_IMR(df, pars)
+    if (set(['Mf', 'af']) <= set(pars['parameters'])) and (set(['m1', 'm2', 'chi1', 'chi2', 'tilt_1', 'tilt_2', 'phi_12', 'phi_jl', 'theta_jn', 'phase']) <= set(df.keys())):
         df = compute_Mf_af_from_IMR_precessing(df, pars)
     if (set(['f_22', 'tau_22']) <= set(pars['parameters'])) and (set(['Mf', 'af']) <= set(df.keys())):
         df = compute_qnms_from_Mf_af(df,  pars['modes'], pars)
@@ -282,7 +284,7 @@ def compute_Mf_af_from_IMR_precessing(df, pars):
     
     for i in range(nsamp):
 
-       m1[i], m2[i], chi1[i], chi2[i], tilt1[i], tilt2[i], phi_12[i], phi_jl[i], theta_jn[i], phase[i] = df.m1[i], df.m2[i], df.a_1[i], df.a_2[i], df.tilt_1[i], df.tilt_2[i], df.phi_12[i], df.phi_jl[i], df.theta_jn[i], df.phase[i]
+       m1[i], m2[i], chi1[i], chi2[i], tilt1[i], tilt2[i], phi_12[i], phi_jl[i], theta_jn[i], phase[i] = df.m1[i], df.m2[i], df.chi1[i], df.chi2[i], df.tilt_1[i], df.tilt_2[i], df.phi_12[i], df.phi_jl[i], df.theta_jn[i], df.phase[i]
         
     Mf, af = get_remnant_PESummary(m1, 
                                    m2, 
