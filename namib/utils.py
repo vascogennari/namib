@@ -3,9 +3,8 @@ import os, h5py, pandas as pd
 import fnmatch
 import numpy as np
 from tqdm import tqdm
-import surfinBH, qnm
+import qnm
 from astropy import constants as const
-from pesummary.gw.conversions.nrutils import NRSur_fit
 
 import namib.plots as plots
 
@@ -13,70 +12,92 @@ import warnings
 warnings.filterwarnings('ignore')
 
 
-def from_IMR_to_RD_samples(df, pars):
+def Adapt_Samples(df, pars):
+    '''
+        Adapt the input samples to namib internal conventions.
+        Compute remnant paramters and QNMs if needed.
+        Remove unnecessary paramters from the data frame.
+    '''
+    def LVK_conventions(df, pars):
+        if (set(['mass_1', 'mass_2']) <= set(df.keys())):
+            df.rename(columns = {'mass_1' : 'm1', 'mass_2' : 'm2'}, inplace = True)
+        if (set(['distance']) <= set(pars['parameters'])) and (set(['luminosity_dustance']) <= set(df.keys())):
+            df.insert(0, 'distance', df.luminosity_dustance / 1000)     # [Gpc]
+        if (set(['cosiota']) <= set(pars['parameters'])) and (set(['cos_theta_jn']) <= set(df.keys())):
+            df.rename(columns = {'cos_theta_jn' : 'cosiota'}, inplace = True)
+        if (set(['iota']) <= set(pars['parameters'])) and (set(['cos_theta_jn']) <= set(df.keys())):
+            df.insert(0, 'iota', np.arccos(df.cos_theta_jn))
 
-    # granite
-    if (set(['m1_detect', 'm2_detect']) <= set(df.keys())):
-        df.rename(columns = {'m1_detect' : 'm1', 'm2_detect' : 'm2'}, inplace = True)
-    if (set(['s1z', 's2z']) <= set(df.keys())):
-        df.rename(columns = {'s1z' : 'chi1', 's2z' : 'chi2'}, inplace = True)
-    if (set(['spin1', 'spin2']) <= set(df.keys())):
-        df.rename(columns = {'spin1' : 'chi1', 'spin2' : 'chi2'}, inplace = True)
-    if (set(['Mc', 'q']) <= set(df.keys())) or (set(['mc', 'q']) <= set(df.keys())):
-        df = compute_progenitors_from_IMR(df)
-    if (set(['Mc', 'q']) <= set(pars['parameters'])) or (set(['mc', 'q']) <= set(pars['parameters'])) or (set(['q']) <= set(pars['parameters'])) and (set(['m1', 'm2']) <= set(df.keys())):
-        df = compute_progenitors_from_IMR(df, inverse = True)
+    def granite_conventions(df, pars):
+        if (set(['m1_detect', 'm2_detect']) <= set(df.keys())):
+            df.rename(columns = {'m1_detect' : 'm1', 'm2_detect' : 'm2'}, inplace = True)
+        if (set(['s1z', 's2z']) <= set(df.keys())):
+            df.rename(columns = {'s1z' : 'chi1', 's2z' : 'chi2'}, inplace = True)
+        if (set(['spin1', 'spin2']) <= set(df.keys())):
+            df.rename(columns = {'spin1' : 'chi1', 'spin2' : 'chi2'}, inplace = True)
+        if (set(['Mc', 'q']) <= set(df.keys())) or (set(['mc', 'q']) <= set(df.keys())):
+            df = compute_progenitors_from_IMR(df)
+        if (set(['Mc', 'q']) <= set(pars['parameters'])) or (set(['mc', 'q']) <= set(pars['parameters'])) or (set(['q']) <= set(pars['parameters'])) and (set(['m1', 'm2']) <= set(df.keys())):
+            df = compute_progenitors_from_IMR(df, inverse = True)
 
-    # LVK
-    if (set(['mass_1', 'mass_2']) <= set(df.keys())):
-        df.rename(columns = {'mass_1' : 'm1', 'mass_2' : 'm2'}, inplace = True)
-    if (set(['distance']) <= set(pars['parameters'])) and (set(['luminosity_dustance']) <= set(df.keys())):
-        df.insert(0, 'distance', df.luminosity_dustance / 1000)     # [Gpc]
-    if (set(['cosiota']) <= set(pars['parameters'])) and (set(['cos_theta_jn']) <= set(df.keys())):
-        df.rename(columns = {'cos_theta_jn' : 'cosiota'}, inplace = True)
-    if (set(['iota']) <= set(pars['parameters'])) and (set(['cos_theta_jn']) <= set(df.keys())):
-        df.insert(0, 'iota', np.arccos(df.cos_theta_jn))
+    def compute_remnant_from_IMR(df, pars):
+        if (set(['Mf', 'af']) <= set(pars['parameters'])) and not (set(['Mf', 'af']) <= set(df.keys())):
+            if pars['IMR-fits'] == 'IMRPhenomXPrecessing':
+                if not (set(['eta', 'a_1', 'a_2', 'chi1', 'chi2', 'chi_p']) <= set(df.columns)) and (set(['m1', 'm2', 'a_1', 'a_2', 'chi1', 'chi2', 'chi_p']) <= set(df.keys())):
+                    df = compute_progenitors_from_IMR(df, func = 'SymmetricMassRatio')
+            df = compute_Mf_af_from_IMR(df, pars)
 
-    # Compute remnant pars
-    if (set(['Mf', 'af']) <= set(pars['parameters'])) and (set(['m1', 'm2', 'chi1', 'chi2']) <= set(df.keys())):
-        df = compute_Mf_af_from_IMR(df, pars)
-    if (set(['Mf', 'af']) <= set(pars['parameters'])) and (set(['m1', 'm2', 'a_1', 'a_2', 'tilt_1', 'tilt_2', 'phi_12', 'phi_jl', 'theta_jn', 'phase']) <= set(df.keys())):
-        df = compute_Mf_af_from_IMR_precessing(df, pars)
-    if (set(['f_22', 'tau_22']) <= set(pars['parameters'])) and (set(['Mf', 'af']) <= set(df.keys())):
-        df = compute_qnms_from_Mf_af(df,  pars['modes'], pars)
-    if (set(['f_22', 'tau_22']) <= set(pars['parameters'])) and (set(['m1', 'm2', 'a_1', 'a_2', 'tilt_1', 'tilt_2', 'phi_12', 'phi_jl', 'theta_jn', 'phase']) <= set(df.keys())) and not (set(['Mf', 'af']) <= set(pars['parameters'])):
-        df = compute_Mf_af_from_IMR_precessing(df, pars)
-        df = compute_qnms_from_Mf_af(df, pars['modes'], pars)
+    def compute_qnms_from_remnant(df, pars):
+        if (set(['f_22', 'tau_22']) <= set(pars['parameters'])) and (set(['f_22', 'tau_22']) <= set(df.keys())):
+            if (set(['f_22', 'tau_22']) <= set(pars['parameters'])) and (set(['Mf', 'af']) <= set(df.keys())):
+                df = compute_qnms_from_Mf_af(df,  pars['modes'], pars)
+            if pars['IMR-fits'] == 'IMRPhenomXPrecessing':
+                if not (set(['eta', 'a_1', 'a_2', 'chi1', 'chi2', 'chi_p']) <= set(df.columns)) and (set(['m1', 'm2', 'a_1', 'a_2', 'chi1', 'chi2', 'chi_p']) <= set(df.keys())):
+                    df = compute_progenitors_from_IMR(df, func = 'SymmetricMassRatio')
+            df = compute_Mf_af_from_IMR(df, pars)    
+            df = compute_qnms_from_Mf_af(df, pars['modes'], pars)
 
-    # Damped-sinusoids
-    if (set(['f_22', 'tau_22']) <= set(pars['parameters'])) and (set(['f_t_0', 'tau_t_0']) <= set(df.keys())):
-        if pars['ds-scaling'] and (set(['f_t_0', 'tau_t_0']) <= set(df.keys())): df.tau_t_0 *= 1000  # Set time in [ms]
-        df.rename(columns = {'f_t_0' : 'f_22', 'tau_t_0' : 'tau_22'}, inplace = True)
-    if 'A2220' in set(pars['parameters']) and 'logA_t_0' in set(df.keys()):
-        df['logA_t_0'] = df['logA_t_0'].apply(lambda x: np.exp(x))
-        if pars['ds-scaling'] and 'logA_t_0' in set(df.keys()): df.logA_t_0 *= 1e10  # Scale amplitude as [1e-21]
-        df.rename(columns = {'logA_t_0' : 'A2220'}, inplace = True)    
-    if 'A2330' in set(pars['parameters']) and 'logA_t_1' in set(df.keys()):
-        df['logA_t_1'] = df['logA_t_1'].apply(lambda x: np.exp(x))
-        if pars['ds-scaling'] and 'logA_t_1' in set(df.keys()): df.logA_t_1 *= 1e10  # Scale amplitude as [1e-21]
-        df.rename(columns = {'logA_t_1' : 'A2330'}, inplace = True)
+    def pyring_damped_sinusoids_conventions(df, pars):
+        if (set(['f_22', 'tau_22']) <= set(pars['parameters'])) and (set(['f_t_0', 'tau_t_0']) <= set(df.keys())):
+            if pars['ds-scaling'] and (set(['f_t_0', 'tau_t_0']) <= set(df.keys())): df.tau_t_0 *= 1000  # Set time in [ms]
+            df.rename(columns = {'f_t_0' : 'f_22', 'tau_t_0' : 'tau_22'}, inplace = True)
+        if 'A2220' in set(pars['parameters']) and 'logA_t_0' in set(df.keys()):
+            df['logA_t_0'] = df['logA_t_0'].apply(lambda x: np.exp(x))
+            if pars['ds-scaling'] and 'logA_t_0' in set(df.keys()): df.logA_t_0 *= 1e10  # Scale amplitude as [1e-21]
+            df.rename(columns = {'logA_t_0' : 'A2220'}, inplace = True)    
+        if 'A2330' in set(pars['parameters']) and 'logA_t_1' in set(df.keys()):
+            df['logA_t_1'] = df['logA_t_1'].apply(lambda x: np.exp(x))
+            if pars['ds-scaling'] and 'logA_t_1' in set(df.keys()): df.logA_t_1 *= 1e10  # Scale amplitude as [1e-21]
+            df.rename(columns = {'logA_t_1' : 'A2330'}, inplace = True)
 
-    # Extrinsic parameters
-    if (set(['distance']) <= set(pars['parameters'])) and (set(['logdistance']) <= set(df.keys())):
-        df.insert(0, 'distance', np.exp(df.logdistance) / 1000)     # [Gpc]
-    if (set(['iota']) <= set(pars['parameters'])) and (set(['costheta_jn']) <= set(df.keys())):
-        df.insert(0, 'iota', np.arccos(df.costheta_jn))
-    if (set(['iota']) <= set(pars['parameters'])) and (set(['cosiota']) <= set(df.keys())):
-        df.insert(0, 'iota', np.arccos(df.cosiota))
+    def extrinsic_parameters_conventions(df, pars):
+        if (set(['distance']) <= set(pars['parameters'])) and (set(['logdistance']) <= set(df.keys())):
+            df.insert(0, 'distance', np.exp(df.logdistance) / 1000)     # [Gpc]
+        if (set(['iota']) <= set(pars['parameters'])) and (set(['costheta_jn']) <= set(df.keys())):
+            df.insert(0, 'iota', np.arccos(df.costheta_jn))
+        if (set(['iota']) <= set(pars['parameters'])) and (set(['cosiota']) <= set(df.keys())):
+            df.insert(0, 'iota', np.arccos(df.cosiota))
 
-    # Set positive spins
-    if (set(['chi1']) in set(pars['parameters'])) and (set(['chi1']) <= set(df.keys())):
-        df['chi1'] = df['chi1'].apply(lambda x: np.abs(x))
-    if (set(['chi2']) in set(pars['parameters'])) and (set(['chi2']) <= set(df.keys())):
-        df['chi2'] = df['chi2'].apply(lambda x: np.abs(x))
+    def set_positive_spins(df, pars):
+        if (set(['chi1']) in set(pars['parameters'])) and (set(['chi1']) <= set(df.keys())):
+            df['chi1'] = df['chi1'].apply(lambda x: np.abs(x))
+        if (set(['chi2']) in set(pars['parameters'])) and (set(['chi2']) <= set(df.keys())):
+            df['chi2'] = df['chi2'].apply(lambda x: np.abs(x))
+    
+    def compute_dependent_paramters(df, pars):
+        if (set(['q'])     in set(pars['parameters'])) and (set(['m1', 'm2']) <= set(df.keys())):
+            df = compute_progenitors_from_IMR(df, func = 'MassRatio')
+        if (set(['mc'])    in set(pars['parameters'])) and (set(['m1', 'm2']) <= set(df.keys())):
+            df = compute_progenitors_from_IMR(df, func = 'Masses2McQ')
+        if (set(['eta'])   in set(pars['parameters'])) and (set(['m1', 'm2']) <= set(df.keys())):
+            df = compute_progenitors_from_IMR(df, func = 'SymmetricMassRatio')
+        if (set(['chi_s']) in set(pars['parameters'])) and (set(['m1', 'm2', 'chi1', 'chi2']) <= set(df.keys())):
+            df = compute_progenitors_from_IMR(df, func = 'ChiSymmetric')
+        if (set(['chi_a']) in set(pars['parameters'])) and (set(['m1', 'm2', 'chi1', 'chi2']) <= set(df.keys())):
+            df = compute_progenitors_from_IMR(df, func = 'ChiAntiymmetric')
 
-    # TGR analysis
-    if pars['TGR-plot']:
+    # FIXME: Implement as a separate option non related to the TGR plot, for all the possible modes.
+    def TGR_plot(df, pars):
         if (set(['f_22'])   <= set(pars['parameters'])) and (set(['domega_220']) <= set(df.keys())):
             try:    df.f_22   *= 1. + df.domega_220
             except: pass
@@ -86,6 +107,16 @@ def from_IMR_to_RD_samples(df, pars):
         if (set(['tau_22']) <= set(pars['parameters'])) and (set(['dtau_220'])   <= set(df.keys())):
             try:    df.tau_22 *= 1. + df.dtau_220
             except: pass
+
+    LVK_conventions(                    df, pars)
+    granite_conventions(                df, pars)
+    compute_remnant_from_IMR(           df, pars)
+    compute_qnms_from_remnant(          df, pars)
+    pyring_damped_sinusoids_conventions(df, pars)
+    extrinsic_parameters_conventions(   df, pars)
+    set_positive_spins(                 df, pars)
+    compute_dependent_paramters(        df, pars)
+    if pars['TGR-plot']: TGR_plot(      df, pars)
 
     if not (set(pars['parameters']).difference(df.keys()) == set()):
         additional_pars = set(pars['parameters']).difference(df.keys())
@@ -123,12 +154,12 @@ def read_posteriors_event(file_path, pars):
 
     df = pd.DataFrame(load)
     df = downsampling(df, pars)    # Downsample the df if required
-    df = from_IMR_to_RD_samples(df, pars)
+    df = Adapt_Samples(df, pars)
     df = df.filter(items = pars['parameters'])
 
     if pars['include-prior']:
         dfp = pd.DataFrame(loadp)
-        dfp = from_IMR_to_RD_samples(dfp, pars)
+        dfp = Adapt_Samples(dfp, pars)
         dfp = dfp.filter(items = pars['parameters'])
     else:
         dfp = pd.DataFrame()
@@ -224,134 +255,100 @@ def add_parameters_to_event(evt_df, new_params_list, new_params_samps):
 
 def compute_Mf_af_from_IMR(df, pars):
     '''
-    Compute Mf and af of the remnant BH from IMR parameters, using the Jimenez-Forteza fits implemented in pyRing.
+    Compute Mf and af of the remnant BH from IMR parameters. Both aligned-spin and precessing fits are implemented.
+    Current options are: JimenezForteza_TEOBPM, UIB2016, NRSur7dq4Remnant, IMRPhenomXPrecessing.
     '''
-    nsamp = len(df)
-    Mf = np.zeros(nsamp)
-    af = np.zeros(nsamp)
-    for i in range(nsamp):
+    # Aligned-spin fits.
+    if   pars['IMR-fits'] == 'JimenezForteza_TEOBPM':
+        try:    import pyRing.waveform as wf
+        except: raise ValueError('Unable to find the pyRing remnant fits. Please either install pyRing or use a different option for the remnant fits.')
 
-        m1, m2, chi1, chi2 = df.m1[i], df.m2[i], df.chi1[i], df.chi2[i]
-        
-        if not pars['remnant-pyRing']:
-            Warning('Using surfinBH fits to compute the remnant samples [Mf, af]. This option is still experimental and it is currently very slow: we suggest to use the option "remnant-pyRing".')
-            Mf[i], af[i] = get_remnant(m1, m2, chi1, chi2)
-        else:
-            try:
-                import pyRing.waveform as wf
-                #print('Using pyRing fits to compute the remnant samples [Mf, af].')
-            except:
-                raise ValueError('Unable to find the pyRing installation for the remnant fits. Please either install pyRing or disactivate the option "remnant-pyRing".')
-            tmp   = wf.TEOBPM(0, m1, m2, chi1, chi2, {}, 100, 0, 0, [], {})
+        if not (set(['m1', 'm2', 'chi1', 'chi2']) <= set(df.columns)):
+            raise ValueError('The IMR samples are not compatible with the selected remnant fits. Please make sure they are consistent.')
+
+        nsamp = len(df)
+        Mf = np.zeros(nsamp)
+        af = np.zeros(nsamp)
+
+        for i in range(nsamp):
+            tmp   = wf.TEOBPM(0, df.m1[i], df.m2[i], df.chi1[i], df.chi2[i], {}, 100, 0, 0, [], {})
             Mf[i] = tmp.JimenezFortezaRemnantMass()
             af[i] = tmp.JimenezFortezaRemnantSpin()
-        # else:
-        #     from lalinference.imrtgr.nrutils import bbh_final_mass_projected_spins, bbh_final_spin_projected_spins, bbh_Kerr_trunc_opts
 
-        #     if(df['chi1'][i] < 0): tilt1 = np.pi
-        #     else: tilt1 = 0.0
-        #     if(df['chi2'][i] < 0): tilt2 = np.pi
-        #     else: tilt2 = 0.0
-        #     chi1  = np.abs(df['chi1'][i])
-        #     chi2  = np.abs(df['chi2'][i])
-        #     Mf[i] = bbh_final_mass_projected_spins(m1, m2, chi1, chi2, tilt1, tilt2, 'UIB2016')
-        #     af[i] = bbh_final_spin_projected_spins(m1, m2, chi1, chi2, tilt1, tilt2, 'UIB2016', truncate = bbh_Kerr_trunc_opts.trunc)
+    # Aligned-spin fits.
+    elif pars['IMR-fits'] == 'UIB2016':
+        try:    from lalinference.imrtgr.nrutils import bbh_final_mass_projected_spins, bbh_final_spin_projected_spins, bbh_Kerr_trunc_opts
+        except: raise ValueError('Unable to find the UIB2016 remnant fits. Please either install lalinference or use a different option for the remnant fits.')
 
-    df.insert(0, 'Mf', Mf)
-    df.insert(0, 'af', af)
-    
-    return df
+        if not (set(['m1', 'm2', 'chi1', 'chi2']) <= set(df.columns)):
+            raise ValueError('The IMR samples are not compatible with the selected remnant fits. Please make sure they are consistent.')
 
-def compute_Mf_af_from_IMR_precessing(df, pars):
-    '''
-    Compute Mf and af of the remnant BH from IMR parameters, using the PESummary remnant fits.
-    '''
-    nsamp = len(df)
-    m1 = np.zeros(nsamp)
-    m2 = np.zeros(nsamp)
-    chi1 = np.zeros(nsamp)
-    chi2 = np.zeros(nsamp)
-    tilt1 = np.zeros(nsamp)
-    tilt2 = np.zeros(nsamp)
-    phi_12 = np.zeros(nsamp)
-    phi_jl = np.zeros(nsamp)
-    theta_jn = np.zeros(nsamp)
-    phase = np.zeros(nsamp)
-    Mf = np.zeros(nsamp)
-    af = np.zeros(nsamp)
-    
-    for i in range(nsamp):
+        nsamp = len(df)
+        Mf = np.zeros(nsamp)
+        af = np.zeros(nsamp)
 
-       m1[i], m2[i], chi1[i], chi2[i], tilt1[i], tilt2[i], phi_12[i], phi_jl[i], theta_jn[i], phase[i] = df.m1[i], df.m2[i], df.a_1[i], df.a_2[i], df.tilt_1[i], df.tilt_2[i], df.phi_12[i], df.phi_jl[i], df.theta_jn[i], df.phase[i]
+        for i in range(nsamp):
+            # Adapt to final state fits conventions
+            if df.chi1[i] < 0: tilt1 = np.pi
+            else:              tilt1 = 0.0
+            if df.chi2[i] < 0: tilt2 = np.pi
+            else:              tilt2 = 0.0
+            chi1_abs = np.abs(df.chi1[i])
+            chi2_abs = np.abs(df.chi2[i])
+
+            Mf[i] = bbh_final_mass_projected_spins(df.m1[i], df.m2[i], chi1_abs, chi2_abs, tilt1, tilt2, 'UIB2016')
+            af[i] = bbh_final_spin_projected_spins(df.m1[i], df.m2[i], chi1_abs, chi2_abs, tilt1, tilt2, 'UIB2016', truncate = bbh_Kerr_trunc_opts.trunc)
+
+    # Precessing fits.
+    elif pars['IMR-fits'] == 'NRSur7dq4Remnant':
+        # This option requires the LAL_DATA_PATH to be set correctly, cloning https://git.ligo.org/lscsoft/lalsuite-extra and pointing to lalsuite-extra/data/lalsimulation:
+        # export LAL_DATA_PATH=~/lalsuite-extra/data/lalsimulation
+        try:    from pesummary.gw.conversions.nrutils import NRSur_fit
+        except: raise ValueError('Unable to find the NRSur remnant fits. Please either install pesummary and  make sure that the LAL_DATA_PATH is properly set, or use a different option for the remnant fits.')
+
+        if not (set(['m1', 'm2', 'a_1', 'a_2', 'tilt_1', 'tilt_2', 'phi_12', 'phi_jl', 'theta_jn', 'phase']) <= set(df.columns)):
+            raise ValueError('The IMR samples are not compatible with the selected remnant fits. Please make sure they are consistent.')
+
+        fits = NRSur_fit(df.m1, df.m2, df.a_1, df.a_2, df.tilt_1, df.tilt_2, df.phi_12, df.phi_jl, df.theta_jn, df.phase,
+                            20.0, np.full_like(df.m1, 20.0),
+                            model       = 'NRSur7dq4Remnant',
+                            approximant = 'IMRPhenomXPHM')
+
+        Mf = fits['final_mass']
+        af = fits['final_spin']
+
+    # Precessing fits.
+    elif pars['IMR-fits'] == 'IMRPhenomXPrecessing':
+        try:    from lalsimulation import SimIMRPhenomXPrecessingFinalSpin2017, SimIMRPhenomXFinalMass2017
+        except: raise ValueError('Unable to find the IMRPhenomXPrecessing remnant fits. Please either install lalsimulation or use a different option for the remnant fits.')
+
+        if not (set(['eta', 'a_1', 'a_2', 'chi1', 'chi2', 'chi_p']) <= set(df.columns)):
+            raise ValueError('The IMR samples are not compatible with the selected remnant fits. Please make sure they are consistent.')
         
-    Mf, af = get_remnant_PESummary(m1, 
-                                   m2, 
-                                   chi1, 
-                                   chi2, 
-                                   tilt1, 
-                                   tilt2, 
-                                   phi_12, phi_jl, 
-                                   theta_jn, 
-                                   phase                   
-                                    )
+        Mf = SimIMRPhenomXFinalMass2017(          df.eta, df.a_1,  df.a_2)
+        af = SimIMRPhenomXPrecessingFinalSpin2017(df.eta, df.chi1, df.chi2, df.chi_p)
+
+    # Precessing fits.
+    elif pars['IMR-fits'] == 'HBR2016':
+        try:    from pesummary.gw.conversions.nrutils import bbh_final_mass_non_precessing_UIB2016, bbh_final_spin_precessing_HBR2016
+        except: raise ValueError('Unable to find the HBR2016 remnant fits. Please either install pesummary and  make sure that the LAL_DATA_PATH is properly set, or use a different option for the remnant fits.')
+
+        if not (set(['m1', 'm2', 'chi1', 'chi2', 'a_1', 'a_2', 'tilt_1', 'tilt_2', 'phi_12']) <= set(df.columns)):
+            raise ValueError('The IMR samples are not compatible with the selected remnant fits. Please make sure they are consistent.')
+
+        fits_m = bbh_final_mass_non_precessing_UIB2016(df.m1, df.m2, df.chi1, df.chi2)
+        fits_a = bbh_final_spin_precessing_HBR2016(    df.m1, df.m2, df.a_1,  df.a_2, df.tilt_1, df.tilt_2, df.phi_12)
+
+        Mf = fits_m['final_mass']
+        af = fits_a['final_spin']
+
+    else:
+        raise ValueError('Option not available for the NR fits to compute remnant parameters from IMR samples. Exiting.')
 
     df.insert(0, 'Mf', Mf)
     df.insert(0, 'af', af)
-    
+
     return df
-
-def get_remnant(m1, m2, chi1, chi2):
-    '''
-        Return remnant mass Mf [M_\odot] and spin af []
-        using the python package surfinBH [https://github.com/vijayvarma392/surfinBH]
-    '''
-    q = m1 / m2
-    fit = surfinBH.LoadFits('NRSur7dq4Remnant')
-
-    Mf, _ = fit.mf(  q, (0.0, 0.0, chi1), (0.0, 0.0, chi2))
-    af, _ = fit.chif(q, (0.0, 0.0, chi1), (0.0, 0.0, chi2))
-
-    return Mf * (m1+m2), af[2]
-
-def get_remnant_PESummary(m1, m2, chi1, chi2, tilt1, tilt2, phi_12, phi_jl, theta_jn, phase):
-    '''
-        Return remnant mass Mf [M_\odot] and spin af [] using the PESummary remnant fits
-    '''
-
-    fits = NRSur_fit(
-                        m1,
-                        m2,
-                        chi1,
-                        chi2,
-                        tilt1,
-                        tilt2,
-                        phi_12,
-                        phi_jl,
-                        theta_jn,
-                        phase,
-                        20.0,
-                        np.full_like(m1, 20.0),
-                        model="NRSur7dq4Remnant",
-                        approximant="IMRPhenomXPHM"
-                        )
-
-    Mf_d        = fits["final_mass"]
-    af_d        = fits["final_spin"]
-
-    return Mf_d, af_d
-
-def get_remnant_precessing(m1, m2, chi1_x, chi1_y, chi1_z, chi2_x, chi2_y, chi2_z):
-    '''
-        Return remnant mass Mf [M_\odot] and spin af []
-        using the python package surfinBH [https://github.com/vijayvarma392/surfinBH]
-    '''
-    q = m1 / m2
-    fit = surfinBH.LoadFits('NRSur7dq4Remnant')
-
-    Mf, _ = fit.mf(  q, (chi1_x, chi1_y, chi1_z), (chi2_x, chi2_y, chi2_z))
-    af, _ = fit.chif(q, (chi1_x, chi1_y, chi1_z), (chi2_x, chi2_y, chi2_z))
-
-    return Mf * (m1+m2), af[2]
 
 def compute_qnms_from_Mf_af(df, modes, pars):
     '''
@@ -372,7 +369,6 @@ def compute_qnms_from_Mf_af(df, modes, pars):
             else:
                 try:
                     import pyRing.waveform as wf
-                    #print('Using pyRing fits to compute the QNMs samples.')
                 except:
                     raise ValueError('Unable to find the pyRing installation for the QNMs fits. Please either install pyRing or disactivate the option "qnms-pyRing".')
                 omg[i] = wf.QNM_fit(l, m, 0).f(Mf, af)            # [Hz]
@@ -397,7 +393,7 @@ def get_qnms(Mf, af, l, m, n = 0):
 
     return f, tau
 
-def compute_progenitors_from_IMR(df, inverse = False):
+def compute_progenitors_from_IMR(df, func = None):
 
     def McQ2Masses(mc, q):
         factor = mc * np.power(1. + q, 1.0/5.0)
@@ -407,12 +403,46 @@ def compute_progenitors_from_IMR(df, inverse = False):
     
     def Masses2McQ(m1, m2):
         q  = m2/m1
-        mc = (m1*m2)**(3./5.)/(m1+m2)**(1./5.)
+        mc = (m1*m2) ** (3./5.) / (m1+m2) ** (1./5.)
         return mc, q
+
+    def MassRatio(m1, m2):
+        q  = m2/m1
+        return q
+
+    def SymmetricMassRatio(m1, m2):
+        # Taken from Bilby
+        # https://git.ligo.org/lscsoft/bilby/-/blob/c6bcb81649b7ebf97ae6e1fd689e8712fe028eb0/bilby/gw/conversion.py#L1030
+        eta = np.minimum((m1*m2) / (m1+m2) ** 2., 1./4.)
+        return eta
+
+    # FIXME: Check which spins needs to be passed.
+    def ChiPrecessing(m1, m2, chi1, chi2):
+        # Taken from Bilby
+        # https://git.ligo.org/lscsoft/bilby/-/blob/c6bcb81649b7ebf97ae6e1fd689e8712fe028eb0/bilby/gw/conversion.py#L2082
+        q = m2/m1
+        chi_p = np.maximum(chi1, (4 * q + 3) / (3 * q + 4) * q * chi2)
+        return chi_p
+
+    def ChiSymmetric(m1, m2, chi1, chi2):
+        # See App.C.2 of [https://arxiv.org/pdf/2001.09082]
+        chi_s = (m1 * chi1 + m2 * chi2) / (m1 + m2)
+        return chi_s
+
+    def ChiAntiymmetric(m1, m2, chi1, chi2):
+        # See App.C.2 of [https://arxiv.org/pdf/2001.09082]
+        chi_a = (m1 * chi1 - m2 * chi2) / (m1 + m2)
+        return chi_a
     
-    if not inverse: df['m1'], df['m2'] = McQ2Masses(df['mc'], df['q'])
-    else:           df['mc'], df['q']  = Masses2McQ(df['m1'], df['m2'])
-    #df['q'] = df['q'].apply(lambda x: 1/x)
+    if   func == 'McQ2Masses'        : df['m1'], df['m2'] = McQ2Masses(        df['mc'], df['q'])
+    elif func == 'Masses2McQ'        : df['mc'], df['q']  = Masses2McQ(        df['m1'], df['m2'])
+    elif func == 'MassRatio'         : df['q']            = MassRatio(         df['m1'], df['m2'])
+    elif func == 'SymmetricMassRatio': df['eta']          = SymmetricMassRatio(df['m1'], df['m2'])
+    elif func == 'ChiPrecessing'     : raise ValueError('Chi Precessing conversion in not yet implemented.')
+    elif func == 'ChiSymmetric'      : df['chi_s']        = ChiSymmetric(      df['m1'], df['m2'], df['chi1'], df['chi2'])
+    elif func == 'ChiAntiymmetric'   : df['chi_a']        = ChiAntiymmetric(   df['m1'], df['m2'], df['chi1'], df['chi2'])
+    else:
+        raise ValueError('The selected sample conversion does not exist. Please check the available options.')
 
     return df
 
@@ -622,6 +652,7 @@ class Posteriors:
                     if not pars['compare'] == '': EventEvidenceDataFrame.insert(0, pars['compare'], single_evt_keys[pars['compare']])
                     self.EvidenceDataFrame = pd.concat([self.EvidenceDataFrame, EventEvidenceDataFrame], ignore_index=True)
 
+            # Case when there is one IMR analysis to compare separately.
             if  (fnmatch.fnmatch(file, '*IMR*') and not pars['include-IMR'] == ''):
 
                 file_path = os.path.join(dir_path, file)
@@ -641,8 +672,9 @@ class Posteriors:
                             else:
                                 EventDataFrame = EventDataFrame.assign(par = 'IMR')
                             EventDataFrame.rename(columns={'par': pars['compare']}, inplace = True)         
-                        self.SampDataFrame = pd.concat([self.SampDataFrame,  EventDataFrame],      ignore_index=True)
+                        self.SampDataFrame = pd.concat([self.SampDataFrame, EventDataFrame], ignore_index=True)
                     else:
+                        # This block is to avoid re-computing the fits multiple times.
                         if pars['ridgeline'] == 1:
                             for key in stack_mode_keys:
                                 EventDataFrame = EventDataFrame0.assign(par = key)
@@ -653,7 +685,7 @@ class Posteriors:
                                     else:
                                         EventDataFrame = EventDataFrame.assign(par = 'IMR')
                                     EventDataFrame.rename(columns={'par': pars['compare']}, inplace = True) 
-                                self.SampDataFrame = pd.concat([self.SampDataFrame,  EventDataFrame],      ignore_index=True)
+                                self.SampDataFrame = pd.concat([self.SampDataFrame, EventDataFrame],ignore_index=True)
                         else:
                             EventDataFrame = EventDataFrame0.assign(par = 'IMR')
                             EventDataFrame.rename(columns={'par': pars['stack-mode']}, inplace = True)
@@ -663,7 +695,7 @@ class Posteriors:
                                 else:
                                     EventDataFrame = EventDataFrame.assign(par = 'IMR')
                                 EventDataFrame.rename(columns={'par': pars['compare']}, inplace = True)         
-                            self.SampDataFrame = pd.concat([self.SampDataFrame,  EventDataFrame],      ignore_index=True)
+                            self.SampDataFrame = pd.concat([self.SampDataFrame, EventDataFrame], ignore_index=True)
                 else:
                     if not pars['compare'] == '':
                         if pars['compare'] in IMR_keys.keys():
@@ -671,20 +703,7 @@ class Posteriors:
                         else:
                             EventDataFrame = EventDataFrame0.assign(par = 'IMR')
                         EventDataFrame.rename(columns={'par': pars['compare']}, inplace = True)         
-                    self.SampDataFrame = pd.concat([self.SampDataFrame,  EventDataFrame],      ignore_index=True)
-##################### NICOLA: What do we do with priors for IMR??? I just commented this part for now
-                    # if pars['include-prior']:
-                    #     EventPriorDataFrame = EventPriorDataFrame.assign(par = single_evt_keys[pars['stack-mode']])
-                    #     EventPriorDataFrame.rename(columns={'par': pars['stack-mode']}, inplace = True)
-
-
-                # if pars['include-prior']:
-                #     self.PriorDataFrame = pd.concat([self.PriorDataFrame, EventPriorDataFrame], ignore_index=True)
-                # if pars['evidence']:
-                #     EventEvidenceDataFrame = read_evidence_event(pars, dir_path, file_path)
-                #     EventEvidenceDataFrame.insert(0, pars['stack-mode'], single_evt_keys[pars['stack-mode']])
-                #     if not pars['compare'] == '': EventEvidenceDataFrame.insert(0, pars['compare'], single_evt_keys[pars['compare']])
-                #     self.EvidenceDataFrame = pd.concat([self.EvidenceDataFrame, EventEvidenceDataFrame], ignore_index=True)
+                    self.SampDataFrame = pd.concat([self.SampDataFrame, EventDataFrame], ignore_index=True)
 
         if (not pars['compare'] == '') and pars['BF-comparison']:
             if not pars['evidence']: raise ValueError('Please activate the evidence option to compute the Bayes factor.')
