@@ -670,3 +670,44 @@ def TGR_plots(pars, SampDataFrame):
 
     filename = os.path.join(pars['plots-dir'], 'TGR_plot.pdf')
     fig.savefig(filename, bbox_inches = 'tight', transparent = True)
+
+
+
+def reconstructed_distributions(pars, CurvesDictionary):
+
+    keys = CurvesDictionary.keys()
+    if not pars['ordering'] == []:
+            if ((set(pars['ordering']) <= set(keys))) and (len(pars['ordering']) == len(keys)): keys = pars['ordering']
+            else: raise ValueError('Invalid option for {stack_mode} ordering.'.format(stack_mode = pars['stack-mode']))
+
+    if not pars['bounds'] == []: bounds_dict = bounds_dictionary(pars)
+    params = pars['parameters']
+    labels = lp.labels_curves(params)
+    colors = lp.palettes(pars, colormap = True, number_colors = len(keys))
+    fig, ax  = plt.subplots(len(pars['parameters']), figsize = (10, 10))
+    percentiles = [50, 5, 16, 84, 95]
+
+    for ki,key in enumerate(keys):
+        CurvesDataFrame = CurvesDictionary[key]
+
+        for pi,par in enumerate(params):
+            CurvesDataFrameFilt = CurvesDataFrame[par]
+            MF = {}
+            for perc in percentiles: MF[perc] = np.percentile(CurvesDataFrameFilt['y'], perc, axis = 0)
+            ax[pi].fill_between(CurvesDataFrameFilt['x'], MF[5] , MF[95],   color = colors[ki], alpha = 0.1)
+            ax[pi].fill_between(CurvesDataFrameFilt['x'], MF[16], MF[84],   color = colors[ki], alpha = 0.5)
+            ax[pi].plot(        CurvesDataFrameFilt['x'], MF[50], lw = 0.7, color = colors[ki])
+            ax[pi].set_xlabel(labels[par]['x'])
+            ax[pi].set_ylabel(labels[par]['y'])
+            if not pars['bounds'] == []: ax[pi].set_xlim(bounds_dict[par])
+
+    patch = [mpatches.Patch(facecolor = colors[ci], edgecolor = 'k', alpha = 0.5, label = c) for ci,c in enumerate(keys)]
+    ax[0].legend(handles = patch, loc = 'best', frameon = False)
+
+    # FIXME: To be removed asap.
+    ax[0].set_yscale('log')
+    ax[0].set_ylim(1e-5, 1)
+
+    plt.tight_layout()
+    filename = os.path.join(pars['plots-dir'], 'reconstructed_{name}.pdf'.format(name = pars['stack-mode']))
+    plt.savefig(filename, bbox_inches = 'tight', transparent = True)

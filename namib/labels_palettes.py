@@ -173,6 +173,29 @@ def labels_events(par):
     
     return label
 
+def labels_curves(pars_list):
+
+    labels_dict = {}
+    for par in pars_list:
+
+        if   par == 'PrimaryMassDistribution':                       dict = {'x': '$m_1\ [M_{\odot}]$',       'y': '$p(m_1)$'}
+        elif par == 'PrimaryMassDistribution_NoSelectionEffects':    dict = {'x': '$m_1\ [M_{\odot}]$',       'y': '$p(m_1)$'}
+        elif par == 'PrimaryMassDistribution_DetectorFrame':         dict = {'x': '$m_{1,det}\ [M_{\odot}]$', 'y': '$p(m_{1,det})$'}
+        elif par == 'SecondaryMassDistribution':                     dict = {'x': '$m_2\ [M_{\odot}]$',       'y': '$p(m_2)$'}
+        elif par == 'SecondaryMassDistribution_NoSelectionEffects':  dict = {'x': '$m_2\ [M_{\odot}]$',       'y': '$p(m_2)$'}
+        elif par == 'SecondaryMassDistribution_DetectorFrame':       dict = {'x': '$m_{2,det}\ [M_{\odot}]$', 'y': '$p(m_{2,det})$'}
+        elif par == 'RateEvolutionFunction':                         dict = {'x': '$z$',                      'y': '$R(z)$'}
+        elif par == 'RateEvolutionDistribution_Probability':         dict = {'x': '$z$',                      'y': '$p(z)$'}
+        elif par == 'RedshiftDistribution_NoSelectionEffects':       dict = {'x': '$z$',                      'y': '$p(z)$'}
+        elif par == 'LuminosityDistranceDistribution_DetectorFrame': dict = {'x': '$d_L\ [Mpc]$',             'y': '$p(d_L)$'}
+
+        else:
+            raise ValueError('At least one of the selected parameters does not have its corresponding label. Please, fix it in labels_palettes.py')
+
+        labels_dict[par] = dict
+
+    return labels_dict
+
 def palettes(pars, colormap, number_colors, corner_plot = False):
 
     # To take inspiration for choosing the palette:

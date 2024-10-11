@@ -1,5 +1,5 @@
 from multiprocessing import Value
-import os, h5py, pandas as pd, json
+import os, h5py, pandas as pd, json, pickle
 import numpy as np
 from tqdm import tqdm
 import surfinBH, qnm
@@ -125,7 +125,7 @@ def read_posteriors_event(file_path, pars):
 
     return df, dfp, nsamp
 
-def read_posterriors_hierarchical(file_path, pars):
+def read_posteriors_hierarchical(file_path, pars):
 
     with open(file_path) as f:
         tmp = json.load(f)
@@ -135,6 +135,18 @@ def read_posterriors_hierarchical(file_path, pars):
         df.rename(columns = {'mu_g' : 'mu_z0'}, inplace = True)
     if (set(['sigma_z0']) <= set(pars['parameters'])) and (set(['sigma_g']) <= set(df.keys())):
         df.rename(columns = {'sigma_g' : 'sigma_z0'}, inplace = True)
+    
+    df = df.filter(items = pars['parameters'])
+
+    return df
+
+def read_curves(file_path, pars):
+
+    with open(file_path, 'rb') as f:
+        tmp = pickle.load(f)
+        df  = pd.DataFrame(tmp)
+
+    df = df.filter(items = pars['parameters'])
 
     return df
 
@@ -528,8 +540,8 @@ class Posteriors:
                 for i,key in enumerate(single_evt_keys.keys()):
                     single_evt_keys[key] = keys[i]
                 
-                if not pars['hierarchical']: EventDataFrame, EventPriorDataFrame, _ = read_posteriors_event(        file_path, pars)
-                else:                        EventDataFrame                         = read_posterriors_hierarchical(file_path, pars)
+                if not pars['hierarchical']: EventDataFrame, EventPriorDataFrame, _ = read_posteriors_event(       file_path, pars)
+                else:                        EventDataFrame                         = read_posteriors_hierarchical(file_path, pars)
                 if not pars['stack-mode'] == '':
                     EventDataFrame = EventDataFrame.assign(par = single_evt_keys[pars['stack-mode']])
                     EventDataFrame.rename(columns={'par': pars['stack-mode']}, inplace = True)
@@ -558,15 +570,57 @@ class Posteriors:
         return self.SampDataFrame, self.PriorDataFrame, self.EvidenceDataFrame
 
 
+
+class Curves:
+    '''
+    Add description.
+    '''
+    def __init__(self, pars):
+
+        dir_path = pars['samp-dir']
+        if not (pars['file-path'] == ''): dir_path = pars['file-path']
+
+        self.SampDataFrame    = pd.DataFrame(columns = pars['parameters'])
+        self.CurvesDictionary = {}
+        single_evt_keys = {'event': str(), 'pipeline': str(), 'model': str(), 'submodel': str(), 'time': str(), 'GR_tag': str()}
+
+        for file in tqdm(os.listdir(dir_path), desc = 'Reading Posteriors'):
+            if not ((file == '.DS_Store') or (file == 'noise_evidences') or (file == 'ignore') or (file == 'SNR_samples') or (file == 'curves')):
+
+                file_path = os.path.join(dir_path, file)
+                keys = file.split('_')
+                keys[-1] = keys[-1].split('.')[0]
+                for i,key in enumerate(single_evt_keys.keys()):
+                    single_evt_keys[key] = keys[i]
+
+                EventDataFrame = read_curves(file_path, pars)
+
+                if not pars['stack-mode'] == '':
+                    EventDataFrame = EventDataFrame.assign(par = single_evt_keys[pars['stack-mode']])
+                    EventDataFrame.rename(columns={'par': pars['stack-mode']}, inplace = True)
+                if not pars['compare'] == '':
+                    EventDataFrame = EventDataFrame.assign(par = single_evt_keys[pars['compare']])
+                    EventDataFrame.rename(columns={'par': pars['compare']}, inplace = True)                
+
+                self.CurvesDictionary[single_evt_keys[pars['stack-mode']]] = EventDataFrame
+
+    def return_curves_dict(self):
+        return self.CurvesDictionary
+
+
+
 class Plots:
     '''
     Compute corner and violin plots.
     '''
-    def __init__(self, pars, SampDataFrame, PriorDataFrame, EvidenceDataFrame):
+    def __init__(self, pars, SampDataFrame, PriorDataFrame, EvidenceDataFrame, CurvesDictionary = None):
         
-        if pars['corner']:
-            if pars['corner-sns']: plots.corner_plots_sns(pars, SampDataFrame, PriorDataFrame)
-            else:                  plots.corner_plots(    pars, SampDataFrame, PriorDataFrame)
-        if pars['violin']:         plots.violin_plots(    pars, SampDataFrame, PriorDataFrame, EvidenceDataFrame)
-        if pars['ridgeline']:      plots.ridgeline_plots( pars, SampDataFrame, PriorDataFrame)
-        if pars['TGR-plot']:       plots.TGR_plots(       pars, SampDataFrame)
+        if not pars['curves']:
+            if pars['corner']:
+                if pars['corner-sns']: plots.corner_plots_sns(pars, SampDataFrame, PriorDataFrame)
+                else:                  plots.corner_plots(    pars, SampDataFrame, PriorDataFrame)
+            if pars['violin']:         plots.violin_plots(    pars, SampDataFrame, PriorDataFrame, EvidenceDataFrame)
+            if pars['ridgeline']:      plots.ridgeline_plots( pars, SampDataFrame, PriorDataFrame)
+            if pars['TGR-plot']:       plots.TGR_plots(       pars, SampDataFrame)
+        else:
+            plots.reconstructed_distributions(pars, CurvesDictionary)

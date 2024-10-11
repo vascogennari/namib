@@ -1,7 +1,7 @@
 import os, configparser, ast
 from optparse import OptionParser
 
-from namib.utils import Posteriors, Plots
+from namib.utils import Posteriors, Curves, Plots
 from namib.utils import create_directory, save_posteriors_to_txt, save_output_medians
 from namib.options import usage
 
@@ -50,6 +50,7 @@ def main():
         'downsample'         : 1,
 
         'hierarchical'       : 0,
+        'curves'             : 0,
 
         # [plots]
 
@@ -88,7 +89,7 @@ def main():
         if ('samp-dir' in key) or ('output' in key) or ('stack-mode' in key) or ('compare' in key):
             try: input_pars[key] = Config.get('input', key)
             except: pass
-        if ('compare-hard' in key) or ('evidence' in key) or ('save-post' in key) or ('include-prior' in key) or ('ds-scaling' in key) or ('screen-medians' in key) or ('save-medians' in key) or ('qnms-pyRing' in key) or ('remnant-pyRing' in key) or ('hierarchical' in key):
+        if ('compare-hard' in key) or ('evidence' in key) or ('save-post' in key) or ('include-prior' in key) or ('ds-scaling' in key) or ('screen-medians' in key) or ('save-medians' in key) or ('qnms-pyRing' in key) or ('remnant-pyRing' in key) or ('hierarchical' in key) or ('curves' in key):
             try: input_pars[key] = Config.getboolean('input', key)
             except: pass
         if ('downsample' in key):
@@ -111,22 +112,27 @@ def main():
         raise ValueError('\nSamples directory {} not found.\n'.format(input_pars['samp-dir']))
     else: print('\nPosteriors are read from:\n{}'.format(input_pars['samp-dir']))
 
-    # Read the posteriors and create the .txt files with the reduced posteriors
-    PostOutput = Posteriors(input_pars)
-    SampDataFrame, PriorDataFrame, EvidenceDataFrame = PostOutput.return_samples_dict()
+    if not input_pars['curves']:
+        # Read the posteriors and create the .txt files with the reduced posteriors.
+        PostOutput = Posteriors(input_pars)
+        SampDataFrame, PriorDataFrame, EvidenceDataFrame = PostOutput.return_samples_dict()
 
-    if input_pars['save-post']:
-        red_post_dir = create_directory(input_pars['output'], 'reduced_posteriors')
-        save_posteriors_to_txt(input_pars, red_post_dir, SampDataFrame)
-    if input_pars['evidence'] and input_pars['save-medians']:
-        output_medians_dir = create_directory(input_pars['output'], 'output_medians')
-        save_output_medians(input_pars, SampDataFrame, EvidenceDataFrame, output_medians_dir)
-
-    if  input_pars['corner'] or input_pars['violin'] or input_pars['ridgeline'] or input_pars['TGR-plot']:
+        if input_pars['save-post']:
+            red_post_dir = create_directory(input_pars['output'], 'reduced_posteriors')
+            save_posteriors_to_txt(input_pars, red_post_dir, SampDataFrame)
+        if input_pars['evidence'] and input_pars['save-medians']:
+            output_medians_dir = create_directory(input_pars['output'], 'output_medians')
+            save_output_medians(input_pars, SampDataFrame, EvidenceDataFrame, output_medians_dir)
+        if  input_pars['corner'] or input_pars['violin'] or input_pars['ridgeline'] or input_pars['TGR-plot']:
+            input_pars['plots-dir'] = create_directory(input_pars['output'], '')
+            Plots(input_pars, SampDataFrame, PriorDataFrame, EvidenceDataFrame)
+    else:
+        CurvesOutput = Curves(input_pars)
+        CurvesDictionary = CurvesOutput.return_curves_dict()
         input_pars['plots-dir'] = create_directory(input_pars['output'], '')
-        Plots(input_pars, SampDataFrame, PriorDataFrame, EvidenceDataFrame)
-        print('\nPlots are saved in:\n{}'.format(input_pars['plots-dir']))
-    
+        Plots(input_pars, {}, {}, {}, CurvesDictionary = CurvesDictionary)
+
+    print('\nPlots are saved in:\n{}'.format(input_pars['plots-dir']))
     print('\nFinished.\n')
 
 
