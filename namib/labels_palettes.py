@@ -6,7 +6,7 @@ rcParams["xtick.labelsize"] = 15
 rcParams["ytick.labelsize"] = 15
 rcParams["xtick.direction"] = "in"
 rcParams["ytick.direction"] = "in"
-rcParams["legend.fontsize"] = 8
+rcParams["legend.fontsize"] = 15
 rcParams["legend.frameon"]  = False
 rcParams["legend.loc"]      = "best"
 rcParams["axes.labelsize"]  = 20
@@ -112,6 +112,7 @@ def labels_legend(par):
         elif par == '22-33':     label = '$(2,2),(3,3)$'
         elif par == '22-21':     label = '$(2,2),(2,1)$'
         elif par == '22-21-33':  label = '$(2,2),(2,1),(3,3)$'
+        elif par == '22-21-33-44-55':  label = '$(2,2),(2,1),(3,3),(4,4),(5,5)$'
 
         elif par == '220':       label = '$(2,2,0)$'
         elif par == '220-330':   label = '$(2,2,0),(3,3,0)$'
@@ -127,7 +128,11 @@ def labels_legend(par):
         elif par == 'do22':      label = '$\\delta\\omega_{22}$'
         elif par == 'do33':      label = '$\\delta\\omega_{33}$'
         elif par == 'dt22':      label = '$\\delta\\tau_{22}$'
-        elif par == 'do22-dt22': label = '$\\delta\\omega_{33},\ \\delta\\tau_{22}$'
+        elif par == 'do22-dt22': label = '$\\delta\\omega_{22},\ \\delta\\tau_{22}$'
+
+        elif par == '22-do22':   label = '$\\delta\\omega_{22}$'
+        elif par == '22-dt22':   label = '$\\delta\\tau_{22}$'
+        elif par == '22-do22-dt22': label = '$\\delta\\omega_{22},\ \\delta\\tau_{22}$'
 
         elif par == 'EdGB':      label = '$\mathrm{EdGB}$'
 
