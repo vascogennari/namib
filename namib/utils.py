@@ -623,4 +623,6 @@ class Plots:
             if pars['ridgeline']:      plots.ridgeline_plots( pars, SampDataFrame, PriorDataFrame)
             if pars['TGR-plot']:       plots.TGR_plots(       pars, SampDataFrame)
         else:
-            plots.reconstructed_distributions(pars, CurvesDictionary)
+            if not pars['redshift']:   plots.reconstructed_distributions(   pars, CurvesDictionary)
+            else:                      plots.reconstructed_primary_redshift(pars, CurvesDictionary)
+            

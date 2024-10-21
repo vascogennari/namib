@@ -711,3 +711,59 @@ def reconstructed_distributions(pars, CurvesDictionary):
     plt.tight_layout()
     filename = os.path.join(pars['plots-dir'], 'reconstructed_{name}.pdf'.format(name = pars['stack-mode']))
     plt.savefig(filename, bbox_inches = 'tight', transparent = True)
+
+
+
+def reconstructed_primary_redshift(pars, CurvesDictionary):
+
+    keys = CurvesDictionary.keys()
+    if not pars['ordering'] == []:
+            if ((set(pars['ordering']) <= set(keys))) and (len(pars['ordering']) == len(keys)): keys = pars['ordering']
+            else: raise ValueError('Invalid option for {stack_mode} ordering.'.format(stack_mode = pars['stack-mode']))
+
+    if not pars['bounds'] == []: bounds_dict = bounds_dictionary(pars)
+    params = pars['parameters']
+    labels = lp.labels_curves(params)
+    colors = lp.palettes(pars, colormap = True, number_colors = len(keys))
+    nz = len(CurvesDictionary[[*CurvesDictionary.keys()][0]]['PrimaryMassDistribution']['y'])
+
+    subplots = [[ni, 'a'] for ni in range(nz)]
+    fig, ax = plt.subplot_mosaic(subplots, figsize = (15, 2 * nz), layout = 'constrained')
+    fig.set_constrained_layout_pads(hspace = 0.0, wspace = 0.0, h_pad = 0.0, w_pad = 0.0)
+
+    for ki,key in enumerate(keys):
+        CurvesDataFrame = CurvesDictionary[key]
+        x = CurvesDataFrame['PrimaryMassDistribution']['x']
+
+        for zi,z in enumerate(CurvesDataFrame['PrimaryMassDistribution']['z']):
+            zi_inv = nz-1 - zi
+            ax[zi_inv].fill_between(x, CurvesDataFrame['PrimaryMassDistribution']['y'][zi][5] , CurvesDataFrame['PrimaryMassDistribution']['y'][zi][95], color = colors[ki], alpha = 0.1)
+            ax[zi_inv].fill_between(x, CurvesDataFrame['PrimaryMassDistribution']['y'][zi][16], CurvesDataFrame['PrimaryMassDistribution']['y'][zi][84], color = colors[ki], alpha = 0.5)
+            ax[zi_inv].plot(        x, CurvesDataFrame['PrimaryMassDistribution']['y'][zi][50], lw = 0.7, color = colors[ki], label = '$z={}$'.format(round(z, 2)))
+        
+            ax[zi_inv].set_xlim(3, 88)
+            ax[zi_inv].set_yscale('log')
+            ax[zi_inv].set_ylim(2e-5, 1)
+            ax[zi_inv].set_ylabel('$p(m_1)$')
+            ax[zi_inv].grid(linestyle = 'dotted', linewidth = 0.3)
+            ax[zi_inv].legend(loc = 'best', handletextpad = -2.0, handlelength = 0) # Revome colors from log plots.
+            if not zi_inv == nz-1: plt.setp(ax[zi_inv].get_xticklabels(), visible = False)  # Remove x_ticks from log plots.
+
+        for zi,z in enumerate(CurvesDataFrame['PrimaryMassDistribution_NoSelectionEffects']['z']):
+            x = CurvesDataFrame['PrimaryMassDistribution_NoSelectionEffects']['x']
+            ax['a'].fill_between(x, CurvesDataFrame['PrimaryMassDistribution_NoSelectionEffects']['y'][zi][5] +z, CurvesDataFrame['PrimaryMassDistribution_NoSelectionEffects']['y'][zi][95]+z, color = colors[ki], alpha = 0.25)
+            ax['a'].fill_between(x, CurvesDataFrame['PrimaryMassDistribution_NoSelectionEffects']['y'][zi][16]+z, CurvesDataFrame['PrimaryMassDistribution_NoSelectionEffects']['y'][zi][84]+z, color = colors[ki], alpha = 0.5)
+
+    ax[nz-1].set_xlabel('$m_1$')
+    ax['a'].set_xlabel( '$m_1$')
+    ax['a'].set_ylabel( '$z$')
+    ax['a'].set_xlim(1, 80)
+    ax['a'].yaxis.tick_right()
+    ax['a'].yaxis.set_label_position('right')
+
+    patch = [mpatches.Patch(facecolor = colors[ci], edgecolor = 'k', alpha = 0.5, label = c) for ci,c in enumerate(keys)]
+    ax['a'].legend(handles = patch, loc = 'best', frameon = False)
+
+    #plt.tight_layout()
+    filename = os.path.join(pars['plots-dir'], 'reconstructed_{name}.pdf'.format(name = pars['stack-mode']))
+    plt.savefig(filename, bbox_inches = 'tight', transparent = True)
