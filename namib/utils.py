@@ -131,11 +131,22 @@ def read_posteriors_hierarchical(file_path, pars):
         tmp = json.load(f)
         df  = pd.DataFrame(tmp['posterior']['content'])
 
-    if (set(['mu_z0']) <= set(pars['parameters'])) and (set(['mu_g']) <= set(df.keys())):
-        df.rename(columns = {'mu_g' : 'mu_z0'}, inplace = True)
+    # Evolution
+    if (set(['mu_z0']   ) <= set(pars['parameters'])) and (set(['mu_g']   ) <= set(df.keys())):
+        df.rename(columns = {'mu_g' : 'mu_z0'      }, inplace = True)
     if (set(['sigma_z0']) <= set(pars['parameters'])) and (set(['sigma_g']) <= set(df.keys())):
         df.rename(columns = {'sigma_g' : 'sigma_z0'}, inplace = True)
-    
+    if (set(['alpha_z0']) <= set(pars['parameters'])) and (set(['alpha']  ) <= set(df.keys())):
+        df.rename(columns = {'alpha' : 'alpha_z0'  }, inplace = True)
+    if (set(['mmin_z0'] ) <= set(pars['parameters'])) and (set(['mmin']   ) <= set(df.keys())):
+        df.rename(columns = {'mmin' : 'mmin_z0'    }, inplace = True)
+
+    # Multiple features
+    if (set(['alpha']   ) <= set(pars['parameters'])) and (set(['alpha_a']) <= set(df.keys())):
+        df.rename(columns = {'alpha_a' : 'alpha'  }, inplace = True)
+    if (set(['mmin']    ) <= set(pars['parameters'])) and (set(['mmin_a'])  <= set(df.keys())):
+        df.rename(columns = {'mmin_a'  : 'mmin'   }, inplace = True)
+
     df = df.filter(items = pars['parameters'])
 
     return df

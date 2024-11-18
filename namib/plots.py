@@ -704,9 +704,9 @@ def reconstructed_distributions(pars, CurvesDictionary):
     patch = [mpatches.Patch(facecolor = colors[ci], edgecolor = 'k', alpha = 0.5, label = c) for ci,c in enumerate(keys)]
     ax[0].legend(handles = patch, loc = 'best', frameon = False)
 
-    # FIXME: To be removed asap.
-    ax[0].set_yscale('log')
-    ax[0].set_ylim(1e-5, 1)
+    if params[0] == 'PrimaryMassDistribution':
+        ax[0].set_yscale('log')
+        ax[0].set_ylim(1e-5, 1)
 
     plt.tight_layout()
     filename = os.path.join(pars['plots-dir'], 'reconstructed_{name}.pdf'.format(name = pars['stack-mode']))
@@ -728,7 +728,7 @@ def reconstructed_primary_redshift(pars, CurvesDictionary):
     nz = len(CurvesDictionary[[*CurvesDictionary.keys()][0]]['PrimaryMassDistribution']['y'])
 
     subplots = [[ni, 'a'] for ni in range(nz)]
-    fig, ax = plt.subplot_mosaic(subplots, figsize = (15, 2 * nz), layout = 'constrained')
+    fig, ax = plt.subplot_mosaic(subplots, figsize = (8, 2 * nz), layout = 'constrained')
     fig.set_constrained_layout_pads(hspace = 0.0, wspace = 0.0, h_pad = 0.0, w_pad = 0.0)
 
     for ki,key in enumerate(keys):
@@ -743,16 +743,22 @@ def reconstructed_primary_redshift(pars, CurvesDictionary):
         
             ax[zi_inv].set_xlim(3, 88)
             ax[zi_inv].set_yscale('log')
-            ax[zi_inv].set_ylim(2e-5, 1)
+            # ax[zi_inv].set_ylim(2e-5, 1)
+            ax[zi_inv].set_ylim(1e-6, 1.5)
             ax[zi_inv].set_ylabel('$p(m_1)$')
             ax[zi_inv].grid(linestyle = 'dotted', linewidth = 0.3)
             ax[zi_inv].legend(loc = 'best', handletextpad = -2.0, handlelength = 0) # Revome colors from log plots.
             if not zi_inv == nz-1: plt.setp(ax[zi_inv].get_xticklabels(), visible = False)  # Remove x_ticks from log plots.
 
-        for zi,z in enumerate(CurvesDataFrame['PrimaryMassDistribution_NoSelectionEffects']['z']):
-            x = CurvesDataFrame['PrimaryMassDistribution_NoSelectionEffects']['x']
-            ax['a'].fill_between(x, CurvesDataFrame['PrimaryMassDistribution_NoSelectionEffects']['y'][zi][5] +z, CurvesDataFrame['PrimaryMassDistribution_NoSelectionEffects']['y'][zi][95]+z, color = colors[ki], alpha = 0.25)
-            ax['a'].fill_between(x, CurvesDataFrame['PrimaryMassDistribution_NoSelectionEffects']['y'][zi][16]+z, CurvesDataFrame['PrimaryMassDistribution_NoSelectionEffects']['y'][zi][84]+z, color = colors[ki], alpha = 0.5)
+        # for zi,z in enumerate(CurvesDataFrame['PrimaryMassDistribution_NoSelectionEffects']['z']):
+        #     x = CurvesDataFrame['PrimaryMassDistribution_NoSelectionEffects']['x']
+        #     ax['a'].fill_between(x, CurvesDataFrame['PrimaryMassDistribution_NoSelectionEffects']['y'][zi][5] +z, CurvesDataFrame['PrimaryMassDistribution_NoSelectionEffects']['y'][zi][95]+z, color = colors[ki], alpha = 0.25)
+        #     ax['a'].fill_between(x, CurvesDataFrame['PrimaryMassDistribution_NoSelectionEffects']['y'][zi][16]+z, CurvesDataFrame['PrimaryMassDistribution_NoSelectionEffects']['y'][zi][84]+z, color = colors[ki], alpha = 0.5)
+        
+        for zi,z in enumerate(CurvesDataFrame['PrimaryMassDistribution']['z']):
+            x = CurvesDataFrame['PrimaryMassDistribution']['x']
+            ax['a'].fill_between(x, CurvesDataFrame['PrimaryMassDistribution']['y'][zi][5] +z, CurvesDataFrame['PrimaryMassDistribution']['y'][zi][95]+z, color = colors[ki], alpha = 0.25)
+            ax['a'].fill_between(x, CurvesDataFrame['PrimaryMassDistribution']['y'][zi][16]+z, CurvesDataFrame['PrimaryMassDistribution']['y'][zi][84]+z, color = colors[ki], alpha = 0.5)
 
     ax[nz-1].set_xlabel('$m_1$')
     ax['a'].set_xlabel( '$m_1$')
