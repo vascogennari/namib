@@ -45,22 +45,20 @@ def Adapt_Samples(df, pars):
             if pars['IMR-fits'] == 'IMRPhenomXPrecessing':
                 if not (set(['eta', 'a_1', 'a_2', 'chi1', 'chi2', 'chi_p']) <= set(df.columns)) and (set(['m1', 'm2', 'a_1', 'a_2', 'chi1', 'chi2', 'chi_p']) <= set(df.keys())):
                     df = compute_progenitors_from_IMR(df, func = 'SymmetricMassRatio')
-            if (set(['m1', 'm2', 'chi1', 'chi2']) <= set(df.keys())):
-                df = compute_Mf_af_from_IMR(df, pars)
-            else:
-                df = compute_Mf_af_NRSur(df)
-        if (set(['a_1', 'a_2']) <= set(df.keys())):
-            df.rename(columns = {'a_1' : 'chi1', 'a_2' : 'chi2'}, inplace = True)
+            try:    df = compute_Mf_af_from_IMR(df, pars)
+            except: pass
 
     def compute_qnms_from_remnant(df, pars):
-        if (set(['f_22', 'tau_22']) <= set(pars['parameters'])) and (set(['f_22', 'tau_22']) <= set(df.keys())):
-            if (set(['f_22', 'tau_22']) <= set(pars['parameters'])) and (set(['Mf', 'af']) <= set(df.keys())):
-                df = compute_qnms_from_Mf_af(df,  pars['modes'], pars)
+        if (set(['f_22', 'tau_22']) <= set(pars['parameters'])) and (set(['Mf', 'af']) <= set(df.keys())):
+            df = compute_qnms_from_Mf_af(df,  pars['modes'], pars)
+        try:
+            # Case where you ask QNMs without remnant parameters.
             if pars['IMR-fits'] == 'IMRPhenomXPrecessing':
                 if not (set(['eta', 'a_1', 'a_2', 'chi1', 'chi2', 'chi_p']) <= set(df.columns)) and (set(['m1', 'm2', 'a_1', 'a_2', 'chi1', 'chi2', 'chi_p']) <= set(df.keys())):
                     df = compute_progenitors_from_IMR(df, func = 'SymmetricMassRatio')
             df = compute_Mf_af_from_IMR(df, pars)    
             df = compute_qnms_from_Mf_af(df, pars['modes'], pars)
+        except: pass
 
     def pyring_damped_sinusoids_conventions(df, pars):
         if (set(['f_22', 'tau_22']) <= set(pars['parameters'])) and (set(['f_t_0', 'tau_t_0']) <= set(df.keys())):
