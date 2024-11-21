@@ -35,10 +35,6 @@ def Adapt_Samples(df, pars):
             df.rename(columns = {'s1z' : 'chi1', 's2z' : 'chi2'}, inplace = True)
         if (set(['spin1', 'spin2']) <= set(df.keys())):
             df.rename(columns = {'spin1' : 'chi1', 'spin2' : 'chi2'}, inplace = True)
-        if (set(['Mc', 'q']) <= set(df.keys())) or (set(['mc', 'q']) <= set(df.keys())):
-            df = compute_progenitors_from_IMR(df)
-        if (set(['Mc', 'q']) <= set(pars['parameters'])) or (set(['mc', 'q']) <= set(pars['parameters'])) or (set(['q']) <= set(pars['parameters'])) and (set(['m1', 'm2']) <= set(df.keys())):
-            df = compute_progenitors_from_IMR(df, inverse = True)
 
     def compute_remnant_from_IMR(df, pars):
         if (set(['Mf', 'af']) <= set(pars['parameters'])) and not (set(['Mf', 'af']) <= set(df.keys())):
@@ -82,21 +78,21 @@ def Adapt_Samples(df, pars):
             df.insert(0, 'iota', np.arccos(df.cosiota))
 
     def set_positive_spins(df, pars):
-        if (set(['chi1']) in set(pars['parameters'])) and (set(['chi1']) <= set(df.keys())):
+        if (set(['chi1']) <= set(pars['parameters'])) and (set(['chi1']) <= set(df.keys())):
             df['chi1'] = df['chi1'].apply(lambda x: np.abs(x))
-        if (set(['chi2']) in set(pars['parameters'])) and (set(['chi2']) <= set(df.keys())):
+        if (set(['chi2']) <= set(pars['parameters'])) and (set(['chi2']) <= set(df.keys())):
             df['chi2'] = df['chi2'].apply(lambda x: np.abs(x))
     
-    def compute_dependent_paramters(df, pars):
-        if (set(['q'])     in set(pars['parameters'])) and (set(['m1', 'm2']) <= set(df.keys())):
+    def compute_dependent_parameters(df, pars):
+        if (set(['q'])     <= set(pars['parameters'])) and (set(['m1', 'm2']) <= set(df.keys())):
             df = compute_progenitors_from_IMR(df, func = 'MassRatio')
-        if (set(['mc'])    in set(pars['parameters'])) and (set(['m1', 'm2']) <= set(df.keys())):
+        if (set(['mc'])    <= set(pars['parameters'])) and (set(['m1', 'm2']) <= set(df.keys())):
             df = compute_progenitors_from_IMR(df, func = 'Masses2McQ')
-        if (set(['eta'])   in set(pars['parameters'])) and (set(['m1', 'm2']) <= set(df.keys())):
+        if (set(['eta'])   <= set(pars['parameters'])) and (set(['m1', 'm2']) <= set(df.keys())):
             df = compute_progenitors_from_IMR(df, func = 'SymmetricMassRatio')
-        if (set(['chi_s']) in set(pars['parameters'])) and (set(['m1', 'm2', 'chi1', 'chi2']) <= set(df.keys())):
+        if (set(['chi_s']) <= set(pars['parameters'])) and (set(['m1', 'm2', 'chi1', 'chi2']) <= set(df.keys())):
             df = compute_progenitors_from_IMR(df, func = 'ChiSymmetric')
-        if (set(['chi_a']) in set(pars['parameters'])) and (set(['m1', 'm2', 'chi1', 'chi2']) <= set(df.keys())):
+        if (set(['chi_a']) <= set(pars['parameters'])) and (set(['m1', 'm2', 'chi1', 'chi2']) <= set(df.keys())):
             df = compute_progenitors_from_IMR(df, func = 'ChiAntiymmetric')
 
     # FIXME: Implement as a separate option non related to the TGR plot, for all the possible modes.
@@ -118,7 +114,7 @@ def Adapt_Samples(df, pars):
     pyring_damped_sinusoids_conventions(df, pars)
     extrinsic_parameters_conventions(   df, pars)
     set_positive_spins(                 df, pars)
-    compute_dependent_paramters(        df, pars)
+    compute_dependent_parameters(       df, pars)
     if pars['TGR-plot']: TGR_plot(      df, pars)
 
     if not (set(pars['parameters']).difference(df.keys()) == set()):
@@ -456,7 +452,7 @@ def compute_progenitors_from_IMR(df, func = None):
         # See App.C.2 of [https://arxiv.org/pdf/2001.09082]
         chi_a = (m1 * chi1 - m2 * chi2) / (m1 + m2)
         return chi_a
-    
+
     if   func == 'McQ2Masses'        : df['m1'], df['m2'] = McQ2Masses(        df['mc'], df['q'])
     elif func == 'Masses2McQ'        : df['mc'], df['q']  = Masses2McQ(        df['m1'], df['m2'])
     elif func == 'MassRatio'         : df['q']            = MassRatio(         df['m1'], df['m2'])
