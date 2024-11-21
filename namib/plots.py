@@ -235,6 +235,16 @@ def corner_plots_sns(pars, SampDataFrame, PriorDataFrame):
     patch = [mpatches.Patch(facecolor = hex_to_RGB(colors[ci], pars['corner-settings']['alpha']), edgecolor = colors[ci], label = lp.labels_legend(comp_pars[ci])) for ci,c in enumerate(comp_pars)]
     fig.axes[0, 0].legend(handles = patch, loc = 'center', frameon = False, bbox_to_anchor = (len(pars['parameters'])-0.5, 0.5))
 
+    # Add truths if required
+    if not pars['truths'] == []:
+        for pi,_ in enumerate(pars['parameters']):
+            for qi,_ in enumerate(pars['parameters']):
+                if pi == qi: # Diagonal elements
+                    fig.axes[pi, qi].axvline(pars['truths'][qi], ls = '--', lw = 0.7, alpha = 0.5, color = pars['truth-color'])
+                elif pi > qi:
+                    fig.axes[pi, qi].axvline(pars['truths'][qi], ls = '--', lw = 0.7, alpha = 0.5, color = pars['truth-color'])
+                    fig.axes[pi, qi].axhline(pars['truths'][pi], ls = '--', lw = 0.7, alpha = 0.5, color = pars['truth-color'])
+
     for pi,par in enumerate(pars['parameters']):
         # Set the bounds
         if not pars['bounds'] == []:
