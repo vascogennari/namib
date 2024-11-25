@@ -12,12 +12,15 @@ import warnings
 warnings.filterwarnings('ignore')
 
 
-def Adapt_Samples(df, pars):
+def Adapt_Samples(df, pars, IMR_flag = False):
     '''
         Adapt the input samples to namib internal conventions.
         Compute remnant paramters and QNMs if needed.
         Remove unnecessary paramters from the data frame.
     '''
+    if IMR_flag: IMR_fits = pars['IMR-fits-IMR']
+    else:        IMR_fits = pars['IMR-fits']
+
     def LVK_conventions(df, pars):
         if (set(['mass_1', 'mass_2']) <= set(df.keys())):
             df.rename(columns = {'mass_1' : 'm1', 'mass_2' : 'm2'}, inplace = True)
@@ -38,10 +41,10 @@ def Adapt_Samples(df, pars):
 
     def compute_remnant_from_IMR(df, pars):
         if (set(['Mf', 'af']) <= set(pars['parameters'])) and not (set(['Mf', 'af']) <= set(df.keys())):
-            if pars['IMR-fits'] == 'IMRPhenomXPrecessing':
+            if IMR_fits == 'IMRPhenomXPrecessing':
                 if not (set(['eta', 'a_1', 'a_2', 'chi1', 'chi2', 'chi_p']) <= set(df.columns)) and (set(['m1', 'm2', 'a_1', 'a_2', 'chi1', 'chi2', 'chi_p']) <= set(df.keys())):
                     df = compute_progenitors_from_IMR(df, func = 'SymmetricMassRatio')
-            try:    df = compute_Mf_af_from_IMR(df, pars)
+            try:    df = compute_Mf_af_from_IMR(df, pars, IMR_fits)
             except: pass
 
     def compute_qnms_from_remnant(df, pars):
@@ -49,10 +52,10 @@ def Adapt_Samples(df, pars):
             df = compute_qnms_from_Mf_af(df,  pars['modes'], pars)
         try:
             # Case where you ask QNMs without remnant parameters.
-            if pars['IMR-fits'] == 'IMRPhenomXPrecessing':
+            if IMR_fits == 'IMRPhenomXPrecessing':
                 if not (set(['eta', 'a_1', 'a_2', 'chi1', 'chi2', 'chi_p']) <= set(df.columns)) and (set(['m1', 'm2', 'a_1', 'a_2', 'chi1', 'chi2', 'chi_p']) <= set(df.keys())):
                     df = compute_progenitors_from_IMR(df, func = 'SymmetricMassRatio')
-            df = compute_Mf_af_from_IMR(df, pars)    
+            df = compute_Mf_af_from_IMR(df, pars, IMR_fits)    
             df = compute_qnms_from_Mf_af(df, pars['modes'], pars)
         except: pass
 
@@ -125,7 +128,7 @@ def Adapt_Samples(df, pars):
 
     return df
 
-def read_posteriors_event(file_path, pars):
+def read_posteriors_event(file_path, pars, IMR_flag = False):
     '''
     Read the posteriors distribution of a single file.
     The posterior distributions for the passed parameters are returned in a Pandas DF.
@@ -153,7 +156,7 @@ def read_posteriors_event(file_path, pars):
 
     df = pd.DataFrame(load)
     df = downsampling(df, pars)    # Downsample the df if required
-    df = Adapt_Samples(df, pars)
+    df = Adapt_Samples(df, pars, IMR_flag = IMR_flag)
     df = df.filter(items = pars['parameters'])
 
     if pars['include-prior']:
@@ -272,13 +275,13 @@ def compute_Mf_af_NRSur(df):
 
     return df
 
-def compute_Mf_af_from_IMR(df, pars):
+def compute_Mf_af_from_IMR(df, pars, IMR_fits):
     '''
     Compute Mf and af of the remnant BH from IMR parameters. Both aligned-spin and precessing fits are implemented.
     Current options are: JimenezForteza_TEOBPM, UIB2016, NRSur7dq4Remnant, IMRPhenomXPrecessing.
     '''
     # Aligned-spin fits.
-    if   pars['IMR-fits'] == 'JimenezForteza_TEOBPM':
+    if   IMR_fits == 'JimenezForteza_TEOBPM':
         try:    import pyRing.waveform as wf
         except: raise ValueError('Unable to find the pyRing remnant fits. Please either install pyRing or use a different option for the remnant fits.')
 
@@ -295,7 +298,7 @@ def compute_Mf_af_from_IMR(df, pars):
             af[i] = tmp.JimenezFortezaRemnantSpin()
 
     # Aligned-spin fits.
-    elif pars['IMR-fits'] == 'UIB2016':
+    elif IMR_fits == 'UIB2016':
         try:    from lalinference.imrtgr.nrutils import bbh_final_mass_projected_spins, bbh_final_spin_projected_spins, bbh_Kerr_trunc_opts
         except: raise ValueError('Unable to find the UIB2016 remnant fits. Please either install lalinference or use a different option for the remnant fits.')
 
@@ -319,7 +322,8 @@ def compute_Mf_af_from_IMR(df, pars):
             af[i] = bbh_final_spin_projected_spins(df.m1[i], df.m2[i], chi1_abs, chi2_abs, tilt1, tilt2, 'UIB2016', truncate = bbh_Kerr_trunc_opts.trunc)
 
     # Precessing fits.
-    elif pars['IMR-fits'] == 'NRSur7dq4Remnant':
+    elif IMR_fits == 'NRSur7dq4Remnant':
+
         # This option requires the LAL_DATA_PATH to be set correctly, cloning https://git.ligo.org/lscsoft/lalsuite-extra and pointing to lalsuite-extra/data/lalsimulation:
         # export LAL_DATA_PATH=~/lalsuite-extra/data/lalsimulation
         try:    from pesummary.gw.conversions.nrutils import NRSur_fit
@@ -337,7 +341,7 @@ def compute_Mf_af_from_IMR(df, pars):
         af = fits['final_spin']
 
     # Precessing fits.
-    elif pars['IMR-fits'] == 'IMRPhenomXPrecessing':
+    elif IMR_fits == 'IMRPhenomXPrecessing':
         try:    from lalsimulation import SimIMRPhenomXPrecessingFinalSpin2017, SimIMRPhenomXFinalMass2017
         except: raise ValueError('Unable to find the IMRPhenomXPrecessing remnant fits. Please either install lalsimulation or use a different option for the remnant fits.')
 
@@ -348,7 +352,7 @@ def compute_Mf_af_from_IMR(df, pars):
         af = SimIMRPhenomXPrecessingFinalSpin2017(df.eta, df.chi1, df.chi2, df.chi_p)
 
     # Precessing fits.
-    elif pars['IMR-fits'] == 'HBR2016':
+    elif IMR_fits == 'HBR2016':
         try:    from pesummary.gw.conversions.nrutils import bbh_final_mass_non_precessing_UIB2016, bbh_final_spin_precessing_HBR2016
         except: raise ValueError('Unable to find the HBR2016 remnant fits. Please either install pesummary and  make sure that the LAL_DATA_PATH is properly set, or use a different option for the remnant fits.')
 
@@ -628,6 +632,7 @@ class Posteriors:
         dir_path = pars['samp-dir']
         self.SampDataFrame     = pd.DataFrame(columns = pars['parameters'])
         self.PriorDataFrame    = pd.DataFrame(columns = pars['parameters'])
+        self.IMRDataFrame      = pd.DataFrame(columns = pars['parameters'])
         self.EvidenceDataFrame = pd.DataFrame()
         single_evt_keys = {'event': str(), 'pipeline': str(), 'model': str(), 'submodel': str(), 'time': str(), 'GR_tag': str()}
         IMR_keys        = {'event': str(), 'pipeline': str(), 'model': str()}
@@ -643,7 +648,7 @@ class Posteriors:
                             stack_mode_keys.append(keys[i])
                     
         for file in tqdm(os.listdir(dir_path), desc = 'Reading Posteriors'):
-            if not ((file == '.DS_Store') or (file == 'noise_evidences') or (file == 'ignore') or (file == 'SNR_samples') or (fnmatch.fnmatch(file, '*IMR*'))):
+            if not ((file == '.DS_Store') or (file == 'noise_evidences') or (file == 'ignore') or (file == 'SNR_samples') or (fnmatch.fnmatch(file, '*_IMR*'))):
 
                 file_path = os.path.join(dir_path, file)
                 keys = file.split('_')
@@ -672,75 +677,25 @@ class Posteriors:
                     self.EvidenceDataFrame = pd.concat([self.EvidenceDataFrame, EventEvidenceDataFrame], ignore_index=True)
 
             # Case when there is one IMR analysis to compare separately.
-            if  (fnmatch.fnmatch(file, '*IMR*') and not pars['include-IMR'] == ''):
+            if  (fnmatch.fnmatch(file, '*_IMR*') and not pars['include-IMR'] == ''):
 
                 file_path = os.path.join(dir_path, file)
-                keys = file.split('_')
-                keys[-1] = keys[-1].split('.')[0]
-                for i,key in enumerate(IMR_keys.keys()):
-                    IMR_keys[key] = keys[i]
-
-                EventDataFrame0, EventPriorDataFrame, _ = read_posteriors_event(file_path, pars)
-                if not pars['stack-mode'] == '':
-                    if pars['stack-mode'] in IMR_keys.keys():
-                        EventDataFrame = EventDataFrame0.assign(par = IMR_keys[pars['stack-mode']])
-                        EventDataFrame.rename(columns={'par': pars['stack-mode']}, inplace = True)
-                        if not pars['compare'] == '':
-                            if pars['compare'] in IMR_keys.keys():
-                                EventDataFrame = EventDataFrame.assign(par = IMR_keys[pars['compare']])
-                            else:
-                                EventDataFrame = EventDataFrame.assign(par = 'IMR')
-                            EventDataFrame.rename(columns={'par': pars['compare']}, inplace = True)         
-                        self.SampDataFrame = pd.concat([self.SampDataFrame, EventDataFrame], ignore_index=True)
-                    else:
-                        # This block is to avoid re-computing the fits multiple times.
-                        if pars['ridgeline'] == 1:
-                            for key in stack_mode_keys:
-                                EventDataFrame = EventDataFrame0.assign(par = key)
-                                EventDataFrame.rename(columns={'par': pars['stack-mode']}, inplace = True)
-                                if not pars['compare'] == '':
-                                    if pars['compare'] in IMR_keys.keys():
-                                        EventDataFrame = EventDataFrame.assign(par = IMR_keys[pars['compare']])
-                                    else:
-                                        EventDataFrame = EventDataFrame.assign(par = 'IMR')
-                                    EventDataFrame.rename(columns={'par': pars['compare']}, inplace = True) 
-                                self.SampDataFrame = pd.concat([self.SampDataFrame, EventDataFrame],ignore_index=True)
-                        else:
-                            EventDataFrame = EventDataFrame0.assign(par = 'IMR')
-                            EventDataFrame.rename(columns={'par': pars['stack-mode']}, inplace = True)
-                            if not pars['compare'] == '':
-                                if pars['compare'] in IMR_keys.keys():
-                                    EventDataFrame = EventDataFrame.assign(par = IMR_keys[pars['compare']])
-                                else:
-                                    EventDataFrame = EventDataFrame.assign(par = 'IMR')
-                                EventDataFrame.rename(columns={'par': pars['compare']}, inplace = True)         
-                            self.SampDataFrame = pd.concat([self.SampDataFrame, EventDataFrame], ignore_index=True)
-                else:
-                    if not pars['compare'] == '':
-                        if pars['compare'] in IMR_keys.keys():
-                            EventDataFrame = EventDataFrame0.assign(par = IMR_keys[pars['compare']])
-                        else:
-                            EventDataFrame = EventDataFrame0.assign(par = 'IMR')
-                        EventDataFrame.rename(columns={'par': pars['compare']}, inplace = True)         
-                    self.SampDataFrame = pd.concat([self.SampDataFrame, EventDataFrame], ignore_index=True)
-
-        if (not pars['compare'] == '') and pars['BF-comparison']:
-            if not pars['evidence']: raise ValueError('Please activate the evidence option to compute the Bayes factor.')
-            self.EvidenceDataFrame = compute_bayes_factor(pars, self.EvidenceDataFrame)
+                self.IMRDataFrame, _, _ = read_posteriors_event(file_path, pars, IMR_flag = True)
 
     def return_samples_dict(self):
-        return self.SampDataFrame, self.PriorDataFrame, self.EvidenceDataFrame
+
+        return self.SampDataFrame, self.PriorDataFrame, self.EvidenceDataFrame, self.IMRDataFrame
 
 
 class Plots:
     '''
     Compute corner and violin plots.
     '''
-    def __init__(self, pars, SampDataFrame, PriorDataFrame, EvidenceDataFrame):
+    def __init__(self, pars, SampDataFrame, PriorDataFrame, EvidenceDataFrame, IMRDataFrame):
         
         if pars['corner']:
-            if pars['corner-sns']: plots.corner_plots_sns(pars, SampDataFrame, PriorDataFrame)
-            else:                  plots.corner_plots(    pars, SampDataFrame, PriorDataFrame)
-        if pars['violin']:         plots.violin_plots(    pars, SampDataFrame, PriorDataFrame, EvidenceDataFrame)
-        if pars['ridgeline']:      plots.ridgeline_plots( pars, SampDataFrame, PriorDataFrame)
+            if pars['corner-sns']: plots.corner_plots_sns(pars, SampDataFrame, PriorDataFrame, IMRDataFrame)
+            else:                  plots.corner_plots(    pars, SampDataFrame, PriorDataFrame, IMRDataFrame)
+        if pars['violin']:         plots.violin_plots(    pars, SampDataFrame, PriorDataFrame, IMRDataFrame, EvidenceDataFrame)
+        if pars['ridgeline']:      plots.ridgeline_plots( pars, SampDataFrame, PriorDataFrame, IMRDataFrame)
         if pars['TGR-plot']:       plots.TGR_plots(       pars, SampDataFrame)

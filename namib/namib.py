@@ -46,6 +46,7 @@ def main():
         'ds-scaling'         : 0,
         'qnms-pyRing'        : 1,
         'IMR-fits'           : 'JimenezForteza_TEOBPM',
+        'IMR-fits-IMR'       : 'NRSur7dq4Remnant',
 
         'save-post'          : 0,
         'save-medians'       : 0,
@@ -94,7 +95,7 @@ def main():
         if ('downsample' in key):
             try: input_pars[key] = Config.getfloat('input', key)
             except: pass
-        if ('parameters' in key) or ('modes' in key) or ('ordering' in key) or ('bounds' in key) or ('compare-ordering' in key ) or ('truths' in key) or ('IMR-fits' in key):
+        if ('parameters' in key) or ('modes' in key) or ('ordering' in key) or ('bounds' in key) or ('compare-ordering' in key ) or ('truths' in key) or ('IMR-fits' in key) or ('IMR-fits-IMR' in key):
             try: input_pars[key] = ast.literal_eval(Config.get('input', key))
             except: pass
         if ('corner' in key) or ('violin' in key) or ('ridgeline' in key) or ('TGR-plot' in key) or ('BF-comparison' in key) or ('evidence-top' in key) or ('remove-xticks' in key) or ('remove-legend' in key) or ('horizontal-legend' in key) or ('fix-dimensions' in key) or ('corner-sns' in key) or ('automatic-bounds' in key):
@@ -121,7 +122,7 @@ def main():
 
     # Read the posteriors and create the .txt files with the reduced posteriors
     PostOutput = Posteriors(input_pars)
-    SampDataFrame, PriorDataFrame, EvidenceDataFrame = PostOutput.return_samples_dict()
+    SampDataFrame, PriorDataFrame, EvidenceDataFrame, IMRDataFrame = PostOutput.return_samples_dict()
 
     if input_pars['save-post']:
         red_post_dir = create_directory(input_pars['output'], 'reduced_posteriors')
@@ -132,7 +133,7 @@ def main():
 
     if  input_pars['corner'] or input_pars['violin'] or input_pars['ridgeline'] or input_pars['TGR-plot']:
         input_pars['plots-dir'] = create_directory(input_pars['output'], '')
-        Plots(input_pars, SampDataFrame, PriorDataFrame, EvidenceDataFrame)
+        Plots(input_pars, SampDataFrame, PriorDataFrame, EvidenceDataFrame, IMRDataFrame)
         print('\nPlots are saved in:\n{}'.format(input_pars['plots-dir']))
     
     print('\nFinished.\n')
