@@ -68,6 +68,10 @@ def labels_parameters(pars_list):
 
         elif par == 'mc':          string = '$M_c\ [M_{\odot}]$'
         elif par == 'q':           string = '$q$'
+        elif par == 'eta':         string = '$\eta$'
+        elif par == 'chi_s':       string = '$\chi_s$'
+        elif par == 'chi_a':       string = '$\chi_a$'
+        elif par == 'chi_p':       string = '$\chi_p$'
 
         elif par == 'domega_220':  string = '$\\delta\\omega_{22}$'
         elif par == 'domega_330':  string = '$\\delta\\omega_{33}$'

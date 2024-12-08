@@ -90,11 +90,29 @@ def get_sigma_bounds(df, pars, keys, comp_pars, par):
                 bounds_min.append(median - dev * sigma)
 
     return [min(bounds_min), max(bounds_max)]
+
+def get_sigma_IMR(df, pars):
+
+    # Set the parameter bounds as 3 times the 90% CI.
+    dev = 3
+    CI = {par: {'median': 0, '90-low': 0, '90-high': 0} for par in pars}
+
+    for par in pars:
+        samps = np.array(df[par])
+        samps = samps[~np.isnan(samps)]
+
+        median = np.percentile(samps, 50)
+        sigma  = np.percentile(samps, 90) - median
+        CI[par]['median']  = median
+        CI[par]['90-high'] = median + dev * sigma
+        CI[par]['90-low']  = median - dev * sigma
+
+    return CI
     
 # --------------------------------------------------------- #
 
 
-def corner_plots(pars, SampDataFrame, PriorDataFrame):
+def corner_plots(pars, SampDataFrame, PriorDataFrame, IMRDataFrame):
 
     if not pars['compare'] == '': comp_pars = pd.unique(SampDataFrame[pars['compare']])
     else:                         comp_pars = 'a'
@@ -200,7 +218,7 @@ def corner_plots(pars, SampDataFrame, PriorDataFrame):
 
 
 
-def corner_plots_sns(pars, SampDataFrame, PriorDataFrame):
+def corner_plots_sns(pars, SampDataFrame, PriorDataFrame, IMRDataFrame):
 
     Warning('The corner_plots_sns option is not fully implemented. Please be careful in using it.')
 
@@ -215,6 +233,8 @@ def corner_plots_sns(pars, SampDataFrame, PriorDataFrame):
     comp_pars = keys
     colors = lp.palettes(pars, colormap = False, number_colors = len(comp_pars))
     SampDataFrame['ordering'] = pd.Categorical(SampDataFrame[pars['stack-mode']], categories = keys, ordered = True)
+
+    if pars['include-IMR']: CI = get_sigma_IMR(IMRDataFrame, pars['parameters'])
 
     lp.rc_labelsizes(pars)    # Set label sizes of matplotlib RC parameters
     height = pars['corner-settings']['figsize'] / len(pars['parameters'])    # The figure size in seaborn is controlled by that of individual plots
@@ -241,6 +261,26 @@ def corner_plots_sns(pars, SampDataFrame, PriorDataFrame):
     patch = [mpatches.Patch(facecolor = hex_to_RGB(colors[ci], pars['corner-settings']['alpha']), edgecolor = colors[ci], label = lp.labels_legend(comp_pars[ci])) for ci,c in enumerate(comp_pars)]
     fig.axes[0, 0].legend(handles = patch, loc = 'center', frameon = False, bbox_to_anchor = (len(pars['parameters'])-0.5, 0.5))
 
+    # Add truths if required
+    if not pars['truths'] == []:
+        for pi,_ in enumerate(pars['parameters']):
+            for qi,_ in enumerate(pars['parameters']):
+                if pi == qi: # Diagonal elements
+                    fig.axes[pi, qi].axvline(pars['truths'][qi], ls = '--', lw = 0.7, alpha = 0.5, color = pars['truth-color'])
+                elif pi > qi:
+                    fig.axes[pi, qi].axvline(pars['truths'][qi], ls = '--', lw = 0.7, alpha = 0.5, color = pars['truth-color'])
+                    fig.axes[pi, qi].axhline(pars['truths'][pi], ls = '--', lw = 0.7, alpha = 0.5, color = pars['truth-color'])
+
+    # Add IMRCI if required
+    if pars['include-IMR']:
+        for pi,par in enumerate(pars['parameters']):
+            for qi,_ in enumerate(pars['parameters']):
+                if pi == qi: # Diagonal elements
+                    fig.axes[pi, qi].axvline(CI[par]['median'],  ls = '--', lw = 1.0, alpha = 0.2, color = pars['truth-color'])
+                elif pi > qi:
+                    fig.axes[pi, qi].axvline(CI[par]['median'],  ls = '--', lw = 1.0, alpha = 0.2, color = pars['truth-color'])
+                    fig.axes[pi, qi].axhline(CI[par]['median'],  ls = '--', lw = 1.0, alpha = 0.2, color = pars['truth-color'])
+
     for pi,par in enumerate(pars['parameters']):
         # Set the bounds
         if not pars['bounds'] == []:
@@ -257,7 +297,7 @@ def corner_plots_sns(pars, SampDataFrame, PriorDataFrame):
 
 
 
-def violin_plots(pars, SampDataFrame, PriorDataFrame, EvidenceDataFrame):
+def violin_plots(pars, SampDataFrame, PriorDataFrame, IMRDataFrame, EvidenceDataFrame):
 
     keys, comp_pars = utils.set_keys_and_comp_pars(pars, SampDataFrame)
     if pars['stack-mode'] == 'time': label_x = np.array(sort_times_list(keys, labels = True), dtype = float)
@@ -305,6 +345,8 @@ def violin_plots(pars, SampDataFrame, PriorDataFrame, EvidenceDataFrame):
 
     if (not pars['compare'] == '') and pars['compare-hard']: comp_pars_loop = 'A'
     else:                                                    comp_pars_loop = comp_pars
+
+    if pars['include-IMR']: CI = get_sigma_IMR(IMRDataFrame, pars['parameters'])
 
     fig, ax = plt.subplots(len(params), figsize = pars['violin-settings']['figsize'], sharex = True)
     fig.subplots_adjust(wspace=0, hspace=0, top=0.95, bottom=0.18)
@@ -430,6 +472,10 @@ def violin_plots(pars, SampDataFrame, PriorDataFrame, EvidenceDataFrame):
         else:
             for xi, axx in enumerate(fig.axes):
                 if not xi == 0:             axx.axhline(pars['truths'][xi], ls = '--', lw = 1.5, alpha = 0.5, color = pars['truth-color'])
+                if pars['include-IMR']:
+                    for pi,par in enumerate(params):
+                        ax[xi][pi].axvline(CI[par]['90-low'],  ls = '--', lw = 1., alpha = 0.2, color = pars['truth-color'])  # Plot IMR CI
+                        ax[xi][pi].axvline(CI[par]['90-high'], ls = '--', lw = 1., alpha = 0.2, color = pars['truth-color'])
 
     utils.create_directory(pars['plots-dir'], 'PNG')
     for extension in ['pdf', 'png']:
@@ -443,7 +489,7 @@ def violin_plots(pars, SampDataFrame, PriorDataFrame, EvidenceDataFrame):
 
 
 
-def ridgeline_plots(pars, SampDataFrame, PriorDataFrame):
+def ridgeline_plots(pars, SampDataFrame, PriorDataFrame, IMRDataFrame):
 
     keys = pd.unique(SampDataFrame[pars['stack-mode']])
     if pars['stack-mode'] == 'time': keys = sort_times_list(keys)
@@ -454,6 +500,8 @@ def ridgeline_plots(pars, SampDataFrame, PriorDataFrame):
     _, labels_dict = lp.labels_parameters(pars['parameters'])
     if pars['stack-mode'] == 'time': label_y = np.array(sort_times_list(keys, labels = True), dtype = float)
     else:                            label_y = keys
+
+    if pars['include-IMR']: CI = get_sigma_IMR(IMRDataFrame, pars['parameters'])
 
     fig, ax = plt.subplots(len(keys), len(pars['parameters']), figsize = pars['ridgeline-settings']['figsize'])
     lp.rc_labelsizes(pars)  # Set label sizes of matplotlib RC parameters
@@ -552,6 +600,9 @@ def ridgeline_plots(pars, SampDataFrame, PriorDataFrame):
             for ni in range(len(keys)):
                 ax[ni][pi].tick_params(axis = 'both', which = 'major', labelsize = pars['label-sizes']['xtick'])
                 if not pars['truths'] == []: ax[ni][pi].axvline(pars['truths'][pi], ls = '--', lw = 1.5, alpha = 0.5, color = pars['truth-color'])  # Plot truth values
+                if pars['include-IMR']:
+                    ax[ni][pi].axvline(CI[par]['90-low'],  ls = '--', lw = 1., alpha = 0.2, color = pars['truth-color'])  # Plot IMR CI
+                    ax[ni][pi].axvline(CI[par]['90-high'], ls = '--', lw = 1., alpha = 0.2, color = pars['truth-color'])
 
     if pars['compare'] == '': colors = lp.palettes(pars, colormap = False, number_colors = len(comp_pars))
     patch = [mpatches.Patch(facecolor = colors[ci], edgecolor = 'k', alpha = pars['ridgeline-settings']['alpha'], label = lp.labels_legend(comp_pars[ci])) for ci,c in enumerate(comp_pars)]
