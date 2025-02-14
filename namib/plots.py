@@ -38,6 +38,35 @@ def sort_times_list(input_keys, labels = False):
 
     return keys
 
+def sort_SNR_list(input_keys, labels = False):
+
+    num_keys = len(input_keys)
+    # Convert the list into a numpy array and sort it
+    tmp = np.empty(num_keys)
+    for i, key in enumerate(input_keys):
+        if not key == 'IMR':
+            tmp[i] = float(key.strip('SNR-'))
+        else:
+            tmp[i] = 999
+    sorted_array = np.sort(tmp)
+
+    # Clean the array and re-add the M
+    switch = False
+    for key in input_keys:
+        if '.' in key: switch = True
+    keys = [0] * num_keys
+    for i, key in enumerate(sorted_array):
+        if not key == 999:
+            tmp = str(key)
+            if not switch:
+                if tmp.endswith('.0'): tmp = tmp[:-2]
+            keys[i] = tmp
+            if not labels: keys[i] = 'SNR-'+keys[i]
+        else:
+            keys[i] = 'IMR'
+
+    return keys
+
 def bounds_dictionary(pars):
 
     bounds_dict = {}
@@ -118,7 +147,8 @@ def corner_plots(pars, SampDataFrame, PriorDataFrame, IMRDataFrame):
     else:                         comp_pars = 'a'
 
     keys = pd.unique(SampDataFrame[pars['stack-mode']])
-    if pars['stack-mode'] == 'time': keys = sort_times_list(keys)
+    if pars['stack-mode'] == 'time':     keys = sort_times_list(keys)
+    if pars['stack-mode'] == 'pipeline': keys = sort_SNR_list(  keys)
     if not pars['ordering'] == []:
         if ((set(pars['ordering']) <= set(keys))) and (len(pars['ordering']) == len(keys)): keys = pars['ordering']
         else: raise ValueError('Invalid option for {stack_mode} ordering.'.format(stack_mode = pars['stack-mode']))
@@ -223,7 +253,8 @@ def corner_plots_sns(pars, SampDataFrame, PriorDataFrame, IMRDataFrame):
     Warning('The corner_plots_sns option is not fully implemented. Please be careful in using it.')
 
     keys = pd.unique(SampDataFrame[pars['stack-mode']])
-    if pars['stack-mode'] == 'time': keys = sort_times_list(keys)
+    if pars['stack-mode'] == 'time':     keys = sort_times_list(keys)
+    if pars['stack-mode'] == 'pipeline': keys = sort_SNR_list(  keys)
     if pars['include-IMR'] and not pars['IMR-posteriors']: CI = get_sigma_IMR(IMRDataFrame, pars['parameters'])
     if pars['include-IMR'] and     pars['IMR-posteriors']: pars['ordering'].append('IMR')
     if not pars['ordering'] == []:
@@ -300,7 +331,8 @@ def corner_plots_sns(pars, SampDataFrame, PriorDataFrame, IMRDataFrame):
 def violin_plots(pars, SampDataFrame, PriorDataFrame, IMRDataFrame, EvidenceDataFrame):
 
     keys, comp_pars = utils.set_keys_and_comp_pars(pars, SampDataFrame)
-    if pars['stack-mode'] == 'time': label_x = np.array(sort_times_list(keys, labels = True), dtype = float)
+    if   pars['stack-mode'] == 'time':     label_x = np.array(sort_times_list(keys, labels = True), dtype = float)
+    elif pars['stack-mode'] == 'pipeline': label_x = np.array(sort_SNR_list(  keys, labels = True), dtype = float)
     else:                            label_x = keys
 
     positions = np.arange(len(keys))
@@ -494,13 +526,15 @@ def violin_plots(pars, SampDataFrame, PriorDataFrame, IMRDataFrame, EvidenceData
 def ridgeline_plots(pars, SampDataFrame, PriorDataFrame, IMRDataFrame):
 
     keys = pd.unique(SampDataFrame[pars['stack-mode']])
-    if pars['stack-mode'] == 'time': keys = sort_times_list(keys)
+    if pars['stack-mode'] == 'time':     keys = sort_times_list(keys)
+    if pars['stack-mode'] == 'pipeline': keys = sort_SNR_list(  keys)
     if not pars['ordering'] == []:
         if ((set(pars['ordering']) <= set(keys))) and (len(pars['ordering']) == len(keys)): keys = pars['ordering']
         else: raise ValueError('Invalid option for {stack_mode} ordering.'.format(stack_mode = pars['stack-mode']))
 
     _, labels_dict = lp.labels_parameters(pars['parameters'])
-    if pars['stack-mode'] == 'time': label_y = np.array(sort_times_list(keys, labels = True), dtype = float)
+    if pars['stack-mode'] == 'time':     label_y = np.array(sort_times_list(keys, labels = True), dtype = float)
+    if pars['stack-mode'] == 'pipeline': label_y = np.array(sort_SNR_list(  keys, labels = True), dtype = float)
     else:                            label_y = keys
 
     if pars['include-IMR'] and not pars['IMR-posteriors']: CI = get_sigma_IMR(IMRDataFrame, pars['parameters'])
