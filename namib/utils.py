@@ -40,7 +40,7 @@ def Adapt_Samples(df, pars, IMR_flag = False):
             df.rename(columns = {'spin1' : 'chi1', 'spin2' : 'chi2'}, inplace = True)
 
     def compute_remnant_from_IMR(df, pars):
-        if (set(['Mf', 'af']) <= set(pars['parameters'])) and not (set(['Mf', 'af']) <= set(df.keys())):
+        if not (set(['Mf', 'af']) <= set(df.keys())) and not (set(['f_t_0', 'tau_t_0']) <= set(df.keys())):
             if IMR_fits == 'IMRPhenomXPrecessing':
                 if not (set(['eta', 'a_1', 'a_2', 'chi1', 'chi2', 'chi_p']) <= set(df.columns)) and (set(['m1', 'm2', 'a_1', 'a_2', 'chi1', 'chi2', 'chi_p']) <= set(df.keys())):
                     df = compute_progenitors_from_IMR(df, func = 'SymmetricMassRatio')
@@ -48,16 +48,17 @@ def Adapt_Samples(df, pars, IMR_flag = False):
             except: pass
 
     def compute_qnms_from_remnant(df, pars):
-        if (set(['f_22', 'tau_22']) <= set(pars['parameters'])) and (set(['Mf', 'af']) <= set(df.keys())):
-            df = compute_qnms_from_Mf_af(df,  pars['modes'], pars)
-        try:
-            # Case where you ask QNMs without remnant parameters.
-            if IMR_fits == 'IMRPhenomXPrecessing':
-                if not (set(['eta', 'a_1', 'a_2', 'chi1', 'chi2', 'chi_p']) <= set(df.columns)) and (set(['m1', 'm2', 'a_1', 'a_2', 'chi1', 'chi2', 'chi_p']) <= set(df.keys())):
-                    df = compute_progenitors_from_IMR(df, func = 'SymmetricMassRatio')
-            df = compute_Mf_af_from_IMR(df, pars, IMR_fits)    
-            df = compute_qnms_from_Mf_af(df, pars['modes'], pars)
-        except: pass
+        if (set(['f_22', 'tau_22']) <= set(pars['parameters'])) and not (set(['f_22', 'tau_22']) <= set(df.keys())) and not (set(['f_t_0', 'tau_t_0']) <= set(df.keys())):
+            if not (set(['Mf', 'af']) <= set(df.keys())):
+                compute_remnant_from_IMR(df, pars)
+            df = compute_qnms_from_Mf_af(df, pars['modes'], pars, scaling = 1)
+        if (set(['f_t_0', 'tau_t_0']) <= set(pars['parameters'])) and not (set(['f_t_0', 'tau_t_0']) <= set(df.keys())):
+            if not (set(['Mf', 'af']) <= set(df.keys())):
+                compute_remnant_from_IMR(df, pars)
+            df = compute_qnms_from_Mf_af(df, [(2,2)], pars, scaling = 0)
+            df.rename(columns = {'f_22' : 'f_t_0', 'tau_22' : 'tau_t_0'}, inplace = True)
+            # if (set(['f_t_0', 'tau_t_0']) <= set(df.keys())):
+            # df.rename(columns = {'f_t_0' : 'f_22', 'tau_t_0' : 'tau_22'}, inplace = True)
 
     def pyring_damped_sinusoids_conventions(df, pars):
         if (set(['f_22', 'tau_22']) <= set(pars['parameters'])) and (set(['f_t_0', 'tau_t_0']) <= set(df.keys())):
@@ -112,7 +113,8 @@ def Adapt_Samples(df, pars, IMR_flag = False):
 
     LVK_conventions(                    df, pars)
     granite_conventions(                df, pars)
-    compute_remnant_from_IMR(           df, pars)
+    if (set(['Mf', 'af']) <= set(pars['parameters'])):
+        compute_remnant_from_IMR(       df, pars)
     compute_qnms_from_remnant(          df, pars)
     pyring_damped_sinusoids_conventions(df, pars)
     extrinsic_parameters_conventions(   df, pars)
@@ -373,7 +375,7 @@ def compute_Mf_af_from_IMR(df, pars, IMR_fits):
 
     return df
 
-def compute_qnms_from_Mf_af(df, modes, pars):
+def compute_qnms_from_Mf_af(df, modes, pars, scaling = 1):
     '''
     Compute QNMs frequency and damping time from Mf and af for one mode (l,m)
     using the qnm python package [https://github.com/duetosymmetry/qnm]
@@ -394,8 +396,11 @@ def compute_qnms_from_Mf_af(df, modes, pars):
                     import pyRing.waveform as wf
                 except:
                     raise ValueError('Unable to find the pyRing installation for the QNMs fits. Please either install pyRing or disactivate the option "qnms-pyRing".')
-                omg[i] = wf.QNM_fit(l, m, 0).f(Mf, af)            # [Hz]
-                tau[i] = wf.QNM_fit(l, m, 0).tau(Mf, af) * 1000   # [ms]
+                omg[i] = wf.QNM_fit(l, m, 0).f(Mf, af)                # [Hz]
+                if scaling == 1:
+                    tau[i] = wf.QNM_fit(l, m, 0).tau(Mf, af) * 1000   # [ms]
+                else:
+                    tau[i] = wf.QNM_fit(l, m, 0).tau(Mf, af)          # [ms]
 
         df.insert(0, 'f_{}{}'.format(l,m),   omg)
         df.insert(0, 'tau_{}{}'.format(l,m), tau)
@@ -638,7 +643,7 @@ class Posteriors:
         IMR_keys        = {'event': str(), 'pipeline': str(), 'model': str()}
         stack_mode_keys = list()
 
-        if not (pars['include-IMR'] == '' and pars['stack-mode'] in IMR_keys.keys()) and pars['ridgeline'] == 1:
+        if not (pars['include-IMR'] == 0 and pars['stack-mode'] in IMR_keys.keys()) and pars['ridgeline'] == 1:
             for file in os.listdir(dir_path):
                 if not ((file == '.DS_Store') or (file == 'noise_evidences') or (file == 'ignore') or (file == 'SNR_samples') or (fnmatch.fnmatch(file, '*IMR*'))):
                     keys = file.split('_')
@@ -677,10 +682,62 @@ class Posteriors:
                     self.EvidenceDataFrame = pd.concat([self.EvidenceDataFrame, EventEvidenceDataFrame], ignore_index=True)
 
             # Case when there is one IMR analysis to compare separately.
-            if  (fnmatch.fnmatch(file, '*_IMR*') and not pars['include-IMR'] == ''):
+            if  (fnmatch.fnmatch(file, '*_IMR*') and not pars['include-IMR'] == 0):
 
                 file_path = os.path.join(dir_path, file)
-                self.IMRDataFrame, _, _ = read_posteriors_event(file_path, pars, IMR_flag = True)
+                if not pars['IMR-posteriors']:
+                    self.IMRDataFrame, _, _ = read_posteriors_event(file_path, pars, IMR_flag = True)
+                else:
+                    keys = file.split('_')
+                    keys[-1] = keys[-1].split('.')[0]
+                    for i,key in enumerate(IMR_keys.keys()):
+                        IMR_keys[key] = keys[i]
+                    EventDataFrame0, EventPriorDataFrame, _ = read_posteriors_event(file_path, pars, IMR_flag = True)
+                    if not pars['stack-mode'] == '':
+                        if pars['stack-mode'] in IMR_keys.keys():
+                            EventDataFrame = EventDataFrame0.assign(par = IMR_keys[pars['stack-mode']])
+                            EventDataFrame.rename(columns={'par': pars['stack-mode']}, inplace = True)
+                            if not pars['compare'] == '':
+                                if pars['compare'] in IMR_keys.keys():
+                                    EventDataFrame = EventDataFrame.assign(par = IMR_keys[pars['compare']])
+                                else:
+                                    EventDataFrame = EventDataFrame.assign(par = 'IMR')
+                                EventDataFrame.rename(columns={'par': pars['compare']}, inplace = True)         
+                            self.SampDataFrame = pd.concat([self.SampDataFrame, EventDataFrame], ignore_index=True)
+                        else:
+                            # This block is to avoid re-computing the fits multiple times.
+                            if pars['ridgeline'] == 1:
+                                for key in stack_mode_keys:
+                                    EventDataFrame = EventDataFrame0.assign(par = key)
+                                    EventDataFrame.rename(columns={'par': pars['stack-mode']}, inplace = True)
+                                    if not pars['compare'] == '':
+                                        if pars['compare'] in IMR_keys.keys():
+                                            EventDataFrame = EventDataFrame.assign(par = IMR_keys[pars['compare']])
+                                        else:
+                                            EventDataFrame = EventDataFrame.assign(par = 'IMR')
+                                        EventDataFrame.rename(columns={'par': pars['compare']}, inplace = True) 
+                                    self.SampDataFrame = pd.concat([self.SampDataFrame, EventDataFrame],ignore_index=True)
+                            else:
+                                EventDataFrame = EventDataFrame0.assign(par = 'IMR')
+                                EventDataFrame.rename(columns={'par': pars['stack-mode']}, inplace = True)
+                                if not pars['compare'] == '':
+                                    if pars['compare'] in IMR_keys.keys():
+                                        EventDataFrame = EventDataFrame.assign(par = IMR_keys[pars['compare']])
+                                    else:
+                                        EventDataFrame = EventDataFrame.assign(par = 'IMR')
+                                    EventDataFrame.rename(columns={'par': pars['compare']}, inplace = True)         
+                                self.SampDataFrame = pd.concat([self.SampDataFrame, EventDataFrame], ignore_index=True)
+                    else:
+                        if not pars['compare'] == '':
+                            if pars['compare'] in IMR_keys.keys():
+                                EventDataFrame = EventDataFrame0.assign(par = IMR_keys[pars['compare']])
+                            else:
+                                EventDataFrame = EventDataFrame0.assign(par = 'IMR')
+                            EventDataFrame.rename(columns={'par': pars['compare']}, inplace = True)         
+                        self.SampDataFrame = pd.concat([self.SampDataFrame, EventDataFrame], ignore_index=True)
+            if (not pars['compare'] == '') and pars['BF-comparison']:
+                if not pars['evidence']: raise ValueError('Please activate the evidence option to compute the Bayes factor.')
+                self.EvidenceDataFrame = compute_bayes_factor(pars, self.EvidenceDataFrame)
 
     def return_samples_dict(self):
 
