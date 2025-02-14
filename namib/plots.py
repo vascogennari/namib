@@ -38,6 +38,35 @@ def sort_times_list(input_keys, labels = False):
 
     return keys
 
+def sort_SNR_list(input_keys, labels = False):
+
+    num_keys = len(input_keys)
+    # Convert the list into a numpy array and sort it
+    tmp = np.empty(num_keys)
+    for i, key in enumerate(input_keys):
+        if not key == 'IMR':
+            tmp[i] = float(key.strip('SNR-'))
+        else:
+            tmp[i] = 999
+    sorted_array = np.sort(tmp)
+
+    # Clean the array and re-add the M
+    switch = False
+    for key in input_keys:
+        if '.' in key: switch = True
+    keys = [0] * num_keys
+    for i, key in enumerate(sorted_array):
+        if not key == 999:
+            tmp = str(key)
+            if not switch:
+                if tmp.endswith('.0'): tmp = tmp[:-2]
+            keys[i] = tmp
+            if not labels: keys[i] = 'SNR-'+keys[i]
+        else:
+            keys[i] = 'IMR'
+
+    return keys
+
 def bounds_dictionary(pars):
 
     bounds_dict = {}
@@ -101,6 +130,7 @@ def corner_plots(pars, SampDataFrame, PriorDataFrame):
 
     keys = pd.unique(SampDataFrame[pars['stack-mode']])
     if pars['stack-mode'] == 'time': keys = sort_times_list(keys)
+    if pars['stack-mode'] == 'pipeline': keys = sort_SNR_list(keys)
     if not pars['ordering'] == []:
         if ((set(pars['ordering']) <= set(keys))) and (len(pars['ordering']) == len(keys)): keys = pars['ordering']
         else: raise ValueError('Invalid option for {stack_mode} ordering.'.format(stack_mode = pars['stack-mode']))
@@ -206,6 +236,7 @@ def corner_plots_sns(pars, SampDataFrame, PriorDataFrame):
 
     keys = pd.unique(SampDataFrame[pars['stack-mode']])
     if pars['stack-mode'] == 'time': keys = sort_times_list(keys)
+    if pars['stack-mode'] == 'pipeline': keys = sort_SNR_list(keys)
     if not pars['ordering'] == []:
         if ((set(pars['ordering']) <= set(keys))) and (len(pars['ordering']) == len(keys)): keys = pars['ordering']
         else: raise ValueError('Invalid option for {stack_mode} ordering.'.format(stack_mode = pars['stack-mode']))
@@ -241,6 +272,16 @@ def corner_plots_sns(pars, SampDataFrame, PriorDataFrame):
     patch = [mpatches.Patch(facecolor = hex_to_RGB(colors[ci], pars['corner-settings']['alpha']), edgecolor = colors[ci], label = lp.labels_legend(comp_pars[ci])) for ci,c in enumerate(comp_pars)]
     fig.axes[0, 0].legend(handles = patch, loc = 'center', frameon = False, bbox_to_anchor = (len(pars['parameters'])-0.5, 0.5))
 
+    # Add truths if required
+    if not pars['truths'] == []:
+        for pi,_ in enumerate(pars['parameters']):
+            for qi,_ in enumerate(pars['parameters']):
+                if pi == qi: # Diagonal elements
+                    fig.axes[pi, qi].axvline(pars['truths'][qi], ls = '--', lw = 0.7, alpha = 0.5, color = pars['truth-color'])
+                elif pi > qi:
+                    fig.axes[pi, qi].axvline(pars['truths'][qi], ls = '--', lw = 0.7, alpha = 0.5, color = pars['truth-color'])
+                    fig.axes[pi, qi].axhline(pars['truths'][pi], ls = '--', lw = 0.7, alpha = 0.5, color = pars['truth-color'])
+
     for pi,par in enumerate(pars['parameters']):
         # Set the bounds
         if not pars['bounds'] == []:
@@ -261,6 +302,7 @@ def violin_plots(pars, SampDataFrame, PriorDataFrame, EvidenceDataFrame):
 
     keys, comp_pars = utils.set_keys_and_comp_pars(pars, SampDataFrame)
     if pars['stack-mode'] == 'time': label_x = np.array(sort_times_list(keys, labels = True), dtype = float)
+    elif pars['stack-mode'] == 'pipeline': label_x = np.array(sort_SNR_list(keys, labels = True), dtype = float)
     else:                            label_x = keys
 
     positions = np.arange(len(keys))
@@ -447,12 +489,14 @@ def ridgeline_plots(pars, SampDataFrame, PriorDataFrame):
 
     keys = pd.unique(SampDataFrame[pars['stack-mode']])
     if pars['stack-mode'] == 'time': keys = sort_times_list(keys)
+    if pars['stack-mode'] == 'pipeline': keys = sort_SNR_list(keys)
     if not pars['ordering'] == []:
         if ((set(pars['ordering']) <= set(keys))) and (len(pars['ordering']) == len(keys)): keys = pars['ordering']
         else: raise ValueError('Invalid option for {stack_mode} ordering.'.format(stack_mode = pars['stack-mode']))
 
     _, labels_dict = lp.labels_parameters(pars['parameters'])
     if pars['stack-mode'] == 'time': label_y = np.array(sort_times_list(keys, labels = True), dtype = float)
+    if pars['stack-mode'] == 'pipeline': label_y = np.array(sort_SNR_list(keys, labels = True), dtype = float)
     else:                            label_y = keys
 
     fig, ax = plt.subplots(len(keys), len(pars['parameters']), figsize = pars['ridgeline-settings']['figsize'])

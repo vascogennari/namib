@@ -37,11 +37,11 @@ def Adapt_Samples(df, pars):
             df.rename(columns = {'spin1' : 'chi1', 'spin2' : 'chi2'}, inplace = True)
         if (set(['Mc', 'q']) <= set(df.keys())) or (set(['mc', 'q']) <= set(df.keys())):
             df = compute_progenitors_from_IMR(df)
-        if (set(['Mc', 'q']) <= set(pars['parameters'])) or (set(['mc', 'q']) <= set(pars['parameters'])) or (set(['q']) <= set(pars['parameters'])) and (set(['m1', 'm2']) <= set(df.keys())):
+        if (set(['Mc', 'q']) <= set(pars['parameters'])) or (set(['mc', 'q']) <= set(pars['parameters'])):
             df = compute_progenitors_from_IMR(df, inverse = True)
 
     def compute_remnant_from_IMR(df, pars):
-        if (set(['Mf', 'af']) <= set(pars['parameters'])) and not (set(['Mf', 'af']) <= set(df.keys())):
+        if not (set(['Mf', 'af']) <= set(df.keys())) and not (set(['f_t_0', 'tau_t_0']) <= set(df.keys())):
             if pars['IMR-fits'] == 'IMRPhenomXPrecessing':
                 if not (set(['eta', 'a_1', 'a_2', 'chi1', 'chi2', 'chi_p']) <= set(df.columns)) and (set(['m1', 'm2', 'a_1', 'a_2', 'chi1', 'chi2', 'chi_p']) <= set(df.keys())):
                     df = compute_progenitors_from_IMR(df, func = 'SymmetricMassRatio')
@@ -53,14 +53,18 @@ def Adapt_Samples(df, pars):
             df.rename(columns = {'a_1' : 'chi1', 'a_2' : 'chi2'}, inplace = True)
 
     def compute_qnms_from_remnant(df, pars):
-        if (set(['f_22', 'tau_22']) <= set(pars['parameters'])) and (set(['f_22', 'tau_22']) <= set(df.keys())):
-            if (set(['f_22', 'tau_22']) <= set(pars['parameters'])) and (set(['Mf', 'af']) <= set(df.keys())):
-                df = compute_qnms_from_Mf_af(df,  pars['modes'], pars)
-            if pars['IMR-fits'] == 'IMRPhenomXPrecessing':
-                if not (set(['eta', 'a_1', 'a_2', 'chi1', 'chi2', 'chi_p']) <= set(df.columns)) and (set(['m1', 'm2', 'a_1', 'a_2', 'chi1', 'chi2', 'chi_p']) <= set(df.keys())):
-                    df = compute_progenitors_from_IMR(df, func = 'SymmetricMassRatio')
-            df = compute_Mf_af_from_IMR(df, pars)    
-            df = compute_qnms_from_Mf_af(df, pars['modes'], pars)
+        if (set(['f_22', 'tau_22']) <= set(pars['parameters'])) and not (set(['f_22', 'tau_22']) <= set(df.keys())) and not (set(['f_t_0', 'tau_t_0']) <= set(df.keys())):
+            if not (set(['Mf', 'af']) <= set(df.keys())):
+                compute_remnant_from_IMR(df, pars)
+            df = compute_qnms_from_Mf_af(df, pars['modes'], pars, scaling = 1)
+        if (set(['f_t_0', 'tau_t_0']) <= set(pars['parameters'])) and not (set(['f_t_0', 'tau_t_0']) <= set(df.keys())):
+            if not (set(['Mf', 'af']) <= set(df.keys())):
+                compute_remnant_from_IMR(df, pars)
+            df = compute_qnms_from_Mf_af(df, [(2,2)], pars, scaling = 0)
+            df.rename(columns = {'f_22' : 'f_t_0', 'tau_22' : 'tau_t_0'}, inplace = True)
+#        if (set(['f_t_0', 'tau_t_0']) <= set(df.keys())):
+#            df.rename(columns = {'f_t_0' : 'f_22', 'tau_t_0' : 'tau_22'}, inplace = True)
+
 
     def pyring_damped_sinusoids_conventions(df, pars):
         if (set(['f_22', 'tau_22']) <= set(pars['parameters'])) and (set(['f_t_0', 'tau_t_0']) <= set(df.keys())):
@@ -90,15 +94,15 @@ def Adapt_Samples(df, pars):
             df['chi2'] = df['chi2'].apply(lambda x: np.abs(x))
     
     def compute_dependent_paramters(df, pars):
-        if (set(['q'])     in set(pars['parameters'])) and (set(['m1', 'm2']) <= set(df.keys())):
+        if (set(['q'])     <= set(pars['parameters'])) and (set(['m1', 'm2']) <= set(df.keys())):
             df = compute_progenitors_from_IMR(df, func = 'MassRatio')
-        if (set(['mc'])    in set(pars['parameters'])) and (set(['m1', 'm2']) <= set(df.keys())):
+        if (set(['mc'])    <= set(pars['parameters'])) and (set(['m1', 'm2']) <= set(df.keys())):
             df = compute_progenitors_from_IMR(df, func = 'Masses2McQ')
-        if (set(['eta'])   in set(pars['parameters'])) and (set(['m1', 'm2']) <= set(df.keys())):
+        if (set(['eta'])   <= set(pars['parameters'])) and (set(['m1', 'm2']) <= set(df.keys())):
             df = compute_progenitors_from_IMR(df, func = 'SymmetricMassRatio')
-        if (set(['chi_s']) in set(pars['parameters'])) and (set(['m1', 'm2', 'chi1', 'chi2']) <= set(df.keys())):
+        if (set(['chi_s']) <= set(pars['parameters'])) and (set(['m1', 'm2', 'chi1', 'chi2']) <= set(df.keys())):
             df = compute_progenitors_from_IMR(df, func = 'ChiSymmetric')
-        if (set(['chi_a']) in set(pars['parameters'])) and (set(['m1', 'm2', 'chi1', 'chi2']) <= set(df.keys())):
+        if (set(['chi_a']) <= set(pars['parameters'])) and (set(['m1', 'm2', 'chi1', 'chi2']) <= set(df.keys())):
             df = compute_progenitors_from_IMR(df, func = 'ChiAntiymmetric')
 
     # FIXME: Implement as a separate option non related to the TGR plot, for all the possible modes.
@@ -115,7 +119,8 @@ def Adapt_Samples(df, pars):
 
     LVK_conventions(                    df, pars)
     granite_conventions(                df, pars)
-    compute_remnant_from_IMR(           df, pars)
+    if (set(['Mf', 'af']) <= set(pars['parameters'])):
+        compute_remnant_from_IMR(       df, pars)
     compute_qnms_from_remnant(          df, pars)
     pyring_damped_sinusoids_conventions(df, pars)
     extrinsic_parameters_conventions(   df, pars)
@@ -375,7 +380,7 @@ def compute_Mf_af_from_IMR(df, pars):
 
     return df
 
-def compute_qnms_from_Mf_af(df, modes, pars):
+def compute_qnms_from_Mf_af(df, modes, pars, scaling = 1):
     '''
     Compute QNMs frequency and damping time from Mf and af for one mode (l,m)
     using the qnm python package [https://github.com/duetosymmetry/qnm]
@@ -397,7 +402,10 @@ def compute_qnms_from_Mf_af(df, modes, pars):
                 except:
                     raise ValueError('Unable to find the pyRing installation for the QNMs fits. Please either install pyRing or disactivate the option "qnms-pyRing".')
                 omg[i] = wf.QNM_fit(l, m, 0).f(Mf, af)            # [Hz]
-                tau[i] = wf.QNM_fit(l, m, 0).tau(Mf, af) * 1000   # [ms]
+                if scaling == 1:
+                    tau[i] = wf.QNM_fit(l, m, 0).tau(Mf, af) * 1000   # [ms]
+                else:
+                    tau[i] = wf.QNM_fit(l, m, 0).tau(Mf, af)   # [ms]
 
         df.insert(0, 'f_{}{}'.format(l,m),   omg)
         df.insert(0, 'tau_{}{}'.format(l,m), tau)
