@@ -123,7 +123,7 @@ def get_sigma_bounds(df, pars, keys, comp_pars, par):
 def get_sigma_IMR(df, pars):
 
     # Set the parameter bounds as 3 times the 90% CI.
-    dev = 3
+    dev = 1
     CI = {par: {'median': 0, '90-low': 0, '90-high': 0} for par in pars}
 
     for par in pars:
@@ -149,6 +149,8 @@ def corner_plots(pars, SampDataFrame, PriorDataFrame, IMRDataFrame):
     keys = pd.unique(SampDataFrame[pars['stack-mode']])
     if pars['stack-mode'] == 'time':     keys = sort_times_list(keys)
     if pars['stack-mode'] == 'pipeline': keys = sort_SNR_list(  keys)
+    if pars['include-IMR'] and not pars['IMR-posteriors']: CI = get_sigma_IMR(IMRDataFrame, pars['parameters'])
+    if pars['include-IMR'] and     pars['IMR-posteriors']: pars['ordering'].append('IMR')
     if not pars['ordering'] == []:
         if ((set(pars['ordering']) <= set(keys))) and (len(pars['ordering']) == len(keys)): keys = pars['ordering']
         else: raise ValueError('Invalid option for {stack_mode} ordering.'.format(stack_mode = pars['stack-mode']))
@@ -240,6 +242,32 @@ def corner_plots(pars, SampDataFrame, PriorDataFrame, IMRDataFrame):
                     truth_color      = pars['truth-color'],
                 )
         
+        # Add truths if required
+        if not pars['truths'] == []:
+            for pi,_ in enumerate(pars['parameters']):
+                for qi,_ in enumerate(pars['parameters']):
+                    if pi == qi: # Diagonal elements
+                        fig.axes[pi, qi].axvline(pars['truths'][qi], ls = '--', lw = 0.7, alpha = 0.5, color = pars['truth-color'])
+                    elif pi > qi:
+                        fig.axes[pi, qi].axvline(pars['truths'][qi], ls = '--', lw = 0.7, alpha = 0.5, color = pars['truth-color'])
+                        fig.axes[pi, qi].axhline(pars['truths'][pi], ls = '--', lw = 0.7, alpha = 0.5, color = pars['truth-color'])
+
+        # Add IMRCI if required
+        if pars['include-IMR'] and not pars['IMR-posteriors']:
+            for pi,par in enumerate(pars['parameters']):
+                for qi,qar in enumerate(pars['parameters']):
+                    if pi == qi: # Diagonal elements
+                        fig.axes[pi, qi].axvline(CI[par]['median'],  ls = '-',  lw = 1., alpha = 0.6, color = pars['truth-color'])
+                        fig.axes[pi, qi].axvline(CI[par]['90-low'],  ls = '--', lw = 1., alpha = 0.2, color = pars['truth-color'])
+                        fig.axes[pi, qi].axvline(CI[par]['90-high'], ls = '--', lw = 1., alpha = 0.2, color = pars['truth-color'])
+                    elif pi > qi:
+                        fig.axes[pi, qi].axhline(CI[par]['median'],  ls = '-',  lw = 1., alpha = 0.6, color = pars['truth-color'])
+                        fig.axes[pi, qi].axhline(CI[par]['90-low'],  ls = '--', lw = 1., alpha = 0.2, color = pars['truth-color'])
+                        fig.axes[pi, qi].axhline(CI[par]['90-high'], ls = '--', lw = 1., alpha = 0.2, color = pars['truth-color'])
+                        fig.axes[pi, qi].axvline(CI[qar]['median'],  ls = '-',  lw = 1., alpha = 0.6, color = pars['truth-color'])
+                        fig.axes[pi, qi].axvline(CI[qar]['90-low'],  ls = '--', lw = 1., alpha = 0.2, color = pars['truth-color'])
+                        fig.axes[pi, qi].axvline(CI[qar]['90-high'], ls = '--', lw = 1., alpha = 0.2, color = pars['truth-color'])
+            
         utils.create_directory(pars['plots-dir'], 'PNG')
         for extension in ['pdf', 'png']:
             if extension == 'pdf': filename = os.path.join(pars['plots-dir'],        '{name}.{ext}'.format(name = pars['corner-settings']['figname'], ext = extension))
@@ -305,12 +333,23 @@ def corner_plots_sns(pars, SampDataFrame, PriorDataFrame, IMRDataFrame):
     # Add IMRCI if required
     if pars['include-IMR'] and not pars['IMR-posteriors']:
         for pi,par in enumerate(pars['parameters']):
-            for qi,_ in enumerate(pars['parameters']):
+            for qi,qar in enumerate(pars['parameters']):
+                # if pi == qi: # Diagonal elements
+                #     fig.axes[pi, qi].axvline(CI[par]['median'],  ls = '--', lw = 1.0, alpha = 0.2, color = pars['truth-color'])
+                # elif pi > qi:
+                #     fig.axes[pi, qi].axvline(CI[par]['median'],  ls = '--', lw = 1.0, alpha = 0.2, color = pars['truth-color'])
+                #     fig.axes[pi, qi].axhline(CI[par]['median'],  ls = '--', lw = 1.0, alpha = 0.2, color = pars['truth-color'])
                 if pi == qi: # Diagonal elements
-                    fig.axes[pi, qi].axvline(CI[par]['median'],  ls = '--', lw = 1.0, alpha = 0.2, color = pars['truth-color'])
+                    fig.axes[pi, qi].axvline(CI[par]['median'],  ls = '-',  lw = 1., alpha = 0.6, color = pars['truth-color'])
+                    fig.axes[pi, qi].axvline(CI[par]['90-low'],  ls = '--', lw = 1., alpha = 0.2, color = pars['truth-color'])
+                    fig.axes[pi, qi].axvline(CI[par]['90-high'], ls = '--', lw = 1., alpha = 0.2, color = pars['truth-color'])
                 elif pi > qi:
-                    fig.axes[pi, qi].axvline(CI[par]['median'],  ls = '--', lw = 1.0, alpha = 0.2, color = pars['truth-color'])
-                    fig.axes[pi, qi].axhline(CI[par]['median'],  ls = '--', lw = 1.0, alpha = 0.2, color = pars['truth-color'])
+                    fig.axes[pi, qi].axhline(CI[par]['median'],  ls = '-',  lw = 1., alpha = 0.6, color = pars['truth-color'])
+                    fig.axes[pi, qi].axhline(CI[par]['90-low'],  ls = '--', lw = 1., alpha = 0.2, color = pars['truth-color'])
+                    fig.axes[pi, qi].axhline(CI[par]['90-high'], ls = '--', lw = 1., alpha = 0.2, color = pars['truth-color'])
+                    fig.axes[pi, qi].axvline(CI[qar]['median'],  ls = '-',  lw = 1., alpha = 0.6, color = pars['truth-color'])
+                    fig.axes[pi, qi].axvline(CI[qar]['90-low'],  ls = '--', lw = 1., alpha = 0.2, color = pars['truth-color'])
+                    fig.axes[pi, qi].axvline(CI[qar]['90-high'], ls = '--', lw = 1., alpha = 0.2, color = pars['truth-color'])
 
     for pi,par in enumerate(pars['parameters']):
         # Set the bounds
@@ -507,9 +546,10 @@ def violin_plots(pars, SampDataFrame, PriorDataFrame, IMRDataFrame, EvidenceData
                 if not xi == 0:             axx.axhline(pars['truths'][xi], ls = '--', lw = 1.5, alpha = 0.5, color = pars['truth-color'])
                 if pars['include-IMR'] and not pars['IMR-posteriors']:
                     for pi,par in enumerate(params):
-                        ax[xi][pi].axvspan(CI[par]['90-low'], CI[par]['90-high'], ls = '--', lw = 1., alpha = 0.2, color = pars['truth-color']) # Plot IMR CI
-                        # ax[xi][pi].axvline(CI[par]['90-low'],  ls = '--', lw = 1., alpha = 0.2, color = pars['truth-color'])
-                        # ax[xi][pi].axvline(CI[par]['90-high'], ls = '--', lw = 1., alpha = 0.2, color = pars['truth-color'])
+                        # Plot IMR CI
+                        ax[xi][pi].axvline(CI[par]['median'],  ls = '-',  lw = 1., alpha = 0.6, color = pars['truth-color'])
+                        ax[xi][pi].axvline(CI[par]['90-low'],  ls = '--', lw = 1., alpha = 0.2, color = pars['truth-color'])
+                        ax[xi][pi].axvline(CI[par]['90-high'], ls = '--', lw = 1., alpha = 0.2, color = pars['truth-color'])
 
     utils.create_directory(pars['plots-dir'], 'PNG')
     for extension in ['pdf', 'png']:
@@ -557,6 +597,7 @@ def ridgeline_plots(pars, SampDataFrame, PriorDataFrame, IMRDataFrame):
             if pars['stack-mode'] == 'time':
                 SampDataFrame['ordering'] = SampDataFrame['ordering'].map(lambda x: x.replace('M', '$'))
                 SampDataFrame['ordering'] = SampDataFrame['ordering'].map(lambda x: '$'+x)
+            else: SampDataFrame['ordering'] = SampDataFrame['ordering'].map(lambda x: '$'+x+'$')
 
             if ax.ndim == 1: subset = ax[pi]
             else:            subset = ax[:,pi]
@@ -600,6 +641,7 @@ def ridgeline_plots(pars, SampDataFrame, PriorDataFrame, IMRDataFrame):
             if pars['stack-mode'] == 'time':
                 SampDataFrame['ordering'] = SampDataFrame['ordering'].map(lambda x: x.replace('M', '$'))
                 SampDataFrame['ordering'] = SampDataFrame['ordering'].map(lambda x: '$'+x)
+            else: SampDataFrame['ordering'] = SampDataFrame['ordering'].map(lambda x: '$'+x+'$')
 
             if ax.ndim == 1: subset = ax[pi]
             else:            subset = ax[:,pi]
@@ -630,6 +672,10 @@ def ridgeline_plots(pars, SampDataFrame, PriorDataFrame, IMRDataFrame):
             ax[pi].set_xlabel(labels_dict[par])
             ax[pi].tick_params(axis = 'both', which = 'major', labelsize = pars['label-sizes']['xtick'])
             if not pars['truths'] == []:         ax[pi].axvline(pars['truths'][pi], ls = '--', lw = 1.5, alpha = 0.5, color = pars['truth-color'])  # Plot truth values
+            if pars['include-IMR'] and not pars['IMR-posteriors']:
+                ax[pi].axvline(CI[par]['median'],  ymin=0.05, ymax=0.9, ls = '-',  alpha = 0.6, lw = 1., color = pars['truth-color'])
+                ax[pi].axvline(CI[par]['90-low'],  ymin=0.05, ymax=0.9, ls = '--', alpha = 0.2, lw = 1., color = pars['truth-color'])
+                ax[pi].axvline(CI[par]['90-high'], ymin=0.05, ymax=0.9, ls = '--', alpha = 0.2 ,lw = 1., color = pars['truth-color'])
         else:
             ax[len(keys)-1][pi].xaxis.set_visible(True)
             ax[len(keys)-1][pi].grid(visible = False)
@@ -638,9 +684,9 @@ def ridgeline_plots(pars, SampDataFrame, PriorDataFrame, IMRDataFrame):
                 ax[ni][pi].tick_params(axis = 'both', which = 'major', labelsize = pars['label-sizes']['xtick'])
                 if not pars['truths'] == []: ax[ni][pi].axvline(pars['truths'][pi], ls = '--', lw = 1.5, alpha = 0.5, color = pars['truth-color'])  # Plot truth values
                 if pars['include-IMR'] and not pars['IMR-posteriors']:
-                    ax[ni][pi].axvspan(CI[par]['90-low'], CI[par]['90-high'], ls = '--', lw = 1., alpha = 0.2, color = pars['truth-color']) # Plot IMR CI
-                    #ax[ni][pi].axvline(CI[par]['90-low'],  ls = '--', lw = 1., alpha = 0.2, color = pars['truth-color'])
-                    #ax[ni][pi].axvline(CI[par]['90-high'], ls = '--', lw = 1., alpha = 0.2, color = pars['truth-color'])
+                    ax[ni][pi].axvline(CI[par]['median'],  ymin=0.05, ymax=0.9, ls = '-',  alpha = 0.6, lw = 1., color = pars['truth-color'])
+                    ax[ni][pi].axvline(CI[par]['90-low'],  ymin=0.05, ymax=0.9, ls = '--', alpha = 0.2, lw = 1., color = pars['truth-color'])
+                    ax[ni][pi].axvline(CI[par]['90-high'], ymin=0.05, ymax=0.9, ls = '--', alpha = 0.2 ,lw = 1., color = pars['truth-color'])
 
     if pars['compare'] == '': colors = lp.palettes(pars, colormap = False, number_colors = len(comp_pars))
     patch = [mpatches.Patch(facecolor = colors[ci], edgecolor = 'k', alpha = pars['ridgeline-settings']['alpha'], label = lp.labels_legend(comp_pars[ci])) for ci,c in enumerate(comp_pars)]

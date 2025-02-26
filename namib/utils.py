@@ -30,6 +30,8 @@ def Adapt_Samples(df, pars, IMR_flag = False):
             df.rename(columns = {'cos_theta_jn' : 'cosiota'}, inplace = True)
         if (set(['iota']) <= set(pars['parameters'])) and (set(['cos_theta_jn']) <= set(df.keys())):
             df.insert(0, 'iota', np.arccos(df.cos_theta_jn))
+        if (set(['a_1', 'a_2']) <= set(df.keys())):
+            df.rename(columns = {'a_1' : 'chi1', 'a_2' : 'chi2'}, inplace = True)
 
     def granite_conventions(df, pars):
         if (set(['m1_detect', 'm2_detect']) <= set(df.keys())):
@@ -261,10 +263,10 @@ def compute_Mf_af_NRSur(df):
     try:    from pesummary.gw.conversions.nrutils import NRSur_fit
     except: raise ValueError('Unable to find the NRSur remnant fits. Please either install pesummary and  make sure that the LAL_DATA_PATH is properly set, or use a different option for the remnant fits.')
 
-    if not (set(['m1', 'm2', 'a_1', 'a_2', 'tilt_1', 'tilt_2', 'phi_12', 'phi_jl', 'theta_jn', 'phase']) <= set(df.columns)):
+    if not (set(['m1', 'm2', 'chi1', 'chi2', 'tilt_1', 'tilt_2', 'phi_12', 'phi_jl', 'theta_jn', 'phase']) <= set(df.columns)):
         raise ValueError('The IMR samples are not compatible with the selected remnant fits. Please make sure they are consistent.')
 
-    fits = NRSur_fit(df.m1, df.m2, df.a_1, df.a_2, df.tilt_1, df.tilt_2, df.phi_12, df.phi_jl, df.theta_jn, df.phase,
+    fits = NRSur_fit(df.m1, df.m2, df.chi1, df.chi2, df.tilt_1, df.tilt_2, df.phi_12, df.phi_jl, df.theta_jn, df.phase,
                         20.0, np.full_like(df.m1, 20.0),
                         model       = 'NRSur7dq4Remnant',
                         approximant = 'IMRPhenomXPHM')
@@ -331,10 +333,10 @@ def compute_Mf_af_from_IMR(df, pars, IMR_fits):
         try:    from pesummary.gw.conversions.nrutils import NRSur_fit
         except: raise ValueError('Unable to find the NRSur remnant fits. Please either install pesummary and  make sure that the LAL_DATA_PATH is properly set, or use a different option for the remnant fits.')
 
-        if not (set(['m1', 'm2', 'a_1', 'a_2', 'tilt_1', 'tilt_2', 'phi_12', 'phi_jl', 'theta_jn', 'phase']) <= set(df.columns)):
+        if not (set(['m1', 'm2', 'chi1', 'chi2', 'tilt_1', 'tilt_2', 'phi_12', 'phi_jl', 'theta_jn', 'phase']) <= set(df.columns)):
             raise ValueError('The IMR samples are not compatible with the selected remnant fits. Please make sure they are consistent.')
 
-        fits = NRSur_fit(df.m1, df.m2, df.a_1, df.a_2, df.tilt_1, df.tilt_2, df.phi_12, df.phi_jl, df.theta_jn, df.phase,
+        fits = NRSur_fit(df.m1, df.m2, df.chi1, df.chi2, df.tilt_1, df.tilt_2, df.phi_12, df.phi_jl, df.theta_jn, df.phase,
                             20.0, np.full_like(df.m1, 20.0),
                             model       = 'NRSur7dq4Remnant',
                             approximant = 'IMRPhenomXPHM')
