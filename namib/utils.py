@@ -138,8 +138,24 @@ def read_posteriors_hierarchical(file_path, pars):
         df.rename(columns = {'sigma_g' : 'sigma_z0'}, inplace = True)
     if (set(['alpha_z0']) <= set(pars['parameters'])) and (set(['alpha']  ) <= set(df.keys())):
         df.rename(columns = {'alpha' : 'alpha_z0'  }, inplace = True)
+    if (set(['alpha_a']) <= set(pars['parameters'])) and (set(['alpha_a_z0']  ) <= set(df.keys())):
+        df.rename(columns = {'alpha_a_z0' : 'alpha_a'  }, inplace = True)
+    if (set(['alpha_b']) <= set(pars['parameters'])) and (set(['alpha_b_z0']  ) <= set(df.keys())):
+        df.rename(columns = {'alpha_b_z0' : 'alpha_b'  }, inplace = True)
+    if (set(['alpha_c']) <= set(pars['parameters'])) and (set(['alpha_c_z0']  ) <= set(df.keys())):
+        df.rename(columns = {'alpha_c_z0' : 'alpha_c'  }, inplace = True)
     if (set(['mmin_z0'] ) <= set(pars['parameters'])) and (set(['mmin']   ) <= set(df.keys())):
         df.rename(columns = {'mmin' : 'mmin_z0'    }, inplace = True)
+    if (set(['mmin_a'] ) <= set(pars['parameters'])) and (set(['mmin_a_z0']   ) <= set(df.keys())):
+        df.rename(columns = {'mmin_a_z0' : 'mmin_a'    }, inplace = True)
+    if (set(['mmin_b'] ) <= set(pars['parameters'])) and (set(['mmin_b_z0']   ) <= set(df.keys())):
+        df.rename(columns = {'mmin_b_z0' : 'mmin_b'    }, inplace = True)
+    if (set(['mmin_c'] ) <= set(pars['parameters'])) and (set(['mmin_c_z0']   ) <= set(df.keys())):
+        df.rename(columns = {'mmin_c_z0' : 'mmin_c'    }, inplace = True)
+    if (set(['mmin_c_z0'] ) <= set(pars['parameters'])) and (set(['mmin_c']   ) <= set(df.keys())):
+        df.rename(columns = {'mmin_c' : 'mmin_c_z0'    }, inplace = True)
+    if (set(['mmax_c_z0'] ) <= set(pars['parameters'])) and (set(['mmax_c']   ) <= set(df.keys())):
+        df.rename(columns = {'mmax_c' : 'mmax_c_z0'    }, inplace = True)
 
     # Multiple features
     if (set(['alpha']   ) <= set(pars['parameters'])) and (set(['alpha_a']) <= set(df.keys())):
@@ -148,6 +164,10 @@ def read_posteriors_hierarchical(file_path, pars):
         df.rename(columns = {'mmin_a'  : 'mmin'   }, inplace = True)
 
     df = df.filter(items = pars['parameters'])
+    df = downsampling(df, pars)    # Downsample the df if required
+
+    if 'alpha12-sigma6' in file_path:
+        df = df[df['mu_z0']>20]
 
     return df
 
@@ -156,8 +176,6 @@ def read_curves(file_path, pars):
     with open(file_path, 'rb') as f:
         tmp = pickle.load(f)
         df  = pd.DataFrame(tmp)
-
-    df = df.filter(items = pars['parameters'])
 
     return df
 
@@ -628,12 +646,12 @@ class Plots:
         
         if not pars['curves']:
             if pars['corner']:
-                if pars['corner-sns']: plots.corner_plots_sns(pars, SampDataFrame, PriorDataFrame)
-                else:                  plots.corner_plots(    pars, SampDataFrame, PriorDataFrame)
-            if pars['violin']:         plots.violin_plots(    pars, SampDataFrame, PriorDataFrame, EvidenceDataFrame)
-            if pars['ridgeline']:      plots.ridgeline_plots( pars, SampDataFrame, PriorDataFrame)
-            if pars['TGR-plot']:       plots.TGR_plots(       pars, SampDataFrame)
+                if pars['corner-sns']:   plots.corner_plots_sns(pars, SampDataFrame, PriorDataFrame)
+                else:                    plots.corner_plots(    pars, SampDataFrame, PriorDataFrame)
+            if pars['violin']:           plots.violin_plots(    pars, SampDataFrame, PriorDataFrame, EvidenceDataFrame)
+            if pars['ridgeline']:        plots.ridgeline_plots( pars, SampDataFrame, PriorDataFrame)
+            if pars['TGR-plot']:         plots.TGR_plots(       pars, SampDataFrame)
         else:
-            if not pars['redshift']:   plots.reconstructed_distributions(   pars, CurvesDictionary)
-            else:                      plots.reconstructed_primary_redshift(pars, CurvesDictionary)
+            if pars['redshift-primary']: plots.reconstructed_primary_redshift(pars, CurvesDictionary)
+            else:                        plots.reconstructed_distributions(   pars, CurvesDictionary)
             
