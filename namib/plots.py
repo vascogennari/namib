@@ -241,7 +241,7 @@ def corner_plots_sns(pars, SampDataFrame, PriorDataFrame):
         if not pars['bounds'] == []:
             fig.axes[pi, pi].set_xlim(pars['bounds'][pi])
             fig.axes[pi, pi].set_ylim(pars['bounds'][pi])
-            
+
         # Remove the grid
         if pars['remove-grid']:
             for qi,_ in enumerate(pars['parameters']):
@@ -748,7 +748,8 @@ def reconstructed_distributions(pars, CurvesDictionary):
             # Set the log scale for the primary distributions.
             if 'PrimaryMass' in par:
                 ax[pi].set_yscale('log')
-                ax[pi].set_ylim(1e-5, 1)
+                ax[pi].set_ylim(1e-5, 2 )
+                if 'DetectorFrame' in par: ax[pi].set_ylim(0.5e-3, 0.1)
 
     if pars['injected-pop'] == '':
         patch = [mpatches.Patch(facecolor = colors[ci], edgecolor = 'k', alpha = 0.5, label = lp.labels_legend(c)) for ci,c in enumerate(keys)]
@@ -786,7 +787,7 @@ def reconstructed_primary_redshift(pars, CurvesDictionary):
 
     # Plot the observed distribution in log scale.
     if not pars['obs-primary-nolog']:
-        fig, ax = plt.subplots(         nz, 2, figsize = (pars['corner-settings']['figsize'], 2.1 * nz), layout = 'constrained')
+        fig, ax = plt.subplots(         nz, 2, figsize = (pars['corner-settings']['figsize'], 2.2 * nz), layout = 'constrained')
     else:
         subplots = [[ni, 'a'] for ni in range(nz)]
         fig, ax = plt.subplot_mosaic(subplots, figsize = (pars['corner-settings']['figsize'], 2.1 * nz), layout = 'constrained')
@@ -829,7 +830,7 @@ def reconstructed_primary_redshift(pars, CurvesDictionary):
                 # FIXME: These values should not be hardcoded.
                 ax_use.set_ylim(1e-6, 7)
                 ax_use.set_yticks([1e-1, 1e-3, 1e-5])
-                ax_use.set_xticks([10, 30, 50, 70, 90])
+                ax_use.set_xticks([10, 30, 50, 70])
                 ax_use.legend(loc = 'best', handletextpad = -2.0, handlelength = 0)  # Revome colors from log plots.
                 if not zi_inv == nz-1: plt.setp(ax_use.get_xticklabels(), visible = False)  # Remove x_ticks from log plots.
                 if par == 'PrimaryMassDistribution_NoSelectionEffects': ax_use.set_yticks([])
@@ -845,7 +846,7 @@ def reconstructed_primary_redshift(pars, CurvesDictionary):
 
     patch = [mpatches.Patch(facecolor = colors[ci], edgecolor = 'k', alpha = 0.5, label = lp.labels_legend(c)) for ci,c in enumerate(keys)]
     if not pars['obs-primary-nolog']: ax[0][1].legend(handles = patch, loc = 'best', frameon = False)
-    else:                                 ax['a' ].legend(handles = patch, loc = 'best', frameon = False)
+    else:                             ax['a' ].legend(handles = patch, loc = 'best', frameon = False)
 
     if pars['remove-grid']:
         for axx in fig.axes: axx.grid(visible = False)
