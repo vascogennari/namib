@@ -125,7 +125,7 @@ def corner_plots(pars, SampDataFrame, PriorDataFrame):
                 range = [ran for ran,f in zip(range,           flag) if f == False]
         else: params = pars['parameters']
 
-        fig = plt.figure(figsize = pars['corner-settings']['figsize'])
+        fig = plt.figure(figsize = (pars['corner-settings']['figsize'], pars['corner-settings']['figsize']))
         for i,key in enumerate(keys):
             SampDataFrameFilt = SampDataFrameComp[SampDataFrameComp[pars['stack-mode']] == key]
             samp = np.column_stack(SampDataFrameFilt[par] for par in params)
@@ -190,9 +190,11 @@ def corner_plots(pars, SampDataFrame, PriorDataFrame):
                     truth_color      = pars['truth-color'],
                 )
         
-        if not pars['compare'] == '': filename = os.path.join(pars['plots-dir'], 'corner_{name}_{comp}.pdf'.format(name = pars['stack-mode'], comp = comp))
-        else:                         filename = os.path.join(pars['plots-dir'], 'corner_{name}.pdf'.format(name = pars['stack-mode']))
-        fig.savefig(filename, bbox_inches = 'tight', transparent = True)
+        utils.create_directory(pars['plots-dir'], 'PNG')
+        for extension in ['pdf', 'png']:
+            if extension == 'pdf': filename = os.path.join(pars['plots-dir'],        '{name}.{ext}'.format(name = pars['corner-settings']['figname'], ext = extension))
+            if extension == 'png': filename = os.path.join(pars['plots-dir'], 'PNG', '{name}.{ext}'.format(name = pars['corner-settings']['figname'], ext = extension))
+            fig.savefig(filename, bbox_inches = 'tight', transparent = True)
 
 
 
@@ -225,16 +227,26 @@ def corner_plots_sns(pars, SampDataFrame, PriorDataFrame):
         height    = height,
         dropna    = 1,
         plot_kws  = dict(alpha = 0),
-        diag_kws  = dict(alpha = pars['corner-settings']['alpha']),
+        diag_kws  = dict(alpha = pars['corner-settings']['alpha'], linewidth = pars['corner-settings']['linewidth']),
     )
     # Add 2D levels
-    fig.map_lower(sns.kdeplot, levels = 2, fill = False)
-    fig.map_lower(sns.kdeplot, levels = 2, fill = True, alpha = pars['corner-settings']['alpha'])
+    fig.map_lower(sns.kdeplot, levels = [0.01, 1], fill = False)
+    fig.map_lower(sns.kdeplot, levels = [0.01, 1], fill = True, alpha = pars['corner-settings']['alpha'])
 
     # Add legend
     fig._legend.remove()    # Remove default legend
     patch = [mpatches.Patch(facecolor = hex_to_RGB(colors[ci], pars['corner-settings']['alpha']), edgecolor = colors[ci], label = lp.labels_legend(comp_pars[ci])) for ci,c in enumerate(comp_pars)]
     fig.axes[0, 0].legend(handles = patch, loc = 'center', frameon = False, bbox_to_anchor = (len(pars['parameters'])-0.5, 0.5))
+
+    # Add truths if required
+    if not pars['truths'] == []:
+        for pi,_ in enumerate(pars['parameters']):
+            for qi,_ in enumerate(pars['parameters']):
+                if pi == qi: # Diagonal elements
+                    fig.axes[pi, qi].axvline(pars['truths'][qi], ls = '--', lw = 0.7, alpha = 0.5, color = pars['truth-color'])
+                elif pi > qi:
+                    fig.axes[pi, qi].axvline(pars['truths'][qi], ls = '--', lw = 0.7, alpha = 0.5, color = pars['truth-color'])
+                    fig.axes[pi, qi].axhline(pars['truths'][pi], ls = '--', lw = 0.7, alpha = 0.5, color = pars['truth-color'])
 
     for pi,par in enumerate(pars['parameters']):
         # Set the bounds
@@ -246,14 +258,15 @@ def corner_plots_sns(pars, SampDataFrame, PriorDataFrame):
         if pars['remove-grid']:
             for qi,_ in enumerate(pars['parameters']):
                 if pi == qi or pi > qi: fig.axes[pi, qi].grid(visible = False)
+
         fig.axes[len(pars['parameters'])-1, pi].set_xlabel(labels_dict[par])
         if not pi==0: fig.axes[pi, 0].set_ylabel(labels_dict[par])
 
-    if not pars['compare'] == '': filename = os.path.join(pars['plots-dir'], 'corner_{name}_{comp}.pdf'.format(name = pars['stack-mode'], comp = comp))
-    else:                         filename = os.path.join(pars['plots-dir'], 'corner_{name}.pdf'.format(name = pars['stack-mode']))
-    fig.savefig(filename, bbox_inches = 'tight', transparent = True)
-    filename = os.path.join(pars['plots-dir'], 'corner_{name}.png'.format(name = pars['stack-mode']))
-    fig.savefig(filename, bbox_inches = 'tight', transparent = True)
+    utils.create_directory(pars['plots-dir'], 'PNG')
+    for extension in ['pdf', 'png']:
+        if extension == 'pdf': filename = os.path.join(pars['plots-dir'],        '{name}.{ext}'.format(name = pars['corner-settings']['figname'], ext = extension))
+        if extension == 'png': filename = os.path.join(pars['plots-dir'], 'PNG', '{name}.{ext}'.format(name = pars['corner-settings']['figname'], ext = extension))
+        fig.savefig(filename, bbox_inches = 'tight', transparent = True)
 
 
 
@@ -436,12 +449,15 @@ def violin_plots(pars, SampDataFrame, PriorDataFrame, EvidenceDataFrame):
             for xi, axx in enumerate(fig.axes):
                 if not xi == 0:             axx.axhline(pars['truths'][xi], ls = '--', lw = 1.5, alpha = 0.5, color = pars['truth-color'])
 
-    filename = os.path.join(pars['plots-dir'], 'violin_{name}.pdf'.format(name = pars['stack-mode']))
-    if not pars['fix-dimensions']:
-        fig.savefig(filename, bbox_inches = 'tight', transparent = True)
-    else:
-        plt.tight_layout(h_pad = pars['violin-settings']['pad'])
-        fig.savefig(filename, transparent = True)
+    utils.create_directory(pars['plots-dir'], 'PNG')
+    for extension in ['pdf', 'png']:
+        if extension == 'pdf': filename = os.path.join(pars['plots-dir'],        '{name}.{ext}'.format(name = pars['violin-settings']['figname'], ext = extension))
+        if extension == 'png': filename = os.path.join(pars['plots-dir'], 'PNG', '{name}.{ext}'.format(name = pars['violin-settings']['figname'], ext = extension))
+        if not pars['fix-dimensions']:
+            fig.savefig(filename, bbox_inches = 'tight', transparent = True)
+        else:
+            plt.tight_layout(h_pad = pars['violin-settings']['pad'])
+            fig.savefig(filename, transparent = True)
 
 
 
@@ -546,7 +562,7 @@ def ridgeline_plots(pars, SampDataFrame, PriorDataFrame):
             ax[pi].grid(visible = False)
             ax[pi].set_xlabel(labels_dict[par])
             ax[pi].tick_params(axis = 'both', which = 'major', labelsize = pars['label-sizes']['xtick'])
-            if not pars['truths'] == []: ax[pi].axvline(pars['truths'][pi], ls = '--', lw = 1.5, alpha = 0.5, color = 'k')  # Plot truth values
+            if not pars['truths'] == []: ax[pi].axvline(pars['truths'][pi], ls = '--', lw = 1.5, alpha = 0.5, color = pars['truth-color'])  # Plot truth values
         else:
             ax[len(keys)-1][pi].xaxis.set_visible(True)
             ax[len(keys)-1][pi].grid(visible = False)
@@ -568,8 +584,11 @@ def ridgeline_plots(pars, SampDataFrame, PriorDataFrame):
         if ax.ndim == 1: ax[0].set_ylabel('$Time\ [M_{f}]$')
         else:            ax[round(len(keys)/2)][0].set_ylabel('$Time\ [M_{f}]$')
 
-    filename = os.path.join(pars['plots-dir'], 'ridgeline_{name}.pdf'.format(name = pars['stack-mode']))
-    plt.savefig(filename, bbox_inches = 'tight', transparent = True)
+    utils.create_directory(pars['plots-dir'], 'PNG')
+    for extension in ['pdf', 'png']:
+        if extension == 'pdf': filename = os.path.join(pars['plots-dir'],        '{name}.{ext}'.format(name = pars['ridgeline-settings']['figname'], ext = extension))
+        if extension == 'png': filename = os.path.join(pars['plots-dir'], 'PNG', '{name}.{ext}'.format(name = pars['ridgeline-settings']['figname'], ext = extension))
+        plt.savefig(filename, bbox_inches = 'tight', transparent = True)
 
 
 

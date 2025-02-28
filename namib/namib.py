@@ -1,5 +1,6 @@
-import os, configparser, ast
+import os, sys, configparser, ast
 from optparse import OptionParser
+import namib
 
 from namib.utils import Posteriors, Curves, Plots
 from namib.utils import create_directory, save_posteriors_to_txt, save_output_medians
@@ -25,7 +26,7 @@ def main():
 
         'samp-dir'           : '',
         'output'             : '',
-        'file-path'          : '',
+        'screen-output'      : 0,
 
         'stack-mode'         : 'event',
         'compare'            : '',
@@ -62,9 +63,9 @@ def main():
         'corner-sns'         : 1,
         'redshift-primary'   : 0,
 
-        'corner-settings'    : {'figsize':  8,       'alpha': 0.5, 'smooth': 0},
-        'violin-settings'    : {'figsize': (15, 25), 'alpha': 0.5, 'rotation': 0, 'pad': -0.5},
-        'ridgeline-settings' : {'figsize': (20, 10), 'alpha': 0.5, 'overlap': 0.5, 'fade': 0, 'borderaxespad': 0.5},
+        'corner-settings'    : {'figsize':  8,       'figname': 'corner',    'alpha': 0.5, 'smooth': 0,    'linewidth': 1},
+        'violin-settings'    : {'figsize': (15, 25), 'figname': 'violin',    'alpha': 0.5, 'rotation': 0,  'pad': -0.5},
+        'ridgeline-settings' : {'figsize': (20, 10), 'figname': 'ridgeline', 'alpha': 0.5, 'overlap': 0.5, 'fade': 0, 'borderaxespad': 0.5},
         'label-sizes'        : {'xtick': 15, 'ytick': 15, 'legend': 17, 'axes': 17},
         'palette'            : 'crest',
 
@@ -83,7 +84,7 @@ def main():
         
         'single-prior'       : '',
         'prior-color'        : '#828F61',
-        'truth-color'        : '#9B280A',
+        'truth-color'        : 'k',
         'percentiles'        : {'ll': 5, 'l': 16, 'm': 50, 'h': 84, 'hh': 95},
 
         'obs-primary-nolog'  : 0,
@@ -95,7 +96,7 @@ def main():
         if ('samp-dir' in key) or ('output' in key) or ('stack-mode' in key) or ('compare' in key) or ('injected-pop' in key):
             try: input_pars[key] = Config.get('input', key)
             except: pass
-        if ('compare-hard' in key) or ('evidence' in key) or ('save-post' in key) or ('include-prior' in key) or ('ds-scaling' in key) or ('screen-medians' in key) or ('save-medians' in key) or ('qnms-pyRing' in key) or ('remnant-pyRing' in key) or ('hierarchical' in key) or ('curves' in key):
+        if ('screen-output' in key) or ('compare-hard' in key) or ('evidence' in key) or ('save-post' in key) or ('include-prior' in key) or ('ds-scaling' in key) or ('screen-medians' in key) or ('save-medians' in key) or ('qnms-pyRing' in key) or ('remnant-pyRing' in key) or ('hierarchical' in key) or ('curves' in key):
             try: input_pars[key] = Config.getboolean('input', key)
             except: pass
         if ('downsample' in key):
@@ -113,6 +114,14 @@ def main():
         if ('palette' in key) or ('time-percentiles' in key) or ('corner-settings' in key) or ('violin-settings' in key) or ('ridgeline-settings' in key) or ('label-sizes' in key) or ('percentiles' in key):
             try: input_pars[key] = ast.literal_eval(Config.get('plots', key))
             except: pass
+
+    # Deviate stdout and stderr to file
+    if input_pars['screen-output']:
+        sys.stdout = open(os.path.join(input_pars['output'], 'stdout_namib.txt'), 'w')
+        sys.stderr = open(os.path.join(input_pars['output'], 'stderr_namib.txt'), 'w')
+    else: pass
+    print('\nn a m i b\n')
+    print(('Reading config file:\n{}'.format(config_file)))
 
     if not os.path.exists(input_pars['samp-dir']):
         raise ValueError('\nSamples directory {} not found.\n'.format(input_pars['samp-dir']))

@@ -6,7 +6,7 @@ rcParams["xtick.labelsize"] = 15
 rcParams["ytick.labelsize"] = 15
 rcParams["xtick.direction"] = "in"
 rcParams["ytick.direction"] = "in"
-rcParams["legend.fontsize"] = 17
+rcParams["legend.fontsize"] = 15
 rcParams["legend.frameon"]  = False
 rcParams["legend.loc"]      = "best"
 rcParams["axes.labelsize"]  = 20
@@ -38,15 +38,20 @@ def labels_parameters(pars_list):
         elif par == 'f_t_1':        string = '$f_{2}\ [Hz]$'
         elif par == 'tau_t_1':      string = '$\\tau_{2}\ [ms]$'
         elif par == 'logA_t_1':     string = '$lnA_{2}$'
+        elif par == 'f_t_2':        string = '$f_{3}\ [Hz]$'
+        elif par == 'tau_t_2':      string = '$\\tau_{3}\ [ms]$'
 
         elif par == 'Mf':           string = '$M_f\ [M_{\odot}]$'
         elif par == 'af':           string = '$a_f$'
         elif par == 'A2220':        string = '$A_{220}$'
         elif par == 'A2330':        string = '$A_{330}$'
+        elif par == 'A2210':        string = '$A_{210}$'
         elif par == 'f_22':         string = '$f_{22}\ [Hz]$'
         elif par == 'tau_22':       string = '$\\tau_{22}\ [ms]$'
         elif par == 'f_33':         string = '$f_{33}\ [Hz]$'
         elif par == 'tau_33':       string = '$\\tau_{33}\ [ms]$'
+        elif par == 'f_44':         string = '$f_{44}\ [Hz]$'
+        elif par == 'tau_44':       string = '$\\tau_{4}\ [ms]$'
 
         elif par == 'm1':           string = '$m_1\ [M_{\odot}]$'
         elif par == 'm2':           string = '$m_2\ [M_{\odot}]$'
@@ -66,7 +71,10 @@ def labels_parameters(pars_list):
 
         elif par == 'domega_220':   string = '$\\delta\\omega_{22}$'
         elif par == 'domega_330':   string = '$\\delta\\omega_{33}$'
+        elif par == 'domega_221':   string = '$\\delta\\omega_{221}$'
         elif par == 'dtau_220':     string = '$\\delta\\tau_{22}$'
+        elif par == 'dtau_330':     string = '$\\delta\\tau_{33}$'
+        elif par == 'domega_220':   string = '$\\delta\\omega_{22}$'
         elif par == 'ell':          string = '$l\ [km]$'
 
         # Cosmology
@@ -150,31 +158,52 @@ def labels_legend(par):
 
     label = ''
     try:
-        if   par == '22':        label = '$(2,2)$'
+        if   par == '1DS':       label = '$1 \mathrm{DS}$'
+        elif par == '2DS':       label = '$2 \mathrm{DS}$'
+        elif par == '3DS':       label = '$3 \mathrm{DS}$' 
+        elif par == '1mode':     label = '$1 \mathrm{DS}$'
+        elif par == '2mode':     label = '$2 \mathrm{DS}$'
+        elif par == '3mode':     label = '$3 \mathrm{DS}$'
+
+        elif par == '22':        label = '$(2,2)$'
         elif par == '22-33':     label = '$(2,2),(3,3)$'
         elif par == '22-21':     label = '$(2,2),(2,1)$'
         elif par == '22-21-33':  label = '$(2,2),(2,1),(3,3)$'
+        elif par == '22-21-33-44-55':  label = '$(2,2),(2,1),(3,3),(4,4),(5,5)$'
 
         elif par == '220':       label = '$(2,2,0)$'
         elif par == '220-330':   label = '$(2,2,0),(3,3,0)$'
         elif par == '220-221':   label = '$(2,2,0),(2,2,1)$'
+        elif par == '220-210':   label = '$(2,2,0),(2,1,0)$'
+        elif par == '220-200':   label = '$(2,2,0),(2,0,0)$'
+        elif par == '220-320':   label = '$(2,2,0),(3,2,0)$'
+        elif par == '220-440':   label = '$(2,2,0),(4,4,0)$'
 
         elif par == 'GR':        label = '$\mathrm{GR}$'
         elif par == 'nGR':       label = '$\mathrm{nGR}$'
         elif par == 'do22':      label = '$\\delta\\omega_{22}$'
         elif par == 'do33':      label = '$\\delta\\omega_{33}$'
         elif par == 'dt22':      label = '$\\delta\\tau_{22}$'
-        elif par == 'do22-dt22': label = '$\\delta\\omega_{33},\ \\delta\\tau_{22}$'
+        elif par == 'do22-dt22': label = '$\\delta\\omega_{22},\ \\delta\\tau_{22}$'
 
-        elif par == 'EdGB':       label = '$\mathrm{EdGB}$'
+        elif par == '22-do22':   label = '$\\delta\\omega_{22}$'
+        elif par == '22-dt22':   label = '$\\delta\\tau_{22}$'
+        elif par == '22-do22-dt22': label = '$\\delta\\omega_{22},\ \\delta\\tau_{22}$'
+
+        elif par == 'EdGB':      label = '$\mathrm{EdGB}$'
 
         elif par == 'DS':        label = '$\mathrm{DS}$'
         elif par == 'TEOBPM':    label = '$\mathrm{TEOBPM}$'
+        elif par == 'Kerr':      label = '$\mathrm{Kerr}$'
         elif par == 'Kerr-220':  label = '$\mathrm{Kerr\ 220}$'
         elif par == 'Kerr-221':  label = '$\mathrm{Kerr\ 221}$'
         elif par == 'MMRDNP':    label = '$\mathrm{MMRDNP}$'
         elif par == 'LVK-RD':    label = '$\mathrm{LVK\ RD}$'
         elif par == 'LVK-IMR':   label = '$\mathrm{LVK\ IMR}$'
+        elif par == 'IMR':       label = '$\mathrm{IMR}$'
+
+        elif par == 'NRSur7dq4':   label = '$\mathrm{NRSur7dq4}$'
+        elif par == 'SEOBv5PHM':   label = '$\mathrm{SEOBv5PHM}$'
 
         # Cosmology
         elif par == 'beta':               label = '$\\beta\ \mathrm{function}$'

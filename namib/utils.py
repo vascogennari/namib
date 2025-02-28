@@ -26,6 +26,8 @@ def from_IMR_to_RD_samples(df, pars):
         df = compute_progenitors_from_IMR(df, inverse = True)
 
     # LVK
+    if (set(['mass_1', 'mass_2']) <= set(df.keys())):
+        df.rename(columns = {'mass_1' : 'm1', 'mass_2' : 'm2'}, inplace = True)
     if (set(['distance']) <= set(pars['parameters'])) and (set(['luminosity_dustance']) <= set(df.keys())):
         df.insert(0, 'distance', df.luminosity_dustance / 1000)     # [Gpc]
     if (set(['cosiota']) <= set(pars['parameters'])) and (set(['cos_theta_jn']) <= set(df.keys())):
@@ -36,10 +38,15 @@ def from_IMR_to_RD_samples(df, pars):
     # Compute remnant pars
     if (set(['Mf', 'af']) <= set(pars['parameters'])) and (set(['m1', 'm2', 'chi1', 'chi2']) <= set(df.keys())):
         df = compute_Mf_af_from_IMR(df, pars)
+    if (set(['Mf', 'af']) <= set(pars['parameters'])) and (set(['m1', 'm2', 'spin_1x', 'spin_1y', 'spin_1z', 'spin_2x', 'spin_2y', 'spin_2z']) <= set(df.keys())):
+        df = compute_Mf_af_from_IMR_precessing(df, pars)
     if (set(['f_22', 'tau_22']) <= set(pars['parameters'])) and (set(['Mf', 'af']) <= set(df.keys())):
         df = compute_qnms_from_Mf_af(df,  pars['modes'], pars)
     if (set(['f_22', 'tau_22']) <= set(pars['parameters'])) and (set(['m1', 'm2', 'chi1', 'chi2']) <= set(df.keys())) and not (set(['Mf', 'af']) <= set(pars['parameters'])):
         df = compute_Mf_af_from_IMR(df, pars)
+        df = compute_qnms_from_Mf_af(df, pars['modes'], pars)
+    if (set(['f_22', 'tau_22']) <= set(pars['parameters'])) and (set(['m1', 'm2', 'spin_1x', 'spin_1y', 'spin_1z', 'spin_2x', 'spin_2y', 'spin_2z']) <= set(df.keys())) and not (set(['Mf', 'af']) <= set(pars['parameters'])):
+        df = compute_Mf_af_from_IMR_precessing(df, pars)
         df = compute_qnms_from_Mf_af(df, pars['modes'], pars)
 
     # Damped-sinusoids
@@ -108,6 +115,12 @@ def read_posteriors_event(file_path, pars):
                     except: raise ValueError('Invalid option for prior reading: cannot find prior samples. Exiting...')
             load = np.array(tmp)
             if pars['include-prior']: loadp = np.array(tmpp)
+    if '.hdf5' in filename:
+        with h5py.File(file_path, 'r') as f:
+            try:
+                tmp = f['posterior']
+            except: raise ValueError('Invalid structure for samples reading: cannot find posterior samples. Exiting...')
+            load = {key: np.array(tmp[key]) for key in tmp.keys()}
 
     df = pd.DataFrame(load)
     df = downsampling(df, pars)    # Downsample the df if required
@@ -310,6 +323,34 @@ def compute_Mf_af_from_IMR(df, pars):
             tmp   = wf.TEOBPM(0, m1, m2, chi1, chi2, {}, 100, 0, 0, [], {})
             Mf[i] = tmp.JimenezFortezaRemnantMass()
             af[i] = tmp.JimenezFortezaRemnantSpin()
+        # else:
+        #     from lalinference.imrtgr.nrutils import bbh_final_mass_projected_spins, bbh_final_spin_projected_spins, bbh_Kerr_trunc_opts
+
+        #     if(df['chi1'][i] < 0): tilt1 = np.pi
+        #     else: tilt1 = 0.0
+        #     if(df['chi2'][i] < 0): tilt2 = np.pi
+        #     else: tilt2 = 0.0
+        #     chi1  = np.abs(df['chi1'][i])
+        #     chi2  = np.abs(df['chi2'][i])
+        #     Mf[i] = bbh_final_mass_projected_spins(m1, m2, chi1, chi2, tilt1, tilt2, 'UIB2016')
+        #     af[i] = bbh_final_spin_projected_spins(m1, m2, chi1, chi2, tilt1, tilt2, 'UIB2016', truncate = bbh_Kerr_trunc_opts.trunc)
+
+    df.insert(0, 'Mf', Mf)
+    df.insert(0, 'af', af)
+    
+    return df
+
+def compute_Mf_af_from_IMR_precessing(df, pars):
+    '''
+    Compute Mf and af of the remnant BH from IMR parameters, using the Jimenez-Forteza fits implemented in pyRing.
+    '''
+    nsamp = len(df)
+    Mf = np.zeros(nsamp)
+    af = np.zeros(nsamp)
+    for i in range(nsamp):
+
+        m1, m2, chi1_x, chi1_y, chi1_z, chi2_x, chi2_y, chi2_z = df.m1[i], df.m2[i], df.spin_1x[i], df.spin_1y[i], df.spin_1z[i], df.spin_2x[i], df.spin_2y[i], df.spin_2z[i]
+        Mf[i], af[i] = get_remnant_precessing(m1, m2, chi1_x, chi1_y, chi1_z, chi2_x, chi2_y, chi2_z)
 
     df.insert(0, 'Mf', Mf)
     df.insert(0, 'af', af)
@@ -322,10 +363,23 @@ def get_remnant(m1, m2, chi1, chi2):
         using the python package surfinBH [https://github.com/vijayvarma392/surfinBH]
     '''
     q = m1 / m2
-    fit = surfinBH.LoadFits('NRSur7dq4EmriRemnant')
+    fit = surfinBH.LoadFits('NRSur7dq4Remnant')
 
     Mf, _ = fit.mf(  q, (0.0, 0.0, chi1), (0.0, 0.0, chi2))
     af, _ = fit.chif(q, (0.0, 0.0, chi1), (0.0, 0.0, chi2))
+
+    return Mf * (m1+m2), af[2]
+
+def get_remnant_precessing(m1, m2, chi1_x, chi1_y, chi1_z, chi2_x, chi2_y, chi2_z):
+    '''
+        Return remnant mass Mf [M_\odot] and spin af []
+        using the python package surfinBH [https://github.com/vijayvarma392/surfinBH]
+    '''
+    q = m1 / m2
+    fit = surfinBH.LoadFits('NRSur7dq4Remnant')
+
+    Mf, _ = fit.mf(  q, (chi1_x, chi1_y, chi1_z), (chi2_x, chi2_y, chi2_z))
+    af, _ = fit.chif(q, (chi1_x, chi1_y, chi1_z), (chi2_x, chi2_y, chi2_z))
 
     return Mf * (m1+m2), af[2]
 
@@ -553,8 +607,6 @@ class Posteriors:
     def __init__(self, pars):
 
         dir_path = pars['samp-dir']
-        if not (pars['file-path'] == ''): dir_path = pars['file-path']
-
         self.SampDataFrame     = pd.DataFrame(columns = pars['parameters'])
         self.PriorDataFrame    = pd.DataFrame(columns = pars['parameters'])
         self.EvidenceDataFrame = pd.DataFrame()
