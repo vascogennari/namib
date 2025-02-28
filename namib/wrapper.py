@@ -1,68 +1,127 @@
 import os
 
-# ------------------------- #
-input_path  = '/Users/vascogennari/Documents/work/code/python/results/GWTC-3_TEOBPM_TGR/PROD4'
-output_path = '/Users/vascogennari/Documents/work/code/python/namib/samples/GWTC-3_TEOBPM/GWTC-3_TEOBPM_TGR'
+ringdown  = 0
+cosmology = 1
 
-elements = {
-    'name'     : '',
-    'pipeline' : 'pyRing',
-    'model'    : '',
-    'submodel' : '',
-    'time'     : '',
-    'GR_tag'   : 'nGR',
-}
+if  ringdown:
+    # ------------------------- #
+    input_path  = '/Users/vascogennari/Documents/work/code/python/results/GWTC-3_TEOBPM_TGR/PROD4'
+    output_path = '/Users/vascogennari/Documents/work/code/python/namib/samples/GWTC-3_TEOBPM/GWTC-3_TEOBPM_TGR'
 
-sampler    = 'raynest'  # Options: [raynest, cpnest]
-deviations = 1
-# ------------------------- #
+    elements = {
+        'name'     : '',
+        'pipeline' : 'pyRing',
+        'model'    : '',
+        'submodel' : '',
+        'time'     : '',
+        'GR_tag'   : 'nGR',
+    }
 
-print('\nCopying samples.\nFrom:\t{input_path}\nTo:\t{output_path}\n'.format(input_path = input_path, output_path = output_path))
+    sampler    = 'raynest'  # Options: [raynest, cpnest]
+    deviations = 1
+    # ------------------------- #
 
-# Create output Evidences directory
-output_evidence_dir = os.path.join(output_path, 'noise_evidences')
-if not os.path.exists(output_evidence_dir): os.makedirs(output_evidence_dir)
+    print('\nCopying samples.\nFrom:\t{input_path}\nTo:\t{output_path}\n'.format(input_path = input_path, output_path = output_path))
 
-# Create output SNR directory
-output_SNR_dir      = os.path.join(output_path, 'SNR_samples')
-if not os.path.exists(output_SNR_dir): os.makedirs(output_SNR_dir)
+    # Create output Evidences directory
+    output_evidence_dir = os.path.join(output_path, 'noise_evidences')
+    if not os.path.exists(output_evidence_dir): os.makedirs(output_evidence_dir)
 
-# Loop on the different runs
-for file in os.listdir(input_path):
-    if (not file == '.DS_Store') and (not file == 'TGR'):
+    # Create output SNR directory
+    output_SNR_dir      = os.path.join(output_path, 'SNR_samples')
+    if not os.path.exists(output_SNR_dir): os.makedirs(output_SNR_dir)
 
-        i = 0
-        keys = []
-        tmp = file.split('_')
-        for element in elements:
-            if elements[element] == '':
-                keys.append(tmp[i])
-                i += 1
-            else:
-                keys.append(elements[element])
+    # Loop on the different runs
+    for file in os.listdir(input_path):
+        if (not file == '.DS_Store') and (not file == 'TGR'):
 
-        if deviations: keys[5] = tmp[-1]   # Set deviations as nonGR_tag
+            i = 0
+            keys = []
+            tmp = file.split('_')
+            for element in elements:
+                if elements[element] == '':
+                    keys.append(tmp[i])
+                    i += 1
+                else:
+                    keys.append(elements[element])
 
-        filename_tmp = '{}_{}_{}_{}_{}_{}'.format(keys[0], keys[1], keys[2], keys[3], keys[4], keys[5]) # Root filename
-        nested_sampler_path = os.path.join(input_path,  file, 'Nested_sampler')                         # Nested Sampler directory path
+            if deviations: keys[5] = tmp[-1]   # Set deviations as nonGR_tag
 
-        # Samples
-        filename            = filename_tmp + '.h5'
-        input_filename      = os.path.join(nested_sampler_path, '{}.h5'.format(sampler))
-        output_filename     = os.path.join(output_path, filename)
+            filename_tmp = '{}_{}_{}_{}_{}_{}'.format(keys[0], keys[1], keys[2], keys[3], keys[4], keys[5]) # Root filename
+            nested_sampler_path = os.path.join(input_path,  file, 'Nested_sampler')                         # Nested Sampler directory path
 
-        # Evidences
-        filename_evidence   = filename_tmp + '_noise.txt'
-        input_evidence      = os.path.join(nested_sampler_path, 'Evidence.txt')
-        output_evidence     = os.path.join(output_evidence_dir, filename_evidence)
+            # Samples
+            filename            = filename_tmp + '.h5'
+            input_filename      = os.path.join(nested_sampler_path, '{}.h5'.format(sampler))
+            output_filename     = os.path.join(output_path, filename)
 
-        # SNR
-        filename_SNR        = filename_tmp + '_SNR.dat'
-        input_SNR           = os.path.join(nested_sampler_path, 'optimal_SNR_TD.dat')
-        output_SNR          = os.path.join(output_SNR_dir, filename_SNR)
+            # Evidences
+            filename_evidence   = filename_tmp + '_noise.txt'
+            input_evidence      = os.path.join(nested_sampler_path, 'Evidence.txt')
+            output_evidence     = os.path.join(output_evidence_dir, filename_evidence)
 
-        os.system('scp -r {input_filename} {output_filename}'.format(input_filename = input_filename, output_filename = output_filename))
-        os.system('scp -r {input_evidence} {output_evidence}'.format(input_evidence = input_evidence, output_evidence = output_evidence))
-        os.system('scp -r {input_SNR} {output_SNR}'.format(               input_SNR = input_SNR,           output_SNR = output_SNR))
+            # SNR
+            filename_SNR        = filename_tmp + '_SNR.dat'
+            input_SNR           = os.path.join(nested_sampler_path, 'optimal_SNR_TD.dat')
+            output_SNR          = os.path.join(output_SNR_dir, filename_SNR)
 
-print('Finished.')
+            os.system('scp -r {input_filename} {output_filename}'.format(input_filename = input_filename, output_filename = output_filename))
+            os.system('scp -r {input_evidence} {output_evidence}'.format(input_evidence = input_evidence, output_evidence = output_evidence))
+            os.system('scp -r {input_SNR} {output_SNR}'.format(               input_SNR = input_SNR,           output_SNR = output_SNR))
+
+elif cosmology:
+ # ------------------------- #
+    input_path  = '/Users/vgennari/Documents/work/code/python/icarogw/results/evolution_study/PROD/non-evolving_population/PROD1'
+    output_path = '/Users/vgennari/Documents/work/code/python/namib/samples/cosmology/LVK_O3/stationary_models_PROD1'
+
+    elements = {
+        'name'     : '',
+        'pipeline' : '',
+        'model'    : '',
+        'submodel' : '',
+        'time'     : 'NN',
+        'GR_tag'   : '',
+    }
+    # ------------------------- #
+
+    print('\nCopying samples.\nFrom:\t{input_path}\nTo:\t{output_path}\n'.format(input_path = input_path, output_path = output_path))
+
+    # Create output directory
+    if not os.path.exists(output_path): os.makedirs(output_path)
+
+    # Create output Evidences directory
+    output_evidence_dir = os.path.join(output_path, 'noise_evidences')
+    if not os.path.exists(output_evidence_dir): os.makedirs(output_evidence_dir)
+
+    # Loop on the different runs
+    for file in os.listdir(input_path):
+        if (not file == '.DS_Store'):
+
+            i = 0
+            keys = []
+            tmp = file.split('_')
+            for element in elements:
+                if elements[element] == '':
+                    keys.append(tmp[i])
+                    i += 1
+                else:
+                    keys.append(elements[element])
+
+            filename_tmp  = '{}_{}_{}_{}_{}_{}'.format(keys[0], keys[1], keys[2], keys[3], keys[4], keys[5]) # Root filename
+            sampler_path  = os.path.join(input_path,  file, 'sampler')                                # Samples directory path
+            evidence_path = os.path.join(input_path,  file)
+
+            # Samples
+            filename            = filename_tmp + '.json'
+            input_filename      = os.path.join(sampler_path, 'label_result.json')
+            output_filename     = os.path.join(output_path, filename)
+
+            # Evidences
+            filename_evidence   = filename_tmp + '_evidence.txt'
+            input_evidence      = os.path.join(evidence_path, 'log_evidence.txt')
+            output_evidence     = os.path.join(output_evidence_dir, filename_evidence)
+
+            os.system('scp -r {input_filename} {output_filename}'.format(input_filename = input_filename, output_filename = output_filename))
+            os.system('scp -r {input_evidence} {output_evidence}'.format(input_evidence = input_evidence, output_evidence = output_evidence))
+
+print('Finished.\n')

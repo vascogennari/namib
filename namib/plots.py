@@ -87,6 +87,10 @@ def get_sigma_bounds(df, pars, keys, comp_pars, par):
     
 # --------------------------------------------------------- #
 
+# ------------------------- #
+# General plots:            #
+# corner, violin, ridgeline #
+# ------------------------- #
 
 def corner_plots(pars, SampDataFrame, PriorDataFrame):
 
@@ -216,7 +220,7 @@ def corner_plots_sns(pars, SampDataFrame, PriorDataFrame):
     fig = sns.pairplot(SampDataFrame.sort_values('ordering'),
         corner    = True,
         hue       = 'ordering',
-        kind      = 'scatter',
+        kind      = 'kde',
         diag_kind = 'kde',
         vars      = labels_dict,
         palette   = colors,
@@ -231,7 +235,6 @@ def corner_plots_sns(pars, SampDataFrame, PriorDataFrame):
 
     # Add legend
     fig._legend.remove()    # Remove default legend
-    patch = [mpatches.Patch(facecolor = colors[ci], edgecolor = 'k', alpha = pars['corner-settings']['alpha'], label = lp.labels_legend(comp_pars[ci])) for ci,c in enumerate(comp_pars)]
     patch = [mpatches.Patch(facecolor = hex_to_RGB(colors[ci], pars['corner-settings']['alpha']), edgecolor = colors[ci], label = lp.labels_legend(comp_pars[ci])) for ci,c in enumerate(comp_pars)]
     fig.axes[0, 0].legend(handles = patch, loc = 'center', frameon = False, bbox_to_anchor = (len(pars['parameters'])-0.5, 0.5))
 
@@ -250,6 +253,12 @@ def corner_plots_sns(pars, SampDataFrame, PriorDataFrame):
         if not pars['bounds'] == []:
             fig.axes[pi, pi].set_xlim(pars['bounds'][pi])
             fig.axes[pi, pi].set_ylim(pars['bounds'][pi])
+
+        # Remove the grid
+        if pars['remove-grid']:
+            for qi,_ in enumerate(pars['parameters']):
+                if pi == qi or pi > qi: fig.axes[pi, qi].grid(visible = False)
+
         fig.axes[len(pars['parameters'])-1, pi].set_xlabel(labels_dict[par])
         if not pi==0: fig.axes[pi, 0].set_ylabel(labels_dict[par])
 
@@ -419,8 +428,13 @@ def violin_plots(pars, SampDataFrame, PriorDataFrame, EvidenceDataFrame):
     if not pars['compare'] == '':
         patch = [mpatches.Patch(facecolor = colors[ci], edgecolor = 'k', alpha = pars['violin-settings']['alpha'], label = lp.labels_legend(comp_pars[ci])) for ci,c in enumerate(comp_pars)]
         fig.axes[-1].legend(handles = patch, loc = 'best', frameon = False)
-        for axx in fig.axes:
-            axx.grid(visible = True)
+
+        # Add or remove grid
+        if pars['remove-grid']:
+            for axx in fig.axes: axx.grid(visible = False)
+        else:
+            for axx in fig.axes: axx.grid(visible = True)
+
     if not pars['event-name'] == '':
         if not '_' in pars['event-name']: a, b = 0.955, 0.88
         else:                             a, b = 0.930, 0.88
@@ -503,7 +517,7 @@ def ridgeline_plots(pars, SampDataFrame, PriorDataFrame):
                 else: raise ValueError('Invalid option for {compare} ordering.'.format(compare = pars['compare-ordering']))
             if not pars['compare-hard']:
                 colors = lp.palettes(pars, colormap = False, number_colors = len(comp_pars))
-            else:                  
+            else:
                 colors = lp.palettes(pars, colormap = False, number_colors = 2)
 
             for comp in comp_pars:
@@ -524,7 +538,7 @@ def ridgeline_plots(pars, SampDataFrame, PriorDataFrame):
             else:            subset = ax[:,pi]
             if pi == 0: flag = True
             else:       flag = False
-
+            
             if pars['automatic-bounds']: bounds = get_sigma_bounds(SampDataFrame, pars, keys, comp_pars, par)
             joyplot(SampDataFrame.sort_values('ordering'),
                 by        = 'ordering',
@@ -548,7 +562,7 @@ def ridgeline_plots(pars, SampDataFrame, PriorDataFrame):
             ax[pi].grid(visible = False)
             ax[pi].set_xlabel(labels_dict[par])
             ax[pi].tick_params(axis = 'both', which = 'major', labelsize = pars['label-sizes']['xtick'])
-            if not pars['truths'] == []:         ax[pi].axvline(pars['truths'][pi], ls = '--', lw = 1.5, alpha = 0.5, color = pars['truth-color'])  # Plot truth values
+            if not pars['truths'] == []: ax[pi].axvline(pars['truths'][pi], ls = '--', lw = 1.5, alpha = 0.5, color = pars['truth-color'])  # Plot truth values
         else:
             ax[len(keys)-1][pi].xaxis.set_visible(True)
             ax[len(keys)-1][pi].grid(visible = False)
@@ -577,6 +591,10 @@ def ridgeline_plots(pars, SampDataFrame, PriorDataFrame):
         plt.savefig(filename, bbox_inches = 'tight', transparent = True)
 
 
+
+# --------------------- #
+# Ringdown no-hair test #
+# --------------------- #
 
 def TGR_plots(pars, SampDataFrame):
     '''
@@ -623,7 +641,7 @@ def TGR_plots(pars, SampDataFrame):
     masses_omg33 = np.array([find_level_curve_mass(freq, 3, 3, 'omg', spins) for freq in tqdm(omg_33, desc = 'freq 33')])
     masses_tau22 = np.array([find_level_curve_mass(freq, 2, 2, 'tau', spins) for freq in tqdm(tau_22, desc = 'tau  22')])
 
-    percentiles = [50, 5, 16, 84, 95]
+    percentiles = [pars['percentiles']['m'], pars['percentiles']['ll'], pars['percentiles']['l'], pars['percentiles']['h'], pars['percentiles']['hh']]
     p_f22 = {}
     p_f33 = {}
     p_t22 = {}
@@ -657,18 +675,18 @@ def TGR_plots(pars, SampDataFrame):
            contour_kwargs   = {'linewidths': 0.6, 'colors': 'k', 'linestyles': 'dashed', 'alpha': 0.5})
     # CR
     # do (3,3)
-    ax.fill_betweenx(spins, p_f33[5],  p_f33[95], color = '#9C3F5C', alpha = 0.25)
-    ax.fill_betweenx(spins, p_f33[16], p_f33[84], color = '#9C3F5C', alpha = 0.5)
+    ax.fill_betweenx(spins, p_f33[pars['percentiles']['ll']], p_f33[pars['percentiles']['hh']], color = '#9C3F5C', alpha = 0.25)
+    ax.fill_betweenx(spins, p_f33[pars['percentiles']['l' ]], p_f33[pars['percentiles']['h' ]], color = '#9C3F5C', alpha = 0.5)
     ax.plot(p_f33[50], spins, lw = 0.7, color = '#9C3F5C', label = '$\\omega_{33}$')
 
     # dt (2,2)
-    ax.fill_betweenx(spins, p_t22[5],  p_t22[95], color = '#E0AA07', alpha = 0.25)
-    ax.fill_betweenx(spins, p_t22[16], p_t22[84], color = '#E0AA07', alpha = 0.5)
+    ax.fill_betweenx(spins, p_t22[pars['percentiles']['ll']], p_t22[pars['percentiles']['hh']], color = '#E0AA07', alpha = 0.25)
+    ax.fill_betweenx(spins, p_t22[pars['percentiles']['l' ]], p_t22[pars['percentiles']['h' ]], color = '#E0AA07', alpha = 0.5)
     ax.plot(p_t22[50], spins, lw = 0.7, color = '#E0AA07', label = '$\\tau_{22}$')
 
     # do (2,2)
-    ax.fill_betweenx(spins, p_f22[5],  p_f22[95], color = '#608F3A', alpha = 0.25)
-    ax.fill_betweenx(spins, p_f22[16], p_f22[84], color = '#608F3A', alpha = 0.5)
+    ax.fill_betweenx(spins, p_f22[pars['percentiles']['ll']], p_f22[pars['percentiles']['hh']], color = '#608F3A', alpha = 0.25)
+    ax.fill_betweenx(spins, p_f22[pars['percentiles']['l' ]], p_f22[pars['percentiles']['h' ]], color = '#608F3A', alpha = 0.5)
     ax.plot(p_f22[50], spins, lw = 0.7, color = '#608F3A', label = '$\\omega_{22}$')
 
     ax.set_xlabel('$M_f\ [M_\\odot]$')
@@ -689,3 +707,169 @@ def TGR_plots(pars, SampDataFrame):
 
     filename = os.path.join(pars['plots-dir'], 'TGR_plot.pdf')
     fig.savefig(filename, bbox_inches = 'tight', transparent = True)
+
+
+
+# ------------------------ #
+# Population distributions #
+# ------------------------ #
+
+def reconstructed_distributions(pars, CurvesDictionary):
+    '''
+        Plot reconstructed population distributions that are not redshift dependent.
+        The file structure should be compatible with the ICAROGW pipeline output.
+    '''
+    keys = CurvesDictionary.keys()
+    if not pars['ordering'] == []:
+            if ((set(pars['ordering']) <= set(keys))) and (len(pars['ordering']) == len(keys)): keys = pars['ordering']
+            else: raise ValueError('Invalid option for {stack_mode} ordering.'.format(stack_mode = pars['stack-mode']))
+
+    if not pars['bounds'] == []: bounds_dict = bounds_dictionary(pars)
+    params = pars['parameters']
+    labels = lp.labels_curves(params)
+    colors = lp.palettes(pars, colormap = True, number_colors = len(keys))
+    fig, ax = plt.subplots(len(pars['parameters']), figsize = (pars['corner-settings']['figsize'], pars['corner-settings']['figsize']))
+
+    # Load the injected population.
+    if not pars['injected-pop'] == '':
+        try:
+            injected_pop = np.loadtxt(pars['injected-pop'], unpack = True)
+            m_array, pdf_array = injected_pop[0], injected_pop[1]
+        except:
+            raise ValueError('Injected population file not found: {}.'.format(pars['injected-pop']))
+
+    # Loop on the models.
+    for ki,key in enumerate(keys):
+        CurvesDataFrame = CurvesDictionary[key]
+        # Loop on the parameters.
+        for pi,par in enumerate(params):
+            CurvesDataFrameFilt = CurvesDataFrame[par]
+
+            # This case is treated separately because the primary mass distribution is always stored on multiple redshift slices.
+            # Since here we plot stationary distributions, we take the first redshift slice.
+            if par == 'PrimaryMassDistribution':
+                ax[pi].fill_between(CurvesDataFrameFilt['x'], CurvesDataFrameFilt['y'][0][pars['percentiles']['ll']], CurvesDataFrameFilt['y'][0][pars['percentiles']['hh']], color = colors[ki], alpha = 0.1)
+                ax[pi].fill_between(CurvesDataFrameFilt['x'], CurvesDataFrameFilt['y'][0][pars['percentiles']['l' ]], CurvesDataFrameFilt['y'][0][pars['percentiles']['h' ]], color = colors[ki], alpha = 0.5)
+                ax[pi].plot(        CurvesDataFrameFilt['x'], CurvesDataFrameFilt['y'][0][pars['percentiles']['m' ]],                                                         color = colors[ki], lw    = 0.7)
+            else:
+                ax[pi].fill_between(CurvesDataFrameFilt['x'], CurvesDataFrameFilt['y'][   pars['percentiles']['ll']], CurvesDataFrameFilt['y'][   pars['percentiles']['hh']], color = colors[ki], alpha = 0.1)
+                ax[pi].fill_between(CurvesDataFrameFilt['x'], CurvesDataFrameFilt['y'][   pars['percentiles']['l' ]], CurvesDataFrameFilt['y'][   pars['percentiles']['h' ]], color = colors[ki], alpha = 0.5)
+                ax[pi].plot(        CurvesDataFrameFilt['x'], CurvesDataFrameFilt['y'][   pars['percentiles']['m' ]],                                                         color = colors[ki], lw    = 0.7)
+            
+            # Plot the injected population.
+            if par == 'PrimaryMassDistribution':
+                if not pars['injected-pop'] == '': ax[pi].plot(m_array, pdf_array, alpha = 0.5, lw = 1.2, color = pars['truth-color'], ls = '--', label = 'Injected population')
+            
+            ax[pi].set_xlabel(labels[par]['x'])
+            ax[pi].set_ylabel(labels[par]['y'])
+            if not pars['bounds'] == []: ax[pi].set_xlim(bounds_dict[par])
+
+            # Set the log scale for the primary distributions.
+            if 'PrimaryMass' in par:
+                ax[pi].set_yscale('log')
+                ax[pi].set_ylim(1e-5, 2 )
+                if 'DetectorFrame' in par: ax[pi].set_ylim(0.5e-3, 0.1)
+
+    if pars['injected-pop'] == '':
+        patch = [mpatches.Patch(facecolor = colors[ci], edgecolor = 'k', alpha = 0.5, label = lp.labels_legend(c)) for ci,c in enumerate(keys)]
+    else:
+        from matplotlib.lines import Line2D
+        patch = [mpatches.Patch(facecolor = colors[2], edgecolor = 'k', alpha = 0.5, label = lp.labels_legend('alpha100-sigma30')), mpatches.Patch(facecolor = colors[1], edgecolor = 'k', alpha = 0.5, label = lp.labels_legend('alpha12-sigma10')), mpatches.Patch(facecolor = colors[0], edgecolor = 'k', alpha = 0.5, label = lp.labels_legend('alpha8-sigma6')), Line2D([0], [0], color = pars['truth-color'], linestyle = '--', linewidth = 1.2, alpha = 0.8, label = lp.labels_legend('injected_pop'))]
+    ax[0].legend(handles = patch, loc = 'best', frameon = False)
+
+    if pars['remove-grid']:
+        for axx in fig.axes: axx.grid(visible = False)
+
+    plt.tight_layout()
+    filename = os.path.join(pars['plots-dir'], 'reconstructed_{name}.pdf'.format(name = pars['stack-mode']))
+    plt.savefig(filename, bbox_inches = 'tight', transparent = True)
+
+
+ 
+def reconstructed_primary_redshift(pars, CurvesDictionary):
+    '''
+        Plot reconstructed astropysical and observed primary distributions for redshift dependent populations.
+        The file structure should be compatible with the ICAROGW pipeline output.
+    '''
+    keys = CurvesDictionary.keys()
+    if not pars['ordering'] == []:
+            if ((set(pars['ordering']) <= set(keys))) and (len(pars['ordering']) == len(keys)): keys = pars['ordering']
+            else: raise ValueError('Invalid option for {stack_mode} ordering.'.format(stack_mode = pars['stack-mode']))
+
+    # Check that the distributions are the correct ones.
+    primary_distributions = ['PrimaryMassDistribution', 'PrimaryMassDistribution_NoSelectionEffects']
+    if not pars['parameters'] == primary_distributions: raise ValueError('Invalid distributions for the redshift dependent populations. Only primary distributions are allowed.')
+
+    if not pars['bounds'] == []: bounds_dict = bounds_dictionary(pars)
+    colors = lp.palettes(pars, colormap = True, number_colors = len(keys))
+    nz = len(CurvesDictionary[[*CurvesDictionary.keys()][0]]['PrimaryMassDistribution']['y'])
+
+    # Plot the observed distribution in log scale.
+    if not pars['obs-primary-nolog']:
+        fig, ax = plt.subplots(         nz, 2, figsize = (pars['corner-settings']['figsize'], 2.2 * nz), layout = 'constrained')
+    else:
+        subplots = [[ni, 'a'] for ni in range(nz)]
+        fig, ax = plt.subplot_mosaic(subplots, figsize = (pars['corner-settings']['figsize'], 2.1 * nz), layout = 'constrained')
+        
+    # Loop on the models.
+    for ki,key in enumerate(keys):
+        CurvesDataFrame = CurvesDictionary[key]
+        # Loop on the parameters.
+        for i,par in enumerate(primary_distributions):
+            x = CurvesDataFrame[par]['x']
+            # Loop on the redshift slices.
+            for zi,z in enumerate(CurvesDataFrame[par]['z']):
+
+                zi_inv = nz-1 - zi
+                if not pars['obs-primary-nolog']: ax_use = ax[zi_inv][i]
+                else:                             ax_use = ax[zi_inv]
+                
+                if ki == 0: label = '$z={}$'.format(round(z, 2))
+                else:       label = ''
+                if par == 'PrimaryMassDistribution' or (par == 'PrimaryMassDistribution_NoSelectionEffects' and not pars['obs-primary-nolog']):
+                    ax_use.fill_between(x, CurvesDataFrame[par]['y'][zi][pars['percentiles']['ll']],   CurvesDataFrame[par]['y'][zi][pars['percentiles']['hh']],   color = colors[ki], alpha = 0.1)
+                    ax_use.fill_between(x, CurvesDataFrame[par]['y'][zi][pars['percentiles']['l' ]],   CurvesDataFrame[par]['y'][zi][pars['percentiles']['h' ]],   color = colors[ki], alpha = 0.5)
+                    ax_use.plot(        x, CurvesDataFrame[par]['y'][zi][pars['percentiles']['m' ]],                                                               color = colors[ki], lw = 0.7, label = label)
+                else:
+                    ax['a'].fill_between(x, CurvesDataFrame[par]['y'][zi][pars['percentiles']['ll']]+z, CurvesDataFrame[par]['y'][zi][pars['percentiles']['hh']]+z, color = colors[ki], alpha = 0.1)
+                    ax['a'].fill_between(x, CurvesDataFrame[par]['y'][zi][pars['percentiles']['l' ]]+z, CurvesDataFrame[par]['y'][zi][pars['percentiles']['h' ]]+z, color = colors[ki], alpha = 0.5)
+                    ax['a'].plot(        x, CurvesDataFrame[par]['y'][zi][pars['percentiles']['m' ]]+z,                                                             color = colors[ki], lw = 0.7, label = label)
+
+                if not pars['obs-primary-nolog']:
+                    if zi_inv == 2: ax[zi_inv][0].set_ylabel('$p(m_1|z)$')
+                    else:           ax[zi_inv][0].set_ylabel('')
+                    ax[nz-1  ][i].set_xlabel('$m_1\ [M_{\odot}]$')
+                else:
+                    if zi_inv == 2: ax_use.set_ylabel('$p(m_1|z)$')
+                    else:           ax_use.set_ylabel('')
+                    ax[nz-1     ].set_xlabel('$m_1\ [M_{\odot}]$')
+
+                ax_use.set_xlim(bounds_dict[par])
+                ax_use.set_yscale('log')
+                # FIXME: These values should not be hardcoded.
+                ax_use.set_ylim(1e-6, 7)
+                ax_use.set_yticks([1e-1, 1e-3, 1e-5])
+                ax_use.set_xticks([10, 30, 50, 70])
+                ax_use.legend(loc = 'best', handletextpad = -2.0, handlelength = 0)  # Revome colors from log plots.
+                if not zi_inv == nz-1: plt.setp(ax_use.get_xticklabels(), visible = False)  # Remove x_ticks from log plots.
+                if par == 'PrimaryMassDistribution_NoSelectionEffects': ax_use.set_yticks([])
+
+    if pars['obs-primary-nolog']:
+        ax['a'].set_xlabel('$m_1\ [M_{\odot}]$')
+        ax['a'].set_ylabel('$z$')
+        ax['a'].set_xlim(1, 70)
+        ax['a'].set_ylim(-0.05, 1.1)
+        ax['a'].set_yscale('linear')
+        ax['a'].yaxis.tick_right()
+        ax['a'].yaxis.set_label_position('right')
+
+    patch = [mpatches.Patch(facecolor = colors[ci], edgecolor = 'k', alpha = 0.5, label = lp.labels_legend(c)) for ci,c in enumerate(keys)]
+    if not pars['obs-primary-nolog']: ax[0][1].legend(handles = patch, loc = 'best', frameon = False)
+    else:                             ax['a' ].legend(handles = patch, loc = 'best', frameon = False)
+
+    if pars['remove-grid']:
+        for axx in fig.axes: axx.grid(visible = False)
+    fig.set_constrained_layout_pads(hspace = 0.0, wspace = 0.0, h_pad = 0.0, w_pad = 0.0)
+
+    filename = os.path.join(pars['plots-dir'], 'reconstructed_{name}.pdf'.format(name = pars['stack-mode']))
+    plt.savefig(filename, bbox_inches = 'tight', transparent = True)

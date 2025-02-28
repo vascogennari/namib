@@ -32,50 +32,107 @@ def labels_parameters(pars_list):
     labels_dict = {}
     for par in pars_list:
 
-        if   par == 'f_t_0':       string = '$f_{1}\ [Hz]$'
-        elif par == 'tau_t_0':     string = '$\\tau_{1}\ [ms]$'
-        elif par == 'logA_t_0':    string = '$lnA_{1}$'
-        elif par == 'f_t_1':       string = '$f_{2}\ [Hz]$'
-        elif par == 'tau_t_1':     string = '$\\tau_{2}\ [ms]$'
-        elif par == 'logA_t_1':    string = '$lnA_{2}$'
-        elif par == 'f_t_2':       string = '$f_{3}\ [Hz]$'
-        elif par == 'tau_t_2':     string = '$\\tau_{3}\ [ms]$'
+        if   par == 'f_t_0':        string = '$f_{1}\ [Hz]$'
+        elif par == 'tau_t_0':      string = '$\\tau_{1}\ [ms]$'
+        elif par == 'logA_t_0':     string = '$lnA_{1}$'
+        elif par == 'f_t_1':        string = '$f_{2}\ [Hz]$'
+        elif par == 'tau_t_1':      string = '$\\tau_{2}\ [ms]$'
+        elif par == 'logA_t_1':     string = '$lnA_{2}$'
+        elif par == 'f_t_2':        string = '$f_{3}\ [Hz]$'
+        elif par == 'tau_t_2':      string = '$\\tau_{3}\ [ms]$'
 
-        elif par == 'Mf':          string = '$M_f\ [M_{\odot}]$'
-        elif par == 'af':          string = '$a_f$'
-        elif par == 'A2220':       string = '$A_{220}$'
-        elif par == 'A2330':       string = '$A_{330}$'
-        elif par == 'A2210':       string = '$A_{210}$'
-        elif par == 'f_22':        string = '$f_{22}\ [Hz]$'
-        elif par == 'tau_22':      string = '$\\tau_{22}\ [ms]$'
-        elif par == 'f_33':        string = '$f_{33}\ [Hz]$'
-        elif par == 'tau_33':      string = '$\\tau_{33}\ [ms]$'
-        elif par == 'f_44':        string = '$f_{44}\ [Hz]$'
-        elif par == 'tau_44':      string = '$\\tau_{4}\ [ms]$'
+        elif par == 'Mf':           string = '$M_f\ [M_{\odot}]$'
+        elif par == 'af':           string = '$a_f$'
+        elif par == 'A2220':        string = '$A_{220}$'
+        elif par == 'A2330':        string = '$A_{330}$'
+        elif par == 'A2210':        string = '$A_{210}$'
+        elif par == 'f_22':         string = '$f_{22}\ [Hz]$'
+        elif par == 'tau_22':       string = '$\\tau_{22}\ [ms]$'
+        elif par == 'f_33':         string = '$f_{33}\ [Hz]$'
+        elif par == 'tau_33':       string = '$\\tau_{33}\ [ms]$'
+        elif par == 'f_44':         string = '$f_{44}\ [Hz]$'
+        elif par == 'tau_44':       string = '$\\tau_{4}\ [ms]$'
 
-        elif par == 'm1':          string = '$m_1\ [M_{\odot}]$'
-        elif par == 'm2':          string = '$m_2\ [M_{\odot}]$'
-        elif par == 'chi1':        string = '$\\chi_1$'
-        elif par == 'chi2':        string = '$\\chi_2$'
-        elif par == 'cosiota':     string = '$cos\\iota$'
-        elif par == 'iota':        string = '$\\iota\ [rad]$'
+        elif par == 'm1':           string = '$m_1\ [M_{\odot}]$'
+        elif par == 'm2':           string = '$m_2\ [M_{\odot}]$'
+        elif par == 'chi1':         string = '$\\chi_1$'
+        elif par == 'chi2':         string = '$\\chi_2$'
+        elif par == 'cosiota':      string = '$cos\\iota$'
+        elif par == 'iota':         string = '$\\iota\ [rad]$'
 
-        elif par == 'logdistance': string = '$ln d_L\ [Mpc]$'
-        elif par == 'distance':    string = '$d_L\ [Gpc]$'
-        elif par == 'psi':         string = '$\\psi$'
-        elif par == 'phase_22':    string = '$\\phi_{22}$'
-        elif par == 'phase_33':    string = '$\\phi_{33}$'
+        elif par == 'logdistance':  string = '$ln d_L\ [Mpc]$'
+        elif par == 'distance':     string = '$d_L\ [Gpc]$'
+        elif par == 'psi':          string = '$\\psi$'
+        elif par == 'phase_22':     string = '$\\phi_{22}$'
+        elif par == 'phase_33':     string = '$\\phi_{33}$'
 
-        elif par == 'mc':          string = '$M_c\ [M_{\odot}]$'
-        elif par == 'q':           string = '$q$'
+        elif par == 'mc':           string = '$M_c\ [M_{\odot}]$'
+        elif par == 'q':            string = '$q$'
 
-        elif par == 'domega_220':  string = '$\\delta\\omega_{22}$'
-        elif par == 'domega_330':  string = '$\\delta\\omega_{33}$'
-        elif par == 'domega_221':  string = '$\\delta\\omega_{221}$'
-        elif par == 'dtau_220':    string = '$\\delta\\tau_{22}$'
-        elif par == 'dtau_330':    string = '$\\delta\\tau_{33}$'
-        elif par == 'domega_220':  string = '$\\delta\\omega_{22}$'
-        elif par == 'ell':         string = '$l\ [km]$'
+        elif par == 'domega_220':   string = '$\\delta\\omega_{22}$'
+        elif par == 'domega_330':   string = '$\\delta\\omega_{33}$'
+        elif par == 'domega_221':   string = '$\\delta\\omega_{221}$'
+        elif par == 'dtau_220':     string = '$\\delta\\tau_{22}$'
+        elif par == 'dtau_330':     string = '$\\delta\\tau_{33}$'
+        elif par == 'domega_220':   string = '$\\delta\\omega_{22}$'
+        elif par == 'ell':          string = '$l\ [km]$'
+
+        # Cosmology
+        elif par == 'H0':           string = '$H_{0}\ [km/s/Mpc]$'
+        elif par == 'Om0':          string = '$\\Omega_{m_0}$'
+        elif par == 'alpha':        string = '$\\alpha$'
+        elif par == 'alpha_a':      string = '$\\alpha_a$'
+        elif par == 'alpha_b':      string = '$\\alpha_b$'
+        elif par == 'alpha_c':      string = '$\\alpha_c$'
+        elif par == 'alpha_z0':     string = '$\\alpha_{z_0}$'
+        elif par == 'alpha_z1':     string = '$\\alpha_{z_1}$'
+        elif par == 'alpha_a_z0':   string = '$\\alpha_{a_{z_0}}$'
+        elif par == 'alpha_a_z1':   string = '$\\alpha_{a_{z_1}}$'
+        elif par == 'alpha_b_z0':   string = '$\\alpha_{b_{z_0}}$'
+        elif par == 'alpha_b_z1':   string = '$\\alpha_{b_{z_1}}$'
+        elif par == 'alpha_c_z0':   string = '$\\alpha_{c_{z_0}}$'
+        elif par == 'alpha_c_z1':   string = '$\\alpha_{c_{z_1}}$'
+        elif par == 'mmin':         string = '$m_{min}\ [M_{\odot}]$'
+        elif par == 'mmin_z0':      string = '$m_{min}\ [M_{\odot}]$'#'$m_{min_{z_0}}\ [M_{\odot}]$'
+        elif par == 'mmin_z1':      string = '$m_{min_{z_1}}\ [M_{\odot}]$'
+        elif par == 'mmin_a_z0':    string = '$m_{min_{a_{z_0}}}\ [M_{\odot}]$'
+        elif par == 'mmin_a_z1':    string = '$m_{min_{a_{z_1}}}\ [M_{\odot}]$'
+        elif par == 'mmin_b_z0':    string = '$m_{min_{b_{z_0}}}\ [M_{\odot}]$'
+        elif par == 'mmin_b_z1':    string = '$m_{min_{b_{z_1}}}\ [M_{\odot}]$'
+        elif par == 'mmin_c_z0':    string = '$m_{min_{c_{z_0}}}\ [M_{\odot}]$'
+        elif par == 'mmin_c_z1':    string = '$m_{min_{c_{z_1}}}\ [M_{\odot}]$'
+        elif par == 'mmin_a':       string = '$m_{min_{a}}\ [M_{\odot}]$'
+        elif par == 'mmin_b':       string = '$m_{min_{b}}\ [M_{\odot}]$'
+        elif par == 'mmin_c':       string = '$m_{min_{c}}\ [M_{\odot}]$'
+        elif par == 'mmax':         string = '$m_{max}\ [M_{\odot}]$'
+        elif par == 'mmax_a_z0':    string = '$m_{max_{a_{z_0}}}\ [M_{\odot}]$'
+        elif par == 'mmax_b_z0':    string = '$m_{max_{b_{z_0}}}\ [M_{\odot}]$'
+        elif par == 'mmax_c_z0':    string = '$m_{max_{c_{z_0}}}\ [M_{\odot}]$'
+        elif par == 'mmax_c_z1':    string = '$m_{max_{c_{z_1}}}\ [M_{\odot}]$'
+        elif par == 'mu_g':         string = '$\\mu_{g}\ [M_{\odot}]$'#'$\\mu\ [M_{\odot}]$'
+        elif par == 'sigma_g':      string = '$\\sigma_{g}\ [M_{\odot}]$'#'$\\sigma\ [M_{\odot}]$'
+        elif par == 'mu_z0':        string = '$\\mu\ [M_{\odot}]$'#'$\\mu_{z_0}\ [M_{\odot}]$'
+        elif par == 'mu_z1':        string = '$\\mu_{z_1}\ [M_{\odot}]$'
+        elif par == 'sigma_z0':     string = '$\\sigma\ [M_{\odot}]$'#'$\\sigma_{z_0}\ [M_{\odot}]$'
+        elif par == 'sigma_z1':     string = '$\\sigma_{z_1}\ [M_{\odot}]$'
+        elif par == 'lambda_peak':  string = '$\\lambda_{p}$'
+        elif par == 'mix_z0':       string = '$mix_{z_0}$'#'$mix$'
+        elif par == 'mix_z1':       string = '$mix_{z_1}$'
+        elif par == 'mix_alpha_z0': string = '$mix_{\\alpha_{z_0}}$'
+        elif par == 'mix_alpha_z1': string = '$mix_{\\alpha_{z_1}}$'
+        elif par == 'mix_beta_z0':  string = '$mix_{\\beta_{z_0}}$'
+        elif par == 'mix_beta_z1':  string = '$mix_{\\beta_{z_1}}$'
+        elif par == 'delta_m':      string = '$\\delta_{m}$'
+        elif par == 'delta_m_a':    string = '$\\delta_{m_a}$'
+        elif par == 'delta_m_b':    string = '$\\delta_{m_b}$'
+        elif par == 'delta_m_c':    string = '$\\delta_{m_c}$'
+        elif par == 'mu_q':         string = '$\\mu_{q}$'
+        elif par == 'sigma_q':      string = '$\\sigma_{q}$'
+        elif par == 'alpha_q':      string = '$\\alpha_{q}$'
+        elif par == 'gamma':        string = '$\\gamma$'
+        elif par == 'kappa':        string = '$\\kappa$'
+        elif par == 'zp':           string = '$z_{p}$'
+        elif par == 'R0':           string = '$R_0\ [Gpc^{-3}yr^{-1}]$'
 
         else:
             raise ValueError('At least one of the selected parameters does not have its corresponding label. Please, fix it in labels_palettes.py')
@@ -148,6 +205,48 @@ def labels_legend(par):
         elif par == 'NRSur7dq4':   label = '$\mathrm{NRSur7dq4}$'
         elif par == 'SEOBv5PHM':   label = '$\mathrm{SEOBv5PHM}$'
 
+        # Cosmology
+        elif par == 'beta':               label = '$\\beta\ \mathrm{function}$'
+        elif par == 'MD':                 label = '$\mathrm{Madau-Dickinson}$'
+        elif par == 'Mass2-PowerLaw':     label = '$m_2\sim\mathrm{PL}$'
+        elif par == 'MassRatio-Gaussian': label = '$q\sim\mathrm{G}$'
+        elif par == 'MassRatio-PowerLaw': label = '$q\sim\mathrm{PL}$'
+        elif par == 'PowerLaw':           label = '$\mathrm{PL\:\:rate}$'
+        elif par == 'MadauDickinson':     label = '$\mathrm{MD\:\:rate}$'
+
+        elif par == 'PL-PL':              label = '$\mathrm{PL\ PL}$'
+        elif par == 'PL-G':               label = '$\mathrm{PL\ G}$'
+        elif par == 'PL-Gz':              label = '$\mathrm{PL\ G(z)}$'
+        elif par == 'PLz-G':              label = '$\mathrm{PL(z)\ G}$'
+        elif par == 'PLz-Gz':             label = '$\mathrm{PL(z)\ G(z)}$'
+        elif par == 'PL-PL-PL':           label = '$\mathrm{PL\ PL\ PL}$'
+        elif par == 'PL-PL-G':            label = '$\mathrm{PL\ PL\ G}$'
+        elif par == 'PL-G-G':             label = '$\mathrm{PL\ G\ G}$'
+        elif par == 'PLz-PL-PL':          label = '$\mathrm{PL(z)\ PL\ PL}$'
+        elif par == 'PL-PLz-PL':          label = '$\mathrm{PL\ PL(z)\ PL}$'
+        elif par == 'PL-PL-PLz':          label = '$\mathrm{PL\ PL\ PL(z)}$'
+        elif par == 'PLz-PLz-PLz':        label = '$\mathrm{PL(z)\ PL(z)\ PL(z)}$'
+        elif par == 'PLz-PL-PL-mixture':  label = '$\mathrm{PL(z)\ PL\ PL,\ \mathrm{mix(z)}}$'
+        elif par == 'PL-PLz-PL-mixture':  label = '$\mathrm{PL\ PL(z)\ PL,\ \mathrm{mix(z)}}$'
+        elif par == 'PL-PL-PLz-mmax':     label = '$\mathrm{PL\ PL\ PL(z),\ m_{max}(z)}$'
+        elif par == 'PL-PL-GW190521':     label = '$\mathrm{PL\ PL,\ \mathrm{GW}190521}$'
+        elif par == 'PL-PL-PL-GW190521':  label = '$\mathrm{PL\ PL\ PL,\ \mathrm{GW}190521}$'
+
+        elif par == 'alpha8-sigma6':      label = '$\mathrm{PL\ G,\ narrow\ priors}$'
+        elif par == 'alpha12-sigma6':     label = '$\mathrm{PL\ G,\ narrow\ priors}$'
+        elif par == 'alpha12-sigma10':    label = '$\mathrm{PL\ G,\ medium\ priors}$'
+        elif par == 'alpha12-sigma30':    label = '$\mathrm{PL\ G,\ medium\ priors}$'
+        elif par == 'alpha200-sigma30':   label = '$\mathrm{PL\ G,\ wide\ priors}$'
+        elif par == 'alpha100-sigma30':   label = '$\mathrm{PL\ G,\ wide\ priors}$'
+
+        elif par == 'stationary':         label = '$\mathrm{Stationary}$'
+        elif par == 'evolving':           label = '$\mathrm{Evolving}$'
+        elif par == 'sharp':              label = '$\mathrm{PL\ PL\ PL}$'
+        elif par == 'smoothed':           label = '$\mathrm{PL\ PL\ PL,\ Smoothing}$'
+
+        # FIXME: to remove
+        elif par == 'injected_pop':       label = '$\mathrm{Injected\ population}$'
+
         else:
             raise ValueError('Unknown legend parameter.')
     except: label = par
@@ -168,6 +267,29 @@ def labels_events(par):
         raise ValueError('The selected option for the event name does not have its corresponding label. Please, fix it in labels_palettes.py')
     
     return label
+
+def labels_curves(pars_list):
+
+    labels_dict = {}
+    for par in pars_list:
+
+        if   par == 'PrimaryMassDistribution':                       dict = {'x': '$m_1\ [M_{\odot}]$',       'y': '$p(m_1)$'}
+        elif par == 'PrimaryMassDistribution_NoSelectionEffects':    dict = {'x': '$m_1\ [M_{\odot}]$',       'y': '$p(m_1)$'}
+        elif par == 'PrimaryMassDistribution_DetectorFrame':         dict = {'x': '$m_{1,det}\ [M_{\odot}]$', 'y': '$p(m_{1,det})$'}
+        elif par == 'SecondaryMassDistribution':                     dict = {'x': '$q$',                      'y': '$p(q)$'}  # dict = {'x': '$m_2\ [M_{\odot}]$',       'y': '$p(m_2)$'}
+        elif par == 'SecondaryMassDistribution_NoSelectionEffects':  dict = {'x': '$q_{det}$',                'y': '$p(q_{det})$'}  # dict = {'x': '$m_2\ [M_{\odot}]$',       'y': '$p(m_2)$'}
+        elif par == 'SecondaryMassDistribution_DetectorFrame':       dict = {'x': '$m_{2,det}\ [M_{\odot}]$', 'y': '$p(m_{2,det})$'}
+        elif par == 'RateEvolutionFunction':                         dict = {'x': '$z$',                      'y': '$R(z)/R_0$'}
+        elif par == 'RateEvolutionDistribution_Probability':         dict = {'x': '$z$',                      'y': '$p(z)$'}
+        elif par == 'RedshiftDistribution_NoSelectionEffects':       dict = {'x': '$z$',                      'y': '$p(z)$'}
+        elif par == 'LuminosityDistranceDistribution_DetectorFrame': dict = {'x': '$d_L\ [Mpc]$',             'y': '$p(d_L)$'}
+
+        else:
+            raise ValueError('At least one of the selected parameters does not have its corresponding label. Please, fix it in labels_palettes.py')
+
+        labels_dict[par] = dict
+
+    return labels_dict
 
 def palettes(pars, colormap, number_colors, corner_plot = False):
 

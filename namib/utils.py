@@ -1,5 +1,5 @@
 from multiprocessing import Value
-import os, h5py, pandas as pd
+import os, h5py, pandas as pd, json, pickle
 import numpy as np
 from tqdm import tqdm
 import surfinBH, qnm
@@ -138,6 +138,60 @@ def read_posteriors_event(file_path, pars):
 
     return df, dfp, nsamp
 
+def read_posteriors_hierarchical(file_path, pars):
+
+    with open(file_path) as f:
+        tmp = json.load(f)
+        df  = pd.DataFrame(tmp['posterior']['content'])
+
+    # Evolution
+    if (set(['mu_z0']   ) <= set(pars['parameters'])) and (set(['mu_g']   ) <= set(df.keys())):
+        df.rename(columns = {'mu_g' : 'mu_z0'      }, inplace = True)
+    if (set(['sigma_z0']) <= set(pars['parameters'])) and (set(['sigma_g']) <= set(df.keys())):
+        df.rename(columns = {'sigma_g' : 'sigma_z0'}, inplace = True)
+    if (set(['alpha_z0']) <= set(pars['parameters'])) and (set(['alpha']  ) <= set(df.keys())):
+        df.rename(columns = {'alpha' : 'alpha_z0'  }, inplace = True)
+    if (set(['alpha_a']) <= set(pars['parameters'])) and (set(['alpha_a_z0']  ) <= set(df.keys())):
+        df.rename(columns = {'alpha_a_z0' : 'alpha_a'  }, inplace = True)
+    if (set(['alpha_b']) <= set(pars['parameters'])) and (set(['alpha_b_z0']  ) <= set(df.keys())):
+        df.rename(columns = {'alpha_b_z0' : 'alpha_b'  }, inplace = True)
+    if (set(['alpha_c']) <= set(pars['parameters'])) and (set(['alpha_c_z0']  ) <= set(df.keys())):
+        df.rename(columns = {'alpha_c_z0' : 'alpha_c'  }, inplace = True)
+    if (set(['mmin_z0'] ) <= set(pars['parameters'])) and (set(['mmin']   ) <= set(df.keys())):
+        df.rename(columns = {'mmin' : 'mmin_z0'    }, inplace = True)
+    if (set(['mmin_a'] ) <= set(pars['parameters'])) and (set(['mmin_a_z0']   ) <= set(df.keys())):
+        df.rename(columns = {'mmin_a_z0' : 'mmin_a'    }, inplace = True)
+    if (set(['mmin_b'] ) <= set(pars['parameters'])) and (set(['mmin_b_z0']   ) <= set(df.keys())):
+        df.rename(columns = {'mmin_b_z0' : 'mmin_b'    }, inplace = True)
+    if (set(['mmin_c'] ) <= set(pars['parameters'])) and (set(['mmin_c_z0']   ) <= set(df.keys())):
+        df.rename(columns = {'mmin_c_z0' : 'mmin_c'    }, inplace = True)
+    if (set(['mmin_c_z0'] ) <= set(pars['parameters'])) and (set(['mmin_c']   ) <= set(df.keys())):
+        df.rename(columns = {'mmin_c' : 'mmin_c_z0'    }, inplace = True)
+    if (set(['mmax_c_z0'] ) <= set(pars['parameters'])) and (set(['mmax_c']   ) <= set(df.keys())):
+        df.rename(columns = {'mmax_c' : 'mmax_c_z0'    }, inplace = True)
+
+    # Multiple features
+    if (set(['alpha']   ) <= set(pars['parameters'])) and (set(['alpha_a']) <= set(df.keys())):
+        df.rename(columns = {'alpha_a' : 'alpha'  }, inplace = True)
+    if (set(['mmin']    ) <= set(pars['parameters'])) and (set(['mmin_a'])  <= set(df.keys())):
+        df.rename(columns = {'mmin_a'  : 'mmin'   }, inplace = True)
+
+    df = df.filter(items = pars['parameters'])
+    df = downsampling(df, pars)    # Downsample the df if required
+
+    if 'alpha12-sigma6' in file_path:
+        df = df[df['mu_z0']>20]
+
+    return df
+
+def read_curves(file_path, pars):
+
+    with open(file_path, 'rb') as f:
+        tmp = pickle.load(f)
+        df  = pd.DataFrame(tmp)
+
+    return df
+
 def read_evidence_event(pars, dir_path, file_path):
 
     evt_evidence = {}
@@ -183,6 +237,29 @@ def read_evidence_event(pars, dir_path, file_path):
             evt_evidence['SNR_net_opt'] = np.array(tmp['Network'])
         except:
             raise ValueError('SNR samples have not been found. Exiting.')
+
+    df = pd.DataFrame([evt_evidence])
+
+    return df
+
+def read_evidence_hierarchical(dir_path, file_path):
+
+    evt_evidence = {}
+
+    # Read the evidence
+    filename = os.path.basename(os.path.normpath(file_path))
+    if   '.txt'  in filename: root_file = filename.replace('.txt' , '')
+    elif '.dat'  in filename: root_file = filename.replace('.dat' , '')
+    elif '.h5'   in filename: root_file = filename.replace('.h5'  , '')
+    elif '.json' in filename: root_file = filename.replace('.json', '')
+
+    noise_file     = root_file + '_evidence.txt'
+    noise_evt_path = os.path.join(dir_path, 'noise_evidences', noise_file)
+    tmp            = np.genfromtxt(noise_evt_path, names = True)
+
+    evt_evidence['lnZ']       = np.array(tmp['log_Z_base_e'])
+    evt_evidence['lnZ_error'] = np.array(tmp['log_Z_err'])
+    evt_evidence['max_logL']  = np.array(tmp['max_log_L'])
 
     df = pd.DataFrame([evt_evidence])
 
@@ -543,8 +620,9 @@ class Posteriors:
                 keys[-1] = keys[-1].split('.')[0]
                 for i,key in enumerate(single_evt_keys.keys()):
                     single_evt_keys[key] = keys[i]
-
-                EventDataFrame, EventPriorDataFrame, _ = read_posteriors_event(file_path, pars)
+                
+                if not pars['hierarchical']: EventDataFrame, EventPriorDataFrame, _ = read_posteriors_event(       file_path, pars)
+                else:                        EventDataFrame                         = read_posteriors_hierarchical(file_path, pars)
                 if not pars['stack-mode'] == '':
                     EventDataFrame = EventDataFrame.assign(par = single_evt_keys[pars['stack-mode']])
                     EventDataFrame.rename(columns={'par': pars['stack-mode']}, inplace = True)
@@ -559,7 +637,8 @@ class Posteriors:
                 if pars['include-prior']:
                     self.PriorDataFrame = pd.concat([self.PriorDataFrame, EventPriorDataFrame], ignore_index=True)
                 if pars['evidence']:
-                    EventEvidenceDataFrame = read_evidence_event(pars, dir_path, file_path)
+                    if not pars['hierarchical']: EventEvidenceDataFrame = read_evidence_event( pars, dir_path, file_path)
+                    else:                        EventEvidenceDataFrame = read_evidence_hierarchical(dir_path, file_path)
                     EventEvidenceDataFrame.insert(0, pars['stack-mode'], single_evt_keys[pars['stack-mode']])
                     if not pars['compare'] == '': EventEvidenceDataFrame.insert(0, pars['compare'], single_evt_keys[pars['compare']])
                     self.EvidenceDataFrame = pd.concat([self.EvidenceDataFrame, EventEvidenceDataFrame], ignore_index=True)
@@ -572,15 +651,59 @@ class Posteriors:
         return self.SampDataFrame, self.PriorDataFrame, self.EvidenceDataFrame
 
 
+
+class Curves:
+    '''
+    Add description.
+    '''
+    def __init__(self, pars):
+
+        dir_path = pars['samp-dir']
+        if not (pars['file-path'] == ''): dir_path = pars['file-path']
+
+        self.SampDataFrame    = pd.DataFrame(columns = pars['parameters'])
+        self.CurvesDictionary = {}
+        single_evt_keys = {'event': str(), 'pipeline': str(), 'model': str(), 'submodel': str(), 'time': str(), 'GR_tag': str()}
+
+        for file in tqdm(os.listdir(dir_path), desc = 'Reading Posteriors'):
+            if not ((file == '.DS_Store') or (file == 'noise_evidences') or (file == 'ignore') or (file == 'SNR_samples') or (file == 'curves')):
+
+                file_path = os.path.join(dir_path, file)
+                keys = file.split('_')
+                keys[-1] = keys[-1].split('.')[0]
+                for i,key in enumerate(single_evt_keys.keys()):
+                    single_evt_keys[key] = keys[i]
+
+                EventDataFrame = read_curves(file_path, pars)
+
+                if not pars['stack-mode'] == '':
+                    EventDataFrame = EventDataFrame.assign(par = single_evt_keys[pars['stack-mode']])
+                    EventDataFrame.rename(columns={'par': pars['stack-mode']}, inplace = True)
+                if not pars['compare'] == '':
+                    EventDataFrame = EventDataFrame.assign(par = single_evt_keys[pars['compare']])
+                    EventDataFrame.rename(columns={'par': pars['compare']}, inplace = True)                
+
+                self.CurvesDictionary[single_evt_keys[pars['stack-mode']]] = EventDataFrame
+
+    def return_curves_dict(self):
+        return self.CurvesDictionary
+
+
+
 class Plots:
     '''
     Compute corner and violin plots.
     '''
-    def __init__(self, pars, SampDataFrame, PriorDataFrame, EvidenceDataFrame):
+    def __init__(self, pars, SampDataFrame, PriorDataFrame, EvidenceDataFrame, CurvesDictionary = None):
         
-        if pars['corner']:
-            if pars['corner-sns']: plots.corner_plots_sns(pars, SampDataFrame, PriorDataFrame)
-            else:                  plots.corner_plots(    pars, SampDataFrame, PriorDataFrame)
-        if pars['violin']:         plots.violin_plots(    pars, SampDataFrame, PriorDataFrame, EvidenceDataFrame)
-        if pars['ridgeline']:      plots.ridgeline_plots( pars, SampDataFrame, PriorDataFrame)
-        if pars['TGR-plot']:       plots.TGR_plots(       pars, SampDataFrame)
+        if not pars['curves']:
+            if pars['corner']:
+                if pars['corner-sns']:   plots.corner_plots_sns(pars, SampDataFrame, PriorDataFrame)
+                else:                    plots.corner_plots(    pars, SampDataFrame, PriorDataFrame)
+            if pars['violin']:           plots.violin_plots(    pars, SampDataFrame, PriorDataFrame, EvidenceDataFrame)
+            if pars['ridgeline']:        plots.ridgeline_plots( pars, SampDataFrame, PriorDataFrame)
+            if pars['TGR-plot']:         plots.TGR_plots(       pars, SampDataFrame)
+        else:
+            if pars['redshift-primary']: plots.reconstructed_primary_redshift(pars, CurvesDictionary)
+            else:                        plots.reconstructed_distributions(   pars, CurvesDictionary)
+            
