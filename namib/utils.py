@@ -687,17 +687,43 @@ class Posteriors:
             if  (fnmatch.fnmatch(file, '*_IMR*') and not pars['include-IMR'] == 0):
 
                 file_path = os.path.join(dir_path, file)
-                if not pars['IMR-posteriors']:
-                    self.IMRDataFrame, _, _ = read_posteriors_event(file_path, pars, IMR_flag = True)
-                else:
-                    keys = file.split('_')
-                    keys[-1] = keys[-1].split('.')[0]
-                    for i,key in enumerate(IMR_keys.keys()):
-                        IMR_keys[key] = keys[i]
-                    EventDataFrame0, EventPriorDataFrame, _ = read_posteriors_event(file_path, pars, IMR_flag = True)
-                    if not pars['stack-mode'] == '':
-                        if pars['stack-mode'] in IMR_keys.keys():
-                            EventDataFrame = EventDataFrame0.assign(par = IMR_keys[pars['stack-mode']])
+                keys = file.split('_')
+                keys[-1] = keys[-1].split('.')[0]
+                for i,key in enumerate(IMR_keys.keys()):
+                    IMR_keys[key] = keys[i]
+                EventDataFrame0, _, _ = read_posteriors_event(file_path, pars, IMR_flag = True)
+                if not pars['stack-mode'] == '':
+                    if pars['stack-mode'] in IMR_keys.keys():
+                        EventDataFrame = EventDataFrame0.assign(par = IMR_keys[pars['stack-mode']])
+                        EventDataFrame.rename(columns={'par': pars['stack-mode']}, inplace = True)
+                        if not pars['compare'] == '':
+                            if pars['compare'] in IMR_keys.keys():
+                                EventDataFrame = EventDataFrame.assign(par = IMR_keys[pars['compare']])
+                            else:
+                                EventDataFrame = EventDataFrame.assign(par = 'IMR')
+                            EventDataFrame.rename(columns={'par': pars['compare']}, inplace = True)         
+                        if not pars['IMR-posteriors']:
+                            self.IMRDataFrame  = pd.concat([self.IMRDataFrame,  EventDataFrame], ignore_index=True)
+                        else:
+                            self.SampDataFrame = pd.concat([self.SampDataFrame, EventDataFrame], ignore_index=True)
+                    else:
+                        # This block is to avoid re-computing the fits multiple times.
+                        if pars['ridgeline'] == 1:
+                            for key in stack_mode_keys:
+                                EventDataFrame = EventDataFrame0.assign(par = key)
+                                EventDataFrame.rename(columns={'par': pars['stack-mode']}, inplace = True)
+                                if not pars['compare'] == '':
+                                    if pars['compare'] in IMR_keys.keys():
+                                        EventDataFrame = EventDataFrame.assign(par = IMR_keys[pars['compare']])
+                                    else:
+                                        EventDataFrame = EventDataFrame.assign(par = 'IMR')
+                                    EventDataFrame.rename(columns={'par': pars['compare']}, inplace = True) 
+                                if not pars['IMR-posteriors']:
+                                    self.IMRDataFrame  = pd.concat([self.IMRDataFrame,  EventDataFrame], ignore_index=True)
+                                else:
+                                    self.SampDataFrame = pd.concat([self.SampDataFrame, EventDataFrame], ignore_index=True)
+                        else:
+                            EventDataFrame = EventDataFrame0.assign(par = 'IMR')
                             EventDataFrame.rename(columns={'par': pars['stack-mode']}, inplace = True)
                             if not pars['compare'] == '':
                                 if pars['compare'] in IMR_keys.keys():
@@ -705,37 +731,20 @@ class Posteriors:
                                 else:
                                     EventDataFrame = EventDataFrame.assign(par = 'IMR')
                                 EventDataFrame.rename(columns={'par': pars['compare']}, inplace = True)         
-                            self.SampDataFrame = pd.concat([self.SampDataFrame, EventDataFrame], ignore_index=True)
-                        else:
-                            # This block is to avoid re-computing the fits multiple times.
-                            if pars['ridgeline'] == 1:
-                                for key in stack_mode_keys:
-                                    EventDataFrame = EventDataFrame0.assign(par = key)
-                                    EventDataFrame.rename(columns={'par': pars['stack-mode']}, inplace = True)
-                                    if not pars['compare'] == '':
-                                        if pars['compare'] in IMR_keys.keys():
-                                            EventDataFrame = EventDataFrame.assign(par = IMR_keys[pars['compare']])
-                                        else:
-                                            EventDataFrame = EventDataFrame.assign(par = 'IMR')
-                                        EventDataFrame.rename(columns={'par': pars['compare']}, inplace = True) 
-                                    self.SampDataFrame = pd.concat([self.SampDataFrame, EventDataFrame],ignore_index=True)
+                            if not pars['IMR-posteriors']:
+                                self.IMRDataFrame  = pd.concat([self.IMRDataFrame,  EventDataFrame], ignore_index=True)
                             else:
-                                EventDataFrame = EventDataFrame0.assign(par = 'IMR')
-                                EventDataFrame.rename(columns={'par': pars['stack-mode']}, inplace = True)
-                                if not pars['compare'] == '':
-                                    if pars['compare'] in IMR_keys.keys():
-                                        EventDataFrame = EventDataFrame.assign(par = IMR_keys[pars['compare']])
-                                    else:
-                                        EventDataFrame = EventDataFrame.assign(par = 'IMR')
-                                    EventDataFrame.rename(columns={'par': pars['compare']}, inplace = True)         
                                 self.SampDataFrame = pd.concat([self.SampDataFrame, EventDataFrame], ignore_index=True)
+                else:
+                    if not pars['compare'] == '':
+                        if pars['compare'] in IMR_keys.keys():
+                            EventDataFrame = EventDataFrame0.assign(par = IMR_keys[pars['compare']])
+                        else:
+                            EventDataFrame = EventDataFrame0.assign(par = 'IMR')
+                        EventDataFrame.rename(columns={'par': pars['compare']}, inplace = True)         
+                    if not pars['IMR-posteriors']:
+                        self.IMRDataFrame  = pd.concat([self.IMRDataFrame,  EventDataFrame], ignore_index=True)
                     else:
-                        if not pars['compare'] == '':
-                            if pars['compare'] in IMR_keys.keys():
-                                EventDataFrame = EventDataFrame0.assign(par = IMR_keys[pars['compare']])
-                            else:
-                                EventDataFrame = EventDataFrame0.assign(par = 'IMR')
-                            EventDataFrame.rename(columns={'par': pars['compare']}, inplace = True)         
                         self.SampDataFrame = pd.concat([self.SampDataFrame, EventDataFrame], ignore_index=True)
             if (not pars['compare'] == '') and pars['BF-comparison']:
                 if not pars['evidence']: raise ValueError('Please activate the evidence option to compute the Bayes factor.')
