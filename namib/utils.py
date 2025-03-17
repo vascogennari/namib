@@ -44,15 +44,19 @@ def Adapt_Samples(df, pars, IMR_flag = False):
     def compute_remnant_from_IMR(df, pars):
         if not (set(['Mf', 'af']) <= set(df.keys())) and not (set(['f_t_0', 'tau_t_0']) <= set(df.keys())):
             if IMR_fits == 'IMRPhenomXPrecessing':
-                if not (set(['eta', 'a_1', 'a_2', 'chi1', 'chi2', 'chi_p']) <= set(df.columns)) and (set(['m1', 'm2', 'a_1', 'a_2', 'chi1', 'chi2', 'chi_p']) <= set(df.keys())):
+                if not (set(['eta', 'chi_p']) <= set(df.keys())):
                     df = compute_progenitors_from_IMR(df, func = 'SymmetricMassRatio')
-            try:    df = compute_Mf_af_from_IMR(df, pars, IMR_fits)
-            except: pass
+                    df = compute_progenitors_from_IMR(df, func = 'ChiSymmetric')
+            if IMR_fits == 'NRSur7dq4Remnant':
+                df = compute_progenitors_from_IMR(df, func = 'MassRatio')
+                #df = remove_mass_ratio_over_threshold(df)
+            df = compute_Mf_af_from_IMR(df, pars, IMR_fits)
+        return df
 
     def compute_qnms_from_remnant(df, pars):
         if (set(['f_22', 'tau_22']) <= set(pars['parameters'])) and not (set(['f_22', 'tau_22']) <= set(df.keys())) and not (set(['f_t_0', 'tau_t_0']) <= set(df.keys())):
             if not (set(['Mf', 'af']) <= set(df.keys())):
-                compute_remnant_from_IMR(df, pars)
+                df = compute_remnant_from_IMR(df, pars)
             df = compute_qnms_from_Mf_af(df, pars['modes'], pars, scaling = 1)
         if (set(['f_t_0', 'tau_t_0']) <= set(pars['parameters'])) and not (set(['f_t_0', 'tau_t_0']) <= set(df.keys())):
             if not (set(['Mf', 'af']) <= set(df.keys())):
@@ -116,7 +120,7 @@ def Adapt_Samples(df, pars, IMR_flag = False):
     LVK_conventions(                    df, pars)
     granite_conventions(                df, pars)
     if (set(['Mf', 'af']) <= set(pars['parameters'])):
-        compute_remnant_from_IMR(       df, pars)
+        df = compute_remnant_from_IMR(  df, pars)
     compute_qnms_from_remnant(          df, pars)
     pyring_damped_sinusoids_conventions(df, pars)
     extrinsic_parameters_conventions(   df, pars)
@@ -349,10 +353,10 @@ def compute_Mf_af_from_IMR(df, pars, IMR_fits):
         try:    from lalsimulation import SimIMRPhenomXPrecessingFinalSpin2017, SimIMRPhenomXFinalMass2017
         except: raise ValueError('Unable to find the IMRPhenomXPrecessing remnant fits. Please either install lalsimulation or use a different option for the remnant fits.')
 
-        if not (set(['eta', 'a_1', 'a_2', 'chi1', 'chi2', 'chi_p']) <= set(df.columns)):
+        if not (set(['eta', 'chi1', 'chi2', 'chi_p']) <= set(df.columns)):
             raise ValueError('The IMR samples are not compatible with the selected remnant fits. Please make sure they are consistent.')
         
-        Mf = SimIMRPhenomXFinalMass2017(          df.eta, df.a_1,  df.a_2)
+        Mf = SimIMRPhenomXFinalMass2017(          df.eta, df.chi1, df.chi2)
         af = SimIMRPhenomXPrecessingFinalSpin2017(df.eta, df.chi1, df.chi2, df.chi_p)
 
     # Precessing fits.
@@ -473,6 +477,19 @@ def compute_progenitors_from_IMR(df, func = None):
     elif func == 'ChiAntiymmetric'   : df['chi_a']        = ChiAntiymmetric(   df['m1'], df['m2'], df['chi1'], df['chi2'])
     else:
         raise ValueError('The selected sample conversion does not exist. Please check the available options.')
+
+    return df
+
+def remove_mass_ratio_over_threshold(df):
+    
+    if not (set(['q']) <= set(df.columns)):
+        raise ValueError('The IMR samples do not contain the mass ratio. Please make sure they are consistent.')
+    
+    nsamp0 = len(df)
+    df = df[df['q'] > 1./6.]
+    df = df.reset_index()
+
+    if len(df) < nsamp0:    print('Incompatible samples with NRSur fit were removed')
 
     return df
 

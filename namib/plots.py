@@ -108,7 +108,7 @@ def get_sigma_bounds(df, pars, keys, comp_pars, par):
             samps = np.array(df[df[pars['stack-mode']] == key][par])
             samps = samps[~np.isnan(samps)]
 
-            if samps.size > 0:
+            if samps.size > 1:
                 median = np.percentile(samps, 50)
                 sig_p  = np.percentile(samps, 95) - median
                 sig_m  = np.percentile(samps,  5)
@@ -121,14 +121,19 @@ def get_sigma_bounds(df, pars, keys, comp_pars, par):
                 samps = np.array(tmp[tmp[pars['compare']] == comp][par])
                 samps = samps[~np.isnan(samps)]
 
-                if samps.size > 0:
+                if samps.size > 1:
                     median = np.percentile(samps, 50)
                     sig_p  = np.percentile(samps, 95) - median
                     sig_m  = median - np.percentile(samps,  5)
                     bounds_max.append(median + dev * sig_p)
                     bounds_min.append(median - dev * sig_m)
 
-    return [min(bounds_min), max(bounds_max)]
+    med_min = np.median(bounds_min)
+    med_max = np.median(bounds_max)
+    var_min = np.var(   bounds_min)
+    var_max = np.var(   bounds_max)
+
+    return [med_min - np.sqrt(var_min), med_max + np.sqrt(var_max)]
 
 def get_sigma_IMR(df, pars, keys):
 
