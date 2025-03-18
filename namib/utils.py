@@ -49,7 +49,7 @@ def Adapt_Samples(df, pars, IMR_flag = False):
                     df = compute_progenitors_from_IMR(df, func = 'ChiSymmetric')
             if IMR_fits == 'NRSur7dq4Remnant':
                 df = compute_progenitors_from_IMR(df, func = 'MassRatio')
-                #df = remove_mass_ratio_over_threshold(df)
+                df = remove_mass_ratio_over_threshold(df)
             df = compute_Mf_af_from_IMR(df, pars, IMR_fits)
         return df
 
@@ -60,7 +60,7 @@ def Adapt_Samples(df, pars, IMR_flag = False):
             df = compute_qnms_from_Mf_af(df, pars['modes'], pars, scaling = 1)
         if (set(['f_t_0', 'tau_t_0']) <= set(pars['parameters'])) and not (set(['f_t_0', 'tau_t_0']) <= set(df.keys())):
             if not (set(['Mf', 'af']) <= set(df.keys())):
-                compute_remnant_from_IMR(df, pars)
+                df = compute_remnant_from_IMR(df, pars)
             df = compute_qnms_from_Mf_af(df, [(2,2)], pars, scaling = 0)
             df.rename(columns = {'f_22' : 'f_t_0', 'tau_22' : 'tau_t_0'}, inplace = True)
             # if (set(['f_t_0', 'tau_t_0']) <= set(df.keys())):
@@ -489,7 +489,7 @@ def remove_mass_ratio_over_threshold(df):
     df = df[df['q'] > 1./6.]
     df = df.reset_index()
 
-    if len(df) < nsamp0:    print('Incompatible samples with NRSur fit were removed')
+    if len(df) < nsamp0:    print(f'{nsamp0-len(df)} incompatible samples with NRSur fit were removed')
 
     return df
 

@@ -384,6 +384,10 @@ def corner_plots_sns(pars, SampDataFrame, PriorDataFrame, IMRDataFrame):
         if not pars['bounds'] == []:
             fig.axes[pi, pi].set_xlim(pars['bounds'][pi])
             fig.axes[pi, pi].set_ylim(pars['bounds'][pi])
+        if pars['automatic-bounds']: 
+            bounds=get_sigma_bounds(SampDataFrame, pars, keys, comp_pars, par)
+            fig.axes[pi, pi].set_xlim(bounds)
+            fig.axes[pi, pi].set_ylim(bounds)
         fig.axes[len(pars['parameters'])-1, pi].set_xlabel(labels_dict[par])
         if not pi==0: fig.axes[pi, 0].set_ylabel(labels_dict[par])
 
