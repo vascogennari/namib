@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
+from matplotlib.lines import Line2D
 from matplotlib import rcParams, colors
 from corner import corner
 import seaborn as sns
@@ -707,18 +708,21 @@ def ridgeline_plots(pars, SampDataFrame, PriorDataFrame, IMRDataFrame):
             ax[pi].xaxis.set_visible(True)
             ax[pi].grid(visible = False)
             ax[pi].set_xlabel(labels_dict[par])
-            ax[pi].tick_params(axis = 'both', which = 'major', labelsize = pars['label-sizes']['xtick'])
+            ax[pi].tick_params(axis = 'x', which = 'major', labelsize = pars['label-sizes']['xtick'], direction = 'inout', length=6, width=1, zorder = 2)
             if not pars['truths'] == []:         ax[pi].axvline(pars['truths'][pi], ls = '--', lw = 1.5, alpha = 0.5, color = pars['truth-color'])  # Plot truth values
             if pars['include-IMR'] and not pars['IMR-posteriors']:
                 ax[pi].axvline(CI[par]['median'],  ymin=0.05, ymax=0.9, ls = '-',  alpha = 0.6, lw = 1., color = pars['truth-color'], zorder = 10)
                 ax[pi].axvline(CI[par]['90-low'],  ymin=0.05, ymax=0.9, ls = '--', alpha = 0.2, lw = 1., color = pars['truth-color'], zorder = 10)
                 ax[pi].axvline(CI[par]['90-high'], ymin=0.05, ymax=0.9, ls = '--', alpha = 0.2 ,lw = 1., color = pars['truth-color'], zorder = 10)
         else:
-            ax[len(keys)-1][pi].xaxis.set_visible(True)
-            ax[len(keys)-1][pi].grid(visible = False)
-            ax[len(keys)-1][pi].set_xlabel(labels_dict[par])
             for ni,key in enumerate(keys):
-                ax[ni][pi].tick_params(axis = 'both', which = 'major', labelsize = pars['label-sizes']['xtick'])
+                ax[ni][pi].xaxis.set_visible(True)
+                ax[ni][pi].grid(visible = False)
+                if ni<len(keys)-1:
+                    ax[ni][pi].xaxis.set_ticklabels([])
+                else:
+                    ax[ni][pi].set_xlabel(labels_dict[par])
+                ax[ni][pi].tick_params(axis = 'x', labelsize = pars['label-sizes']['xtick'], direction = 'inout', length=10, width=0.5, zorder = 20)
                 if not pars['truths'] == []: ax[ni][pi].axvline(pars['truths'][pi], ls = '--', lw = 1.5, alpha = 0.5, color = pars['truth-color'])  # Plot truth values
                 if pars['include-IMR'] and not pars['IMR-posteriors']:
                     if pars['stack-mode'] in ('event', 'pipeline', 'model'):
@@ -732,10 +736,14 @@ def ridgeline_plots(pars, SampDataFrame, PriorDataFrame, IMRDataFrame):
 
     if pars['compare'] == '': colors = lp.palettes(pars, colormap = False, number_colors = len(comp_pars))
     patch = [mpatches.Patch(facecolor = colors[ci], edgecolor = 'k', alpha = pars['ridgeline-settings']['alpha'], label = lp.labels_legend(comp_pars[ci])) for ci,c in enumerate(comp_pars)]
+    if pars['include-IMR'] and not pars['IMR-posteriors']:
+        patch.append(Line2D([0], [0], ls='-', alpha = 0.6, lw =1., color = pars['truth-color'], label = lp.labels_legend('IMR')))
 
     # Set multiple labels in columns if required
     if not pars['horizontal-legend']: ncol = 1
-    else:                             ncol = len(comp_pars)
+    else:  
+        if pars['include-IMR']:    ncol = len(comp_pars)+1
+        else:                      ncol = len(comp_pars)
     fig.axes[0].legend(handles = patch, loc = 2, frameon = False, ncol = ncol, borderaxespad = pars['ridgeline-settings']['borderaxespad'])
 
     if pars['remove-legend']: fig.axes[0].get_legend().remove()
