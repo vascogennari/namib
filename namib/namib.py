@@ -42,7 +42,7 @@ def main():
         'include-IMR'        : 0,
         'truths'             : [],
 
-        'modes'              : [(2,2)],
+        'modes'              : [(2,2,0)],
         'ds-scaling'         : 0,
         'qnms-pyRing'        : 1,
         'IMR-fits'           : 'JimenezForteza_TEOBPM',

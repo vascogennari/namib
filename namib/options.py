@@ -25,7 +25,7 @@ usage = """
         include-IMR        Flag to plot the IMR posteriors. They must be in the samples folder with name "event_pipeline_IMR.format". Default: 0
         truths             List of true values of the selected parameters. Currently implemented only with corner-sns=0. Default: []
 
-        modes              List of modes for which the QNMs are computed. This option is used only when QNMs are computed from {Mf, af}. Default: [(2,2)]
+        modes              List of modes for which the QNMs are computed. This option is used only when QNMs are computed from {Mf, af}. Default: [(2,2,0)]
         ds-scaling         Flag to convert the damping time in [ms] and scale amplitudes as [1e-21]. The option is used to compare samples from Damped Sinusoids with other models. Default: 0
         qnms-pyRing        Flag to use pyRing fits to compute the QNMs. Default: 1
         IMR-fits           Option to select the NR fits used to compute the remnant parameters from IMR smaples. Available options: ['JimenezForteza_TEOBPM', 'UIB2016', 'NRSur7dq4Remnant', 'IMRPhenomXPrecessing', 'HBR2016']. Default: 'JimenezForteza_TEOBPM'

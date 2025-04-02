@@ -53,6 +53,37 @@ def Adapt_Samples(df, pars, IMR_flag = False):
             df = compute_Mf_af_from_IMR(df, pars, IMR_fits)
         return df
 
+    def compute_phase_amplitude_from_IMR(df, pars):
+        if not ((set(['A2220']) <= set(df.keys())) or (set(['phi2220']) <= set(df.keys()))) and not (set(['f_t_0', 'tau_t_0']) <= set(df.keys())):
+            if not (set(['eta', 'chi_p', 'chi_a']) <= set(df.keys())):
+                df = compute_progenitors_from_IMR(df, func = 'SymmetricMassRatio')
+                df = compute_progenitors_from_IMR(df, func = 'ChiSymmetric')
+                df = compute_progenitors_from_IMR(df, func = 'ChiAntiymmetric')
+            df = compute_phase_amplitude_from_progenitors(df, pars['modes'])
+        return df
+    
+    def compute_phase_amplitude_test(df,pars):
+        if (set(['A2220']) <= set(df.keys()) or set(['phi2220']) <= set(df.keys())):
+            for mode in pars['modes']:
+                l, m, n = mode[0], mode[1], mode[2]
+                if not (mode == (2,2,0)):
+
+                    df[f'AR{l}{m}{n}'] = df[f'A2{l}{m}{n}']/df['A2220']
+                    df[f'deltaphi{l}{m}{n}'] = (m/2.)*df['phi2220'] - df[f'phi2{l}{m}{n}']
+
+                    nsamp = len(df)
+                    deltaphi = df[f'deltaphi{l}{m}{n}']
+                    if (m % 2 == 0): 
+                        cc=2.
+                    else:
+                        cc = 1.
+                    for i in range(nsamp):
+                        while (deltaphi[i] > cc*np.pi) or (deltaphi[i] < 0):
+                            if deltaphi[i] > cc*np.pi: deltaphi[i] = deltaphi[i] - cc*np.pi
+                            if deltaphi[i] < 0:        deltaphi[i] = deltaphi[i] + cc*np.pi
+                    df[f'deltaphi{l}{m}{n}'] = deltaphi
+        return df
+
     def compute_qnms_from_remnant(df, pars):
         if (set(['f_22', 'tau_22']) <= set(pars['parameters'])) and not (set(['f_22', 'tau_22']) <= set(df.keys())) and not (set(['f_t_0', 'tau_t_0']) <= set(df.keys())):
             if not (set(['Mf', 'af']) <= set(df.keys())):
@@ -121,6 +152,8 @@ def Adapt_Samples(df, pars, IMR_flag = False):
     granite_conventions(                df, pars)
     if (set(['Mf', 'af']) <= set(pars['parameters'])):
         df = compute_remnant_from_IMR(  df, pars)
+    df = compute_phase_amplitude_from_IMR(df, pars)
+    df = compute_phase_amplitude_test(df,pars)
     compute_qnms_from_remnant(          df, pars)
     pyring_damped_sinusoids_conventions(df, pars)
     extrinsic_parameters_conventions(   df, pars)
@@ -383,30 +416,30 @@ def compute_Mf_af_from_IMR(df, pars, IMR_fits):
 
 def compute_qnms_from_Mf_af(df, modes, pars, scaling = 1):
     '''
-    Compute QNMs frequency and damping time from Mf and af for one mode (l,m)
+    Compute QNMs frequency and damping time from Mf and af for one mode (l,m,n)
     using the qnm python package [https://github.com/duetosymmetry/qnm]
     '''
     nsamp = len(df)
 
     for mode in modes:
-        l, m = mode[0], mode[1]
+        l, m, n = mode[0], mode[1], mode[2]
         omg = np.zeros(nsamp)
         tau = np.zeros(nsamp)
         for i in range(nsamp):
             Mf, af = df.Mf[i], df.af[i]
             if not pars['qnms-pyRing']:
                 Warning('Using qnm fits to compute the remnant samples [Mf, af]. This option is still experimental and it is currently very slow: we suggest to use the option "qnms-pyRing".')
-                omg[i], tau[i] = get_qnms(Mf, af, l, m)
+                omg[i], tau[i] = get_qnms(Mf, af, l, m, n)
             else:
                 try:
                     import pyRing.waveform as wf
                 except:
                     raise ValueError('Unable to find the pyRing installation for the QNMs fits. Please either install pyRing or disactivate the option "qnms-pyRing".')
-                omg[i] = wf.QNM_fit(l, m, 0).f(Mf, af)                # [Hz]
+                omg[i] = wf.QNM_fit(l, m, n).f(Mf, af)                # [Hz]
                 if scaling == 1:
-                    tau[i] = wf.QNM_fit(l, m, 0).tau(Mf, af) * 1000   # [ms]
+                    tau[i] = wf.QNM_fit(l, m, n).tau(Mf, af) * 1000   # [ms]
                 else:
-                    tau[i] = wf.QNM_fit(l, m, 0).tau(Mf, af)          # [ms]
+                    tau[i] = wf.QNM_fit(l, m, n).tau(Mf, af)          # [ms]
 
         df.insert(0, 'f_{}{}'.format(l,m),   omg)
         df.insert(0, 'tau_{}{}'.format(l,m), tau)
@@ -479,6 +512,66 @@ def compute_progenitors_from_IMR(df, func = None):
         raise ValueError('The selected sample conversion does not exist. Please check the available options.')
 
     return df
+
+def phase_amplitude_fits(eta,chi_p,chi_m,mode):
+    '''
+    Compute amplitude and phase fits from eta, chi_p and chi_m
+    uses the fits of Cheung et al [https://arxiv.org/abs/2310.04489]
+    '''
+    delta = np.sqrt(1-4*eta)
+
+    Amps = {(2,2,0): 4.004 + 1.349*chi_p + 0.333*chi_m - 1.325*eta**2 - 1.369*eta*chi_m + 2.622*chi_p*chi_m - 32.74*eta**2*chi_p + 4.313*eta*chi_p**2 - 25.18*eta*chi_p*chi_m + 83.37*eta**3*chi_p - 13.39*eta**2*chi_p**2 + 58.01*eta**2*chi_p*chi_m - 0.3837 *eta*chi_p**3 - 0.2075* chi_p**4,
+            
+            (2,2,1): 15.46 - 407*eta**2 + 55.43*eta*chi_p - 413.5*eta*chi_m + 14.82*chi_p**2 - 65.08*chi_p*chi_m + 17.99*chi_m**2 + 1731*eta**3 + 4245*eta**2*chi_m + 876.8*eta*chi_p*chi_m - 72.06*eta*chi_m**2 + 11.46*chi_p**3 + 101.2*chi_p*chi_m**2 -2.499*chi_m**3 - 10310*eta**3*chi_m - 2485*eta**2*chi_p*chi_m - 400*eta*chi_p*chi_m**2,
+            
+            (2,1,0): 0.9376*abs(chi_m) + delta*(6.697 - 148.3*eta - 1.035*chi_m + 1603*eta**2 - 0.96*eta*chi_p + 3.022*chi_p*chi_m - 4.27*chi_m**2 - 7388*eta**3 - 37.87*eta**2*chi_m - 15.85*eta*chi_p + 12060* eta**4 - 13.17*eta*chi_p*chi_m**2 + 11.61*eta*chi_m**3 - 2.666*chi_p**2*chi_m**2 + 4.661*chi_m**4),
+            
+            (3,3,0): 0.2115*abs(chi_m) + delta*(1.82 + 0.6007*chi_p + 0.4653*chi_m + 16.49*eta**2 + 0.9369*chi_p*chi_m - 0.2701*chi_m**2 - 53.16*eta**3 - 4.201*eta**2*chi_m + 2.18*eta*chi_p**2 - 6.289*eta*chi_p*chi_m ),
+            
+            (3,2,0): 0.7695 - 3.308*eta - 1.446*eta*chi_p - 61.87*eta**3 + 72.14*eta**2*chi_p - 127.1*eta**2*chi_m - 2.769*eta*chi_p*chi_m + 0.3681*eta*chi_m**2 - 0.5065*chi_p*chi_m**2 + 0.5483*chi_m**3 + 293.4*eta**4 - 527.6*eta**3*chi_p + 1110*eta**3*chi_m + 11.14*eta**2*chi_p*chi_m + 2.18*eta*chi_p*chi_m**2 - 2.023*eta*chi_m**3 + 1014*eta**4*chi_p - 2407*eta**4*chi_m,
+            
+            (4,4,0): 0.6505 + 2.978*eta*chi_m + 0.4262*chi_p*chi_m + 106.1*eta**3 + 67.45*eta**2*chi_p - 12.08*eta**2*chi_m - 1.738*eta*chi_p*chi_m - 2041*eta**4 - 614.2*eta**3*chi_p + 5974*eta**5 + 1387*eta**4*chi_p
+            
+            }
+
+    phases =   {(2,2,0): 0.,
+    
+                (2,2,1): 3.918 + 30.68*eta + 1.65*chi_p + 2.251*chi_m - 196.8*eta**2 - 15.94*eta*chi_p - 35.86*eta*chi_m - 0.2809*chi_p**2 - 2.797*chi_p*chi_m + 324.6*eta**3 + 32.04*eta**2*chi_p + 107*eta**2*chi_m + 11.19*eta*chi_p*chi_m - 0.2427*chi_p**3,
+                
+                (2,1,0): 4.282 + 2.075*eta - 0.8584*chi_p - 5.04*eta*chi_m - 1.626*chi_p*chi_m - 4.319*eta**2*chi_p + 21.01*eta**2*chi_m - 2.27*eta*chi_p**2 + 5.414*eta*chi_p*chi_m,
+                
+                (3,3,0): 0.08988 + 1.049*eta*chi_p + 40.79*eta**3,
+                 
+                (3,2,0): -32.08 + 889.7*eta - 81.88*chi_p + 93.05*chi_m - 9292*eta**2 + 1584*eta*chi_p - 1817*eta*chi_m - 0.3888*chi_m**2 + 40350*eta**3 - 9588*eta**2*chi_p + 10930*eta**2*chi_m - 6.121*eta*chi_p**2 - 60250*eta**4 + 18190*eta**3*chi_p - 20600*eta**3*chi_m,
+                 
+                (4,4,0): 153.6 - 6463*eta + 114700*eta**2 - 1053000*eta**3 + 5278000*eta**4 + 478.4*eta**3*chi_p - 13680000*eta**5 - 1960*eta**4*chi_p + 65.4*eta**4*chi_m + 14320000*eta**6
+                 
+                }
+
+    Amp = eta*Amps[mode]
+    phi = phases[mode]
+
+    return Amp, phi
+
+def compute_phase_amplitude_from_progenitors(df,modes):
+
+    nsamp = len(df)
+    A   = np.zeros(nsamp)
+    phi = np.zeros(nsamp)
+
+    for mode in modes:
+        l, m, n = mode[0], mode[1], mode[2]
+
+        for i in range(nsamp):
+
+            eta,chi_p,chi_m = df.eta[i], df.chi_s[i], df.chi_a[i]
+            A[i], phi[i] = phase_amplitude_fits(eta,chi_p,chi_m,mode)
+
+        df.insert(0, 'A2{}{}{}'.format(l,m,n), A)
+        df.insert(0, 'phi2{}{}{}'.format(l,m,n), phi)
+
+    return df
+        
 
 def remove_mass_ratio_over_threshold(df):
     
