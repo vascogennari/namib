@@ -54,7 +54,7 @@ def Adapt_Samples(df, pars, IMR_flag = False):
         return df
 
     def compute_phase_amplitude_from_IMR(df, pars):
-        if not ((set(['A2220']) <= set(df.keys())) or (set(['phi2220']) <= set(df.keys()))) and not (set(['f_t_0', 'tau_t_0']) <= set(df.keys())):
+        if not ((set(['A2220']) <= set(df.keys())) or (set(['phi2220']) <= set(df.keys())) or (set(['A2220_1']) <= set(df.keys())) or (set(['phi2220_1']) <= set(df.keys()))) and not (set(['f_t_0', 'tau_t_0']) <= set(df.keys())):
             if not (set(['eta', 'chi_p', 'chi_a']) <= set(df.keys())):
                 df = compute_progenitors_from_IMR(df, func = 'SymmetricMassRatio')
                 df = compute_progenitors_from_IMR(df, func = 'ChiSymmetric')

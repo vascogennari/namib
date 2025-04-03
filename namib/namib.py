@@ -63,7 +63,7 @@ def main():
         'corner-settings'    : {'figsize':  8,       'figname': 'corner',    'alpha': 0.5, 'smooth': 0,    'linewidth': 1},
         'violin-settings'    : {'figsize': (15, 25), 'figname': 'violin',    'alpha': 0.5, 'rotation': 0,  'pad': -0.5},
         'ridgeline-settings' : {'figsize': (20, 10), 'figname': 'ridgeline', 'alpha': 0.5, 'overlap': 0.5, 'fade': 0, 'borderaxespad': 0.5},
-        'label-sizes'        : {'xtick': 15, 'ytick': 15, 'legend': 17, 'axes': 17},
+        'label-sizes'        : {'xtick': 15, 'ytick': 15, 'legend': 15, 'axes': 15, 'font': 15},
         'palette'            : 'crest',
 
         'extra-row'          : '',

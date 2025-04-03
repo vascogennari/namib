@@ -2,14 +2,10 @@ from matplotlib import rcParams
 from distutils.spawn import find_executable
 
 if find_executable('latex'): rcParams["text.usetex"] = True
-rcParams["xtick.labelsize"] = 15
-rcParams["ytick.labelsize"] = 15
 rcParams["xtick.direction"] = "in"
 rcParams["ytick.direction"] = "in"
-rcParams["legend.fontsize"] = 15
 rcParams["legend.frameon"]  = False
 rcParams["legend.loc"]      = "best"
-rcParams["axes.labelsize"]  = 20
 rcParams["axes.grid"]       = True
 rcParams["grid.alpha"]      = 0.6
 rcParams["grid.linestyle"]  = "dotted"
@@ -21,8 +17,7 @@ def rc_labelsizes(pars):
     rcParams["ytick.labelsize"] = pars['label-sizes']['ytick']
     rcParams["legend.fontsize"] = pars['label-sizes']['legend']
     rcParams["axes.labelsize"]  = pars['label-sizes']['axes']
-
-    Warning('\nLabelsize of axes is not currently read from the label-sizes dictionary. Please manually change the value at the beginning of labels_palettes.py\n')
+    rcParams["font.size"]       = pars['label-sizes']['font']
 
     return 0
 
