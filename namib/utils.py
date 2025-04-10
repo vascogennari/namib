@@ -92,10 +92,11 @@ def Adapt_Samples(df, pars, IMR_flag = False):
         if (set(['f_t_0', 'tau_t_0']) <= set(pars['parameters'])) and not (set(['f_t_0', 'tau_t_0']) <= set(df.keys())):
             if not (set(['Mf', 'af']) <= set(df.keys())):
                 df = compute_remnant_from_IMR(df, pars)
-            df = compute_qnms_from_Mf_af(df, [(2,2)], pars, scaling = 0)
+            df = compute_qnms_from_Mf_af(df, [(2,2,0)], pars, scaling = 0)
             df.rename(columns = {'f_22' : 'f_t_0', 'tau_22' : 'tau_t_0'}, inplace = True)
             # if (set(['f_t_0', 'tau_t_0']) <= set(df.keys())):
             # df.rename(columns = {'f_t_0' : 'f_22', 'tau_t_0' : 'tau_22'}, inplace = True)
+        return df
 
     def pyring_damped_sinusoids_conventions(df, pars):
         if (set(['f_22', 'tau_22']) <= set(pars['parameters'])) and (set(['f_t_0', 'tau_t_0']) <= set(df.keys())):
@@ -148,18 +149,18 @@ def Adapt_Samples(df, pars, IMR_flag = False):
             try:    df.tau_22 *= 1. + df.dtau_220
             except: pass
 
-    LVK_conventions(                    df, pars)
-    granite_conventions(                df, pars)
+    LVK_conventions(                      df, pars)
+    granite_conventions(                  df, pars)
     if (set(['Mf', 'af']) <= set(pars['parameters'])):
-        df = compute_remnant_from_IMR(  df, pars)
+        df = compute_remnant_from_IMR(    df, pars)
     df = compute_phase_amplitude_from_IMR(df, pars)
-    df = compute_phase_amplitude_test(df,pars)
-    compute_qnms_from_remnant(          df, pars)
-    pyring_damped_sinusoids_conventions(df, pars)
-    extrinsic_parameters_conventions(   df, pars)
-    set_positive_spins(                 df, pars)
-    compute_dependent_parameters(       df, pars)
-    if pars['TGR-plot']: TGR_plot(      df, pars)
+    df = compute_phase_amplitude_test(    df, pars)
+    df = compute_qnms_from_remnant(       df, pars)
+    pyring_damped_sinusoids_conventions(  df, pars)
+    extrinsic_parameters_conventions(     df, pars)
+    set_positive_spins(                   df, pars)
+    compute_dependent_parameters(         df, pars)
+    if pars['TGR-plot']: TGR_plot(        df, pars)
 
     if not (set(pars['parameters']).difference(df.keys()) == set()):
         additional_pars = set(pars['parameters']).difference(df.keys())

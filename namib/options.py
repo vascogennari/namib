@@ -44,9 +44,9 @@ usage = """
         TGR-plot           Flag to produce TGR plot. Default: 0
         corner-sns         Flag to produce corner plot with seaborn. Default: 1
 
-        corner-settings    Dictionary for additional corner settings. Options with seaborn: {'figsize', 'figname', 'alpha', 'linewidth'}. Options with corner: {'figsize', 'figname', 'smooth'}. Default: {'figsize': 8, 'figname': 'corner', 'alpha': 0.5, 'smooth': 0, 'linewidth': 1}
-        violin-settings    Dictionary for additional violin settings. Options: {'figsize', 'figname', 'alpha', 'rotation', 'pad'}. Default: {'figsize': (15, 25), 'figname': 'violin', 'alpha': 0.5, 'rotation': 0, 'pad': -0.5}
-        ridgeline-settings Dictionary for additional ridgeline settings. Options: {'figsize', 'figname', 'alpha', 'overlap', 'fade', 'borderaxespad'}. Default: {'figsize': (20, 10), 'figname': 'ridgeline', 'alpha': 0.5, 'overlap': 0.5, 'fade': 0, 'borderaxespad': 0.5}
+        corner-settings    Dictionary for additional corner settings. Options with seaborn: {'figsize', 'figname', 'figtitle', 'alpha', 'linewidth'}. Options with corner: {'figsize', 'figname', 'figtitle', 'smooth'}. Default: {'figsize': 8, 'figname': 'corner', 'figtitle': '', 'alpha': 0.5, 'smooth': 0, 'linewidth': 1}
+        violin-settings    Dictionary for additional violin settings. Options: {'figsize', 'figname', 'figtitle', 'alpha', 'rotation', 'pad'}. Default: {'figsize': (15, 25), 'figname': 'violin', 'figtitle': '', 'alpha': 0.5, 'rotation': 0, 'pad': -0.5}
+        ridgeline-settings Dictionary for additional ridgeline settings. Options: {'figsize', 'figname', 'figtitle', 'alpha', 'overlap', 'fade', 'borderaxespad'}. Default: {'figsize': (20, 10), 'figname': 'ridgeline', 'figtitle': '', 'alpha': 0.5, 'overlap': 0.5, 'fade': 0, 'borderaxespad': 0.5}
         label-sizes        Dictionary to set labels size. Options: {'xtick', 'ytick', 'legend', 'axes', 'font'}. Default: {'xtick': 15, 'ytick': 15, 'legend': 15, 'axes': 15, 'font': 15}
         palette            Option to set the colors used in the plots. If string is passed colors are read from that colormap, otherwise a list of colors needs to be passed. Syntax: 'cmap_name' or ['#AB3507', '#0771AB', ...]. Default: 'crest'
         

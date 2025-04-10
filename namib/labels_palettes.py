@@ -2,14 +2,17 @@ from matplotlib import rcParams
 from distutils.spawn import find_executable
 
 if find_executable('latex'): rcParams["text.usetex"] = True
-rcParams["xtick.direction"] = "in"
-rcParams["ytick.direction"] = "in"
+rcParams["xtick.direction"] = "inout"
+rcParams["ytick.direction"] = "inout"
 rcParams["legend.frameon"]  = False
 rcParams["legend.loc"]      = "best"
 rcParams["axes.grid"]       = True
 rcParams["grid.alpha"]      = 0.6
 rcParams["grid.linestyle"]  = "dotted"
 rcParams["lines.linewidth"] = 0.7
+#rcParams["axes.labelsize"]  = 20
+rcParams["axes.titlepad"]   = 30.
+rcParams["font.family"]     = "Computer Modern Roman"
 
 def rc_labelsizes(pars):
     

@@ -99,8 +99,8 @@ def hex_to_RGB(hex, alpha):
 
 def get_sigma_bounds(df, pars, keys, comp_pars, par):
 
-    # Set the parameter bounds as 3 times the 90% CI.
-    dev = 3
+    # Set the parameter bounds as 2 times the 90% CI.
+    dev = 2
     bounds_max = []
     bounds_min = []
 
@@ -301,6 +301,9 @@ def corner_plots(pars, SampDataFrame, PriorDataFrame, IMRDataFrame):
                         fig.axes[pi, qi].axvline(CI[qar]['median'],  ls = '-',  lw = 1., alpha = 0.6, color = pars['truth-color'], zorder = 10)
                         fig.axes[pi, qi].axvline(CI[qar]['90-low'],  ls = '--', lw = 1., alpha = 0.2, color = pars['truth-color'], zorder = 10)
                         fig.axes[pi, qi].axvline(CI[qar]['90-high'], ls = '--', lw = 1., alpha = 0.2, color = pars['truth-color'], zorder = 10)
+
+        if pars['corner-settings']['figtitle'] is not None:
+            fig.figure.suptitle(pars['corner-settings']['figtitle'])
             
         utils.create_directory(pars['plots-dir'], 'PNG')
         for extension in ['pdf', 'png']:
@@ -391,6 +394,9 @@ def corner_plots_sns(pars, SampDataFrame, PriorDataFrame, IMRDataFrame):
             fig.axes[pi, pi].set_ylim(bounds)
         fig.axes[len(pars['parameters'])-1, pi].set_xlabel(labels_dict[par])
         if not pi==0: fig.axes[pi, 0].set_ylabel(labels_dict[par])
+
+    if pars['corner-settings']['figtitle'] is not None:
+        fig.figure.suptitle(pars['corner-settings']['figtitle'])
 
     utils.create_directory(pars['plots-dir'], 'PNG')
     for extension in ['pdf', 'png']:
@@ -583,6 +589,9 @@ def violin_plots(pars, SampDataFrame, PriorDataFrame, IMRDataFrame, EvidenceData
                         ax[xi][pi].axvline(CI[par]['median'],  ls = '-',  lw = 1., alpha = 0.6, color = pars['truth-color'], zorder = 10)
                         ax[xi][pi].axvline(CI[par]['90-low'],  ls = '--', lw = 1., alpha = 0.2, color = pars['truth-color'], zorder = 10)
                         ax[xi][pi].axvline(CI[par]['90-high'], ls = '--', lw = 1., alpha = 0.2, color = pars['truth-color'], zorder = 10)
+    
+    if pars['violin-settings']['figtitle'] is not None:
+        plt.title(pars['violin-settings']['figtitle'])
 
     utils.create_directory(pars['plots-dir'], 'PNG')
     for extension in ['pdf', 'png']:
@@ -614,9 +623,9 @@ def ridgeline_plots(pars, SampDataFrame, PriorDataFrame, IMRDataFrame):
     if pars['include-IMR'] and not pars['IMR-posteriors']: CI = get_sigma_IMR(IMRDataFrame, pars, keys)
     if pars['include-IMR'] and     pars['IMR-posteriors']: pars['compare-ordering'].append('IMR')
 
-    fig, ax = plt.subplots(len(keys), len(pars['parameters']), figsize = pars['ridgeline-settings']['figsize'])
     lp.rc_labelsizes(pars)  # Set label sizes of matplotlib RC parameters
-
+    fig, ax = plt.subplots(len(keys), len(pars['parameters']), figsize = pars['ridgeline-settings']['figsize'])
+    
     for pi,par in enumerate(pars['parameters']):
 
         if pars['bounds'] == []: bounds = None
@@ -650,7 +659,8 @@ def ridgeline_plots(pars, SampDataFrame, PriorDataFrame, IMRDataFrame):
                 linecolor = 'k',
                 x_range   = bounds,
                 ax        = subset,
-                xlabels   = labels_dict[par]
+                xlabels   = labels_dict[par],
+                title     = pars['ridgeline-settings']['figtitle']
             )
         else:
             comp_pars = pd.unique(SampDataFrame[pars['compare']])
@@ -701,14 +711,15 @@ def ridgeline_plots(pars, SampDataFrame, PriorDataFrame, IMRDataFrame):
                 linecolor = 'k',
                 x_range   = bounds,
                 ax        = subset,
-                xlabels   = labels_dict[par]
+                xlabels   = labels_dict[par],
+                title     = pars['ridgeline-settings']['figtitle']
             )
 
         if ax.ndim == 1:
             ax[pi].xaxis.set_visible(True)
             ax[pi].grid(visible = False)
             ax[pi].set_xlabel(labels_dict[par])
-            ax[pi].tick_params(axis = 'x', which = 'major', labelsize = pars['label-sizes']['xtick'], direction = 'inout', length=6, width=1, zorder = 2)
+            ax[pi].tick_params(axis = 'x', which = 'major', labelsize = pars['label-sizes']['xtick'], direction = 'inout', length=3, width=1, zorder = 2)
             if not pars['truths'] == []:         ax[pi].axvline(pars['truths'][pi], ls = '--', lw = 1.5, alpha = 0.5, color = pars['truth-color'])  # Plot truth values
             if pars['include-IMR'] and not pars['IMR-posteriors']:
                 ax[pi].axvline(CI[par]['median'],  ymin=0.05, ymax=0.9, ls = '-',  alpha = 0.6, lw = 1., color = pars['truth-color'], zorder = 10)
