@@ -726,7 +726,7 @@ def reconstructed_distributions(pars, CurvesDictionary):
 
     if not pars['bounds'] == []: bounds_dict = bounds_dictionary(pars)
     params = pars['parameters']
-    labels = lp.labels_curves(params)
+    labels = lp.labels_curves(params, log10_PDF = pars['log10-PDF'])
     colors = lp.palettes(pars, colormap = True, number_colors = len(keys))
     fig, ax = plt.subplots(len(pars['parameters']), figsize = (pars['corner-settings']['figsize'], pars['corner-settings']['figsize']))
 
@@ -737,6 +737,17 @@ def reconstructed_distributions(pars, CurvesDictionary):
             m_array, pdf_array = injected_pop[0], injected_pop[1]
         except:
             raise ValueError('Injected population file not found: {}.'.format(pars['injected-pop']))
+    # Load data.
+    if not pars['data-histogram'] == '':
+        try:
+            import pickle
+            with open(pars['data-histogram'], 'rb') as f: tmp = pickle.load(f)
+            if pars['log10-PDF']:
+                data_hist = [np.log10(tmp['m1s']), np.log10(tmp['q']), tmp['z']]
+            else:
+                raise ValueError('Data histograms are currently only implemented for log10 distributions.')
+        except:
+           raise ValueError('Data population file not found: {}.'.format(pars['data-histogram']))
 
     # Loop on the models.
     for ki,key in enumerate(keys):
@@ -766,15 +777,21 @@ def reconstructed_distributions(pars, CurvesDictionary):
 
             # Set the log scale for the primary distributions.
             if 'PrimaryMass' in par:
-                ax[pi].set_yscale('log')
-                ax[pi].set_ylim(1e-5, 2 )
+                if not pars['m1-logscale']:
+                    ax[pi].set_yscale('log')
+                    ax[pi].set_ylim(1e-5, 2 )
                 if 'DetectorFrame' in par: ax[pi].set_ylim(0.5e-3, 0.1)
 
-    if pars['injected-pop'] == '':
-        patch = [mpatches.Patch(facecolor = colors[ci], edgecolor = 'k', alpha = 0.5, label = lp.labels_legend(c)) for ci,c in enumerate(keys)]
-    else:
+    if   not pars['injected-pop']   == '':
         from matplotlib.lines import Line2D
-        patch = [mpatches.Patch(facecolor = colors[2], edgecolor = 'k', alpha = 0.5, label = lp.labels_legend('alpha100-sigma30')), mpatches.Patch(facecolor = colors[1], edgecolor = 'k', alpha = 0.5, label = lp.labels_legend('alpha12-sigma10')), mpatches.Patch(facecolor = colors[0], edgecolor = 'k', alpha = 0.5, label = lp.labels_legend('alpha8-sigma6')), Line2D([0], [0], color = pars['truth-color'], linestyle = '--', linewidth = 1.2, alpha = 0.8, label = lp.labels_legend('injected_pop'))]
+        patch = [mpatches.Patch(facecolor = colors[2],  edgecolor = 'k', alpha = 0.5, label = lp.labels_legend('alpha100-sigma30')), mpatches.Patch(facecolor = colors[1], edgecolor = 'k', alpha = 0.5, label = lp.labels_legend('alpha12-sigma10')), mpatches.Patch(facecolor = colors[0], edgecolor = 'k', alpha = 0.5, label = lp.labels_legend('alpha8-sigma6')), Line2D([0], [0], color = pars['truth-color'], linestyle = '--', linewidth = 1.2, alpha = 0.8, label = lp.labels_legend('injected_pop'))]
+    elif not pars['data-histogram'] == '':
+        from matplotlib.lines import Line2D
+        for pi,par in enumerate(params):
+            ax[pi].hist(data_hist[pi], bins = 17, density = True, color = pars['truth-color'], alpha = 0.5, fill = False, histtype = 'step', linestyle = 'dashed')
+        patch = [mpatches.Patch(facecolor = colors[0],  edgecolor = 'k', alpha = 0.5, label = lp.labels_legend('90yrs-Johnson')), mpatches.Patch(facecolor = colors[1], edgecolor = 'k', alpha = 0.5, label = lp.labels_legend('65yrs-DoublePowerlaw')), Line2D([0], [0], color = pars['truth-color'], linestyle = '--', linewidth = 1.2, alpha = 0.5, label = lp.labels_legend('data_histogram'))]
+    else:
+        patch = [mpatches.Patch(facecolor = colors[ci], edgecolor = 'k', alpha = 0.5, label = lp.labels_legend(c)) for ci,c in enumerate(keys)]
     ax[0].legend(handles = patch, loc = 'best', frameon = False)
 
     if pars['remove-grid']:

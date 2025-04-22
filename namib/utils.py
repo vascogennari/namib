@@ -659,7 +659,7 @@ class Curves:
     def __init__(self, pars):
 
         dir_path = pars['samp-dir']
-        if not (pars['file-path'] == ''): dir_path = pars['file-path']
+        #if not (pars['file-path'] == ''): dir_path = pars['file-path']
 
         self.SampDataFrame    = pd.DataFrame(columns = pars['parameters'])
         self.CurvesDictionary = {}

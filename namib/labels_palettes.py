@@ -133,6 +133,12 @@ def labels_parameters(pars_list):
         elif par == 'kappa':        string = '$\\kappa$'
         elif par == 'zp':           string = '$z_{p}$'
         elif par == 'R0':           string = '$R_0\ [Gpc^{-3}yr^{-1}]$'
+        elif par == 'beta':         string = '$\\beta$'
+        elif par == 'm_b':          string = '$m_{b}\ [M_{\odot}]$'
+        elif par == 'delta':        string = '$\\delta$'
+        elif par == 'gamma':        string = '$\\gamma$'
+        elif par == 'a_gamma':      string = '$a_{\\gamma}$'
+        elif par == 'theta':        string = '$\\theta$'
 
         else:
             raise ValueError('At least one of the selected parameters does not have its corresponding label. Please, fix it in labels_palettes.py')
@@ -244,8 +250,12 @@ def labels_legend(par):
         elif par == 'sharp':              label = '$\mathrm{PL\ PL\ PL}$'
         elif par == 'smoothed':           label = '$\mathrm{PL\ PL\ PL,\ Smoothing}$'
 
+        elif par == '90yrs-Johnson':        label = '$\mathrm{JD\ (90yrs)}$'
+        elif par == '65yrs-DoublePowerlaw': label = '$\mathrm{DPL\ (65yrs)}$'
+
         # FIXME: to remove
         elif par == 'injected_pop':       label = '$\mathrm{Injected\ population}$'
+        elif par == 'data_histogram':     label = '$\mathrm{MBH\ Q3d\ catalog}$'
 
         else:
             raise ValueError('Unknown legend parameter.')
@@ -268,15 +278,19 @@ def labels_events(par):
     
     return label
 
-def labels_curves(pars_list):
+def labels_curves(pars_list, log10_PDF = False):
 
     labels_dict = {}
     for par in pars_list:
 
-        if   par == 'PrimaryMassDistribution':                       dict = {'x': '$m_1\ [M_{\odot}]$',       'y': '$p(m_1)$'}
+        if   par == 'PrimaryMassDistribution':
+            if not log10_PDF:                                        dict = {'x': '$m_1\ [M_{\odot}]$',       'y': '$p(m_1)$'}
+            else:                                                    dict = {'x': '$log_{10}(m_1)$',          'y': '$p(log_{10}(m_1))$'}
         elif par == 'PrimaryMassDistribution_NoSelectionEffects':    dict = {'x': '$m_1\ [M_{\odot}]$',       'y': '$p(m_1)$'}
         elif par == 'PrimaryMassDistribution_DetectorFrame':         dict = {'x': '$m_{1,det}\ [M_{\odot}]$', 'y': '$p(m_{1,det})$'}
-        elif par == 'SecondaryMassDistribution':                     dict = {'x': '$q$',                      'y': '$p(q)$'}  # dict = {'x': '$m_2\ [M_{\odot}]$',       'y': '$p(m_2)$'}
+        elif par == 'SecondaryMassDistribution':
+            if not log10_PDF:                                        dict = {'x': '$q$',                      'y': '$p(q)$'}  # dict = {'x': '$m_2\ [M_{\odot}]$',       'y': '$p(m_2)$'}
+            else:                                                    dict = {'x': '$log_{10}(q)$',            'y': '$p(log_{10}(q))$'}  # dict = {'x': '$m_2\ [M_{\odot}]$',       'y': '$p(m_2)$'}
         elif par == 'SecondaryMassDistribution_NoSelectionEffects':  dict = {'x': '$q_{det}$',                'y': '$p(q_{det})$'}  # dict = {'x': '$m_2\ [M_{\odot}]$',       'y': '$p(m_2)$'}
         elif par == 'SecondaryMassDistribution_DetectorFrame':       dict = {'x': '$m_{2,det}\ [M_{\odot}]$', 'y': '$p(m_{2,det})$'}
         elif par == 'RateEvolutionFunction':                         dict = {'x': '$z$',                      'y': '$R(z)/R_0$'}

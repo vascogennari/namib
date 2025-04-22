@@ -41,6 +41,7 @@ def main():
         'include-prior'      : 0,
         'truths'             : [],
         'injected-pop'       : '',
+        'data-histogram'     : '',
 
         'modes'              : [(2,2)],
         'ds-scaling'         : 0,
@@ -88,12 +89,13 @@ def main():
         'percentiles'        : {'ll': 5, 'l': 16, 'm': 50, 'h': 84, 'hh': 95},
 
         'obs-primary-nolog'  : 0,
-
+        'm1-logscale'        : 0,
+        'log10-PDF'          : 0,
     }
     
     for key in input_pars.keys():
 
-        if ('samp-dir' in key) or ('output' in key) or ('stack-mode' in key) or ('compare' in key) or ('injected-pop' in key):
+        if ('samp-dir' in key) or ('output' in key) or ('stack-mode' in key) or ('compare' in key) or ('injected-pop' in key) or ('data-histogram' in key):
             try: input_pars[key] = Config.get('input', key)
             except: pass
         if ('screen-output' in key) or ('compare-hard' in key) or ('evidence' in key) or ('save-post' in key) or ('include-prior' in key) or ('ds-scaling' in key) or ('screen-medians' in key) or ('save-medians' in key) or ('qnms-pyRing' in key) or ('remnant-pyRing' in key) or ('hierarchical' in key) or ('curves' in key):
@@ -105,7 +107,7 @@ def main():
         if ('parameters' in key) or ('modes' in key) or ('ordering' in key) or ('bounds' in key) or ('compare-ordering' in key ) or ('truths' in key):
             try: input_pars[key] = ast.literal_eval(Config.get('input', key))
             except: pass
-        if ('corner' in key) or ('violin' in key) or ('ridgeline' in key) or ('TGR-plot' in key) or ('BF-comparison' in key) or ('evidence-top' in key) or ('remove-xticks' in key) or ('remove-legend' in key) or ('horizontal-legend' in key) or ('fix-dimensions' in key) or ('corner-sns' in key) or ('redshift-primary' in key) or ('automatic-bounds' in key) or ('remove-grid' in key) or ('obs-primary-nolog' in key):
+        if ('corner' in key) or ('violin' in key) or ('ridgeline' in key) or ('TGR-plot' in key) or ('BF-comparison' in key) or ('evidence-top' in key) or ('remove-xticks' in key) or ('remove-legend' in key) or ('horizontal-legend' in key) or ('fix-dimensions' in key) or ('corner-sns' in key) or ('redshift-primary' in key) or ('automatic-bounds' in key) or ('remove-grid' in key) or ('obs-primary-nolog' in key) or ('m1-logscale' in key) or ('log10-PDF' in key):
             try: input_pars[key] = Config.getboolean('plots', key)
             except: pass
         if ('extra-row' in key) or ('single-prior' in key) or ('prior-color' in key) or ('event-name' in key) or ('truth-color' in key):
