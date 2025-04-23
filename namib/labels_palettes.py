@@ -216,6 +216,8 @@ def labels_legend(par):
         elif par == 'EdGB':                          label = '$\mathrm{EdGB}$'
 
         elif par == 'DS':                            label = '$\mathrm{DS}$'
+        elif par == 'KerrBinary':                    label = '$\mathrm{KerrBinary}$'
+        elif par == 'KerrPostmerger':                label = '$\mathrm{KerrPostmerger}$'
         elif par == 'TEOB':                          label = '$\mathrm{TEOB}$'
         elif par == 'TEOBPM':                        label = '$\mathrm{TEOBPM}$'
         elif par == 'Kerr':                          label = '$\mathrm{Kerr}$'
