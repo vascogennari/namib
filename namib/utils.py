@@ -525,7 +525,7 @@ def phase_amplitude_fits(eta,chi_p,chi_m,mode):
             
             (2,2,1): 15.46 - 407*eta**2 + 55.43*eta*chi_p - 413.5*eta*chi_m + 14.82*chi_p**2 - 65.08*chi_p*chi_m + 17.99*chi_m**2 + 1731*eta**3 + 4245*eta**2*chi_m + 876.8*eta*chi_p*chi_m - 72.06*eta*chi_m**2 + 11.46*chi_p**3 + 101.2*chi_p*chi_m**2 -2.499*chi_m**3 - 10310*eta**3*chi_m - 2485*eta**2*chi_p*chi_m - 400*eta*chi_p*chi_m**2,
             
-            (2,1,0): 0.9376*abs(chi_m) + delta*(6.697 - 148.3*eta - 1.035*chi_m + 1603*eta**2 - 0.96*eta*chi_p + 3.022*chi_p*chi_m - 4.27*chi_m**2 - 7388*eta**3 - 37.87*eta**2*chi_m - 15.85*eta*chi_p + 12060* eta**4 - 13.17*eta*chi_p*chi_m**2 + 11.61*eta*chi_m**3 - 2.666*chi_p**2*chi_m**2 + 4.661*chi_m**4),
+            (2,1,0): 0.9376*abs(chi_m) + delta*(6.697 - 148.3*eta - 1.035*chi_m + 1603*eta**2 - 0.96*eta*chi_p + 3.022*chi_p*chi_m - 4.27*chi_m**2 - 7388*eta**3 - 37.87*eta**2*chi_m - 15.85*eta*chi_p*chi_m + 12060* eta**4 - 13.17*eta*chi_p*chi_m**2 + 11.61*eta*chi_m**3 - 2.666*chi_p**2*chi_m**2 + 4.661*chi_m**4),
             
             (3,3,0): 0.2115*abs(chi_m) + delta*(1.82 + 0.6007*chi_p + 0.4653*chi_m + 16.49*eta**2 + 0.9369*chi_p*chi_m - 0.2701*chi_m**2 - 53.16*eta**3 - 4.201*eta**2*chi_m + 2.18*eta*chi_p**2 - 6.289*eta*chi_p*chi_m ),
             

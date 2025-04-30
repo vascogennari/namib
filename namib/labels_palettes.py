@@ -61,6 +61,7 @@ def labels_parameters(pars_list):
         elif par == 'A2440_1':     string = '$A^{(1)}_{440}$'
         elif par == 'A2440_2':     string = '$A^{(2)}_{440}$'
 
+        elif par == 'AR221':       string = '$A^R_{221}$'
         elif par == 'AR210':       string = '$A^R_{210}$'
         elif par == 'AR200':       string = '$A^R_{200}$'
         elif par == 'AR330':       string = '$A^R_{330}$'
@@ -86,6 +87,7 @@ def labels_parameters(pars_list):
         elif par == 'phi2440_1':   string = '$\\phi^{(1)}_{440}$'
         elif par == 'phi2440_2':   string = '$\\phi^{(2)}_{440}$'
         
+        elif par == 'deltaphi221':     string = '$\\delta\\phi_{221}$'
         elif par == 'deltaphi210':     string = '$\\delta\\phi_{210}$'
         elif par == 'deltaphi200':     string = '$\\delta\\phi_{200}$'
         elif par == 'deltaphi330':     string = '$\\delta\\phi_{330}$'

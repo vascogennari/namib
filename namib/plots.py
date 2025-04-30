@@ -112,7 +112,7 @@ def get_sigma_bounds(df, pars, keys, comp_pars, par):
             if samps.size > 1:
                 median = np.percentile(samps, 50)
                 sig_p  = np.percentile(samps, 95) - median
-                sig_m  = np.percentile(samps,  5)
+                sig_m  = median - np.percentile(samps,  5)
                 bounds_max.append(median + dev * sig_p)
                 bounds_min.append(median - dev * sig_m)
     else:
