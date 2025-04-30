@@ -32,10 +32,10 @@ def labels_parameters(pars_list):
 
         if   par == 'f_t_0':       string = '$f_{1}\ [Hz]$'
         elif par == 'tau_t_0':     string = '$\\tau_{1}\ [ms]$'
-        elif par == 'logA_t_0':    string = '$lnA_{1}$'
+        elif par == 'logA_t_0':    string = '$\\log\ A_{1}$'
         elif par == 'f_t_1':       string = '$f_{2}\ [Hz]$'
         elif par == 'tau_t_1':     string = '$\\tau_{2}\ [ms]$'
-        elif par == 'logA_t_1':    string = '$lnA_{2}$'
+        elif par == 'logA_t_1':    string = '$\\log\ A_{2}$'
         elif par == 'f_t_2':       string = '$f_{3}\ [Hz]$'
         elif par == 'tau_t_2':     string = '$\\tau_{3}\ [ms]$'
 
