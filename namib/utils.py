@@ -184,7 +184,7 @@ def read_posteriors_event(file_path, pars, IMR_flag = False):
         with h5py.File(file_path, 'r') as f:
             try:
                 #tmp = f['C01:IMRPhenomPv2']['posterior_samples']
-                tmp = f['bilby-NRSur7dqs4']['posterior_samples']
+                tmp = f['bilby-NRSur7dq4']['posterior_samples']
             except:
                 tmp = f['combined']['posterior_samples']   # IMPROVE ME: Check the CPNest version
                 if pars['include-prior']:
