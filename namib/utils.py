@@ -32,6 +32,8 @@ def Adapt_Samples(df, pars, IMR_flag = False):
             df.insert(0, 'iota', np.arccos(df.cos_theta_jn))
         if (set(['a_1', 'a_2']) <= set(df.keys())):
             df.rename(columns = {'a_1' : 'chi1', 'a_2' : 'chi2'}, inplace = True)
+        if (set(['final_mass', 'final_spin']) <= set(df.keys())):
+            df.rename(columns = {'final_mass': 'Mf', 'final_spin': 'af'}, inplace=True)
 
     def granite_conventions(df, pars):
         if (set(['m1_detect', 'm2_detect']) <= set(df.keys())):
@@ -181,7 +183,8 @@ def read_posteriors_event(file_path, pars, IMR_flag = False):
     if '.h5' in filename:
         with h5py.File(file_path, 'r') as f:
             try:
-                tmp = f['C01:IMRPhenomPv2']['posterior_samples']
+                #tmp = f['C01:IMRPhenomPv2']['posterior_samples']
+                tmp = f['bilby-NRSur7dqs4']['posterior_samples']
             except:
                 tmp = f['combined']['posterior_samples']   # IMPROVE ME: Check the CPNest version
                 if pars['include-prior']:
