@@ -348,8 +348,8 @@ def corner_plots_sns(pars, SampDataFrame, PriorDataFrame, IMRDataFrame):
         diag_kws  = dict(alpha = pars['corner-settings']['alpha'], linewidth = pars['corner-settings']['linewidth']),
     )
     # Add 2D levels
-    fig.map_lower(sns.kdeplot, levels = [0.01, 1], fill = False)
-    fig.map_lower(sns.kdeplot, levels = [0.01, 1], fill = True, alpha = pars['corner-settings']['alpha'])
+    fig.map_lower(sns.kdeplot, levels = [0.1, 1], fill = False)
+    fig.map_lower(sns.kdeplot, levels = [0.1, 1], fill = True, alpha = pars['corner-settings']['alpha'])
 
     # Add legend
     fig._legend.remove()    # Remove default legend
