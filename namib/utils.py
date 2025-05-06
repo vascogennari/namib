@@ -11,8 +11,9 @@ import namib.plots as plots
 import warnings
 warnings.filterwarnings('ignore')
 
+T_MSUN = const.M_sun.value * const.G.value / const.c.value**3
 
-def Adapt_Samples(df, pars, IMR_flag = False):
+def Adapt_Samples(df, pars, event_keys, IMR_flag = False):
     '''
         Adapt the input samples to namib internal conventions.
         Compute remnant paramters and QNMs if needed.
@@ -56,27 +57,42 @@ def Adapt_Samples(df, pars, IMR_flag = False):
         return df
 
     def compute_phase_amplitude_from_IMR(df, pars):
-        if not ((set(['A2220']) <= set(df.keys())) or (set(['phi2220']) <= set(df.keys())) or (set(['A2220_1']) <= set(df.keys())) or (set(['phi2220_1']) <= set(df.keys()))) and not (set(['f_t_0', 'tau_t_0']) <= set(df.keys())):
-            if not (set(['eta', 'chi_p', 'chi_a']) <= set(df.keys())):
-                df = compute_progenitors_from_IMR(df, func = 'SymmetricMassRatio')
-                df = compute_progenitors_from_IMR(df, func = 'ChiSymmetric')
-                df = compute_progenitors_from_IMR(df, func = 'ChiAntiymmetric')
-            df = compute_phase_amplitude_from_progenitors(df, pars['modes'])
+        if any("AR" in par for par in pars['parameters']) and any("deltaphi" in par for par in pars['parameters']):
+            if not (any("A2" in key for key in df.keys()) and any("phi2" in key for key in df.keys())):
+                if not (set(['eta', 'chi_p', 'chi_a']) <= set(df.keys())):
+                    df = compute_progenitors_from_IMR(df, func = 'SymmetricMassRatio')
+                    df = compute_progenitors_from_IMR(df, func = 'ChiSymmetric')
+                    df = compute_progenitors_from_IMR(df, func = 'ChiAntiymmetric')
+                df = compute_phase_amplitude_from_progenitors(df, pars['modes'])
         return df
     
-    def compute_phase_amplitude_test(df,pars):
-        if (set(['A2220']) <= set(df.keys()) or set(['phi2220']) <= set(df.keys())):
+    def compute_phase_amplitude_test(df, pars, event_keys):
+        if (any("A2" in key for key in df.keys()) and any("phi2" in key for key in df.keys())):
             for mode in pars['modes']:
                 l, m, n = mode[0], mode[1], mode[2]
+                if (mode == (2,2,0)):
+                    if IMR_flag == False:
+                        df = compute_qnms_from_Mf_af(df, [(l,m,n)], pars, scaling = 0)
+
                 if not (mode == (2,2,0)):
 
-                    df[f'AR{l}{m}{n}'] = df[f'A2{l}{m}{n}']/df['A2220']
+                    df[f'AR{l}{m}{n}']       = df[f'A2{l}{m}{n}']/df['A2220']
                     df[f'deltaphi{l}{m}{n}'] = (m/2.)*df['phi2220'] - df[f'phi2{l}{m}{n}']
+
+                    if IMR_flag == False:
+                        t=event_keys['time']
+                        t=t.replace('M','')
+                        t=float(t)*T_MSUN
+                        df = compute_qnms_from_Mf_af(df, [(l,m,n)], pars, scaling = 0)
+                        delta_t_peak = 1.420878141218902588e+09 - 1.420878141219543457e+09
+
+                        df[f'AR{l}{m}{n}']       = df[f'AR{l}{m}{n}'] * np.exp((t*df['Mf'] + delta_t_peak) * (1/df[f'tau_{l}{m}{n}'] - 1/df['tau_220']))
+                        df[f'deltaphi{l}{m}{n}'] = df[f'deltaphi{l}{m}{n}'] - 2. * np.pi * ((m/2.)*df['f_220'] - df[f'f_{l}{m}{n}']) * (t*df['Mf'] + delta_t_peak)
 
                     nsamp = len(df)
                     deltaphi = df[f'deltaphi{l}{m}{n}']
                     if (m % 2 == 0): 
-                        cc=2.
+                        cc = 2.
                     else:
                         cc = 1.
                     for i in range(nsamp):
@@ -156,7 +172,7 @@ def Adapt_Samples(df, pars, IMR_flag = False):
     if (set(['Mf', 'af']) <= set(pars['parameters'])):
         df = compute_remnant_from_IMR(    df, pars)
     df = compute_phase_amplitude_from_IMR(df, pars)
-    df = compute_phase_amplitude_test(    df, pars)
+    df = compute_phase_amplitude_test(    df, pars, event_keys)
     df = compute_qnms_from_remnant(       df, pars)
     pyring_damped_sinusoids_conventions(  df, pars)
     extrinsic_parameters_conventions(     df, pars)
@@ -172,7 +188,7 @@ def Adapt_Samples(df, pars, IMR_flag = False):
 
     return df
 
-def read_posteriors_event(file_path, pars, IMR_flag = False):
+def read_posteriors_event(file_path, pars, event_keys, IMR_flag = False):
     '''
     Read the posteriors distribution of a single file.
     The posterior distributions for the passed parameters are returned in a Pandas DF.
@@ -201,12 +217,12 @@ def read_posteriors_event(file_path, pars, IMR_flag = False):
 
     df = pd.DataFrame(load)
     df = downsampling(df, pars)    # Downsample the df if required
-    df = Adapt_Samples(df, pars, IMR_flag = IMR_flag)
+    df = Adapt_Samples(df, pars, event_keys, IMR_flag = IMR_flag)
     df = df.filter(items = pars['parameters'])
 
     if pars['include-prior']:
         dfp = pd.DataFrame(loadp)
-        dfp = Adapt_Samples(dfp, pars)
+        dfp = Adapt_Samples(dfp, pars, event_keys)
         dfp = dfp.filter(items = pars['parameters'])
     else:
         dfp = pd.DataFrame()
@@ -443,10 +459,10 @@ def compute_qnms_from_Mf_af(df, modes, pars, scaling = 1):
                 if scaling == 1:
                     tau[i] = wf.QNM_fit(l, m, n).tau(Mf, af) * 1000   # [ms]
                 else:
-                    tau[i] = wf.QNM_fit(l, m, n).tau(Mf, af)          # [ms]
+                    tau[i] = wf.QNM_fit(l, m, n).tau(Mf, af)          # [s]
 
-        df.insert(0, 'f_{}{}'.format(l,m),   omg)
-        df.insert(0, 'tau_{}{}'.format(l,m), tau)
+        df.insert(0, 'f_{}{}{}'.format(l,m,n),   omg)
+        df.insert(0, 'tau_{}{}{}'.format(l,m,n), tau)
 
     return df
 
@@ -553,7 +569,7 @@ def phase_amplitude_fits(eta,chi_p,chi_m,mode):
                 }
 
     Amp = eta*Amps[mode]
-    phi = phases[mode]
+    phi = 0.5*phases[mode]
 
     return Amp, phi
 
@@ -777,7 +793,7 @@ class Posteriors:
                 for i,key in enumerate(single_evt_keys.keys()):
                     single_evt_keys[key] = keys[i]
 
-                EventDataFrame, EventPriorDataFrame, _ = read_posteriors_event(file_path, pars)
+                EventDataFrame, EventPriorDataFrame, _ = read_posteriors_event(file_path, pars, single_evt_keys)
                 if not pars['stack-mode'] == '':
                     EventDataFrame = EventDataFrame.assign(par = single_evt_keys[pars['stack-mode']])
                     EventDataFrame.rename(columns={'par': pars['stack-mode']}, inplace = True)
@@ -805,7 +821,7 @@ class Posteriors:
                 keys[-1] = keys[-1].split('.')[0]
                 for i,key in enumerate(IMR_keys.keys()):
                     IMR_keys[key] = keys[i]
-                EventDataFrame0, _, _ = read_posteriors_event(file_path, pars, IMR_flag = True)
+                EventDataFrame0, _, _ = read_posteriors_event(file_path, pars, IMR_keys, IMR_flag = True)
                 if not pars['stack-mode'] == '':
                     if pars['stack-mode'] in IMR_keys.keys():
                         EventDataFrame = EventDataFrame0.assign(par = IMR_keys[pars['stack-mode']])
