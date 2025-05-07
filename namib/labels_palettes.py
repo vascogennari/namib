@@ -39,7 +39,7 @@ def labels_parameters(pars_list):
         elif par == 'f_t_2':       string = '$f_{3}\ [Hz]$'
         elif par == 'tau_t_2':     string = '$\\tau_{3}\ [ms]$'
 
-        elif par == 'Mf':          string = '$M_f\ [M_{\odot}]$'
+        elif par == 'Mf':          string = '$M_f^\\mathrm{det}\ [M_{\odot}]$'
         elif par == 'af':          string = '$a_f$'
 
         elif par == 'A2220':       string = '$A_{220}$'
@@ -232,6 +232,8 @@ def labels_legend(par):
         elif par == 'LVK-IMR':                       label = '$\mathrm{LVK\ IMR}$'
         elif par == 'IMR':                           label = '$\mathrm{IMR}$'
 
+        elif par == 'IMR-NRSur7dq4':                 label = '$\mathrm{IMR\ NRSur7dq4}$'
+        elif par == 'IMR-combined':                  label = '$\mathrm{IMR\ combined}$'
         elif par == 'NRSur7dq4':                     label = '$\mathrm{NRSur7dq4}$'
         elif par == 'SEOBv5PHM':                     label = '$\mathrm{SEOBv5PHM}$'
 

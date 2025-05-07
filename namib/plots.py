@@ -184,7 +184,7 @@ def corner_plots(pars, SampDataFrame, PriorDataFrame, IMRDataFrame):
     if pars['stack-mode'] == 'time':     keys = sort_times_list(keys)
     if pars['stack-mode'] == 'pipeline': keys = sort_SNR_list(  keys)
     if pars['include-IMR'] and not pars['IMR-posteriors']: CI = get_sigma_IMR(IMRDataFrame, pars, keys)
-    if pars['include-IMR'] and     pars['IMR-posteriors']: pars['ordering'].append('IMR')
+    if pars['include-IMR'] and     pars['IMR-posteriors'] and not any('IMR' in par for par in pars['ordering']): pars['ordering'].append('IMR')
     if not pars['ordering'] == []:
         if ((set(pars['ordering']) <= set(keys))) and (len(pars['ordering']) == len(keys)): keys = pars['ordering']
         else: raise ValueError('Invalid option for {stack_mode} ordering.'.format(stack_mode = pars['stack-mode']))
@@ -321,7 +321,7 @@ def corner_plots_sns(pars, SampDataFrame, PriorDataFrame, IMRDataFrame):
     if pars['stack-mode'] == 'time':     keys = sort_times_list(keys)
     if pars['stack-mode'] == 'pipeline': keys = sort_SNR_list(  keys)
     if pars['include-IMR'] and not pars['IMR-posteriors']: CI = get_sigma_IMR(IMRDataFrame, pars, keys)
-    if pars['include-IMR'] and     pars['IMR-posteriors']: pars['ordering'].append('IMR')
+    if pars['include-IMR'] and     pars['IMR-posteriors'] and not any('IMR' in par for par in pars['ordering']): pars['ordering'].append('IMR')
     if not pars['ordering'] == []:
         if ((set(pars['ordering']) <= set(keys))) and (len(pars['ordering']) == len(keys)): keys = pars['ordering']
         else: raise ValueError('Invalid option for {stack_mode} ordering.'.format(stack_mode = pars['stack-mode']))
@@ -338,7 +338,7 @@ def corner_plots_sns(pars, SampDataFrame, PriorDataFrame, IMRDataFrame):
     fig = sns.pairplot(SampDataFrame.sort_values('ordering'),
         corner    = True,
         hue       = 'ordering',
-        kind      = 'scatter',
+        #kind      = 'scatter',
         diag_kind = 'kde',
         vars      = labels_dict,
         palette   = colors,
@@ -457,7 +457,7 @@ def violin_plots(pars, SampDataFrame, PriorDataFrame, IMRDataFrame, EvidenceData
     else:                                                    comp_pars_loop = comp_pars
 
     if pars['include-IMR'] and not pars['IMR-posteriors']: CI = get_sigma_IMR(IMRDataFrame, pars, keys)
-    if pars['include-IMR'] and     pars['IMR-posteriors']: pars['compare-ordering'].append('IMR')
+    if pars['include-IMR'] and     pars['IMR-posteriors'] and not any('IMR' in par for par in pars['compare-ordering']): pars['compare-ordering'].append('IMR')
 
     fig, ax = plt.subplots(len(params), figsize = pars['violin-settings']['figsize'], sharex = True)
     fig.subplots_adjust(wspace=0, hspace=0, top=0.95, bottom=0.18)
@@ -621,7 +621,7 @@ def ridgeline_plots(pars, SampDataFrame, PriorDataFrame, IMRDataFrame):
     else:                            label_y = keys
 
     if pars['include-IMR'] and not pars['IMR-posteriors']: CI = get_sigma_IMR(IMRDataFrame, pars, keys)
-    if pars['include-IMR'] and     pars['IMR-posteriors']: pars['compare-ordering'].append('IMR')
+    if pars['include-IMR'] and     pars['IMR-posteriors'] and not any('IMR' in par for par in pars['compare-ordering']): pars['compare-ordering'].append('IMR')
 
     lp.rc_labelsizes(pars)  # Set label sizes of matplotlib RC parameters
     fig, ax = plt.subplots(len(keys), len(pars['parameters']), figsize = pars['ridgeline-settings']['figsize'])
