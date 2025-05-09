@@ -16,7 +16,7 @@ def sort_times_list(input_keys, labels = False):
     # Convert the list into a numpy array and sort it
     tmp = np.empty(num_keys)
     for i, key in enumerate(input_keys):
-        if not key == 'IMR':
+        if not 'IMR' in key:
             tmp[i] = float(key.strip('M'))
         else:
             tmp[i] = 999
@@ -318,8 +318,7 @@ def corner_plots_sns(pars, SampDataFrame, PriorDataFrame, IMRDataFrame):
     Warning('The corner_plots_sns option is not fully implemented. Please be careful in using it.')
 
     keys = pd.unique(SampDataFrame[pars['stack-mode']])
-    if pars['stack-mode'] == 'time':     keys = sort_times_list(keys)
-    if pars['stack-mode'] == 'pipeline': keys = sort_SNR_list(  keys)
+    keys = sorted(keys)
     if pars['include-IMR'] and not pars['IMR-posteriors']: CI = get_sigma_IMR(IMRDataFrame, pars, keys)
     if pars['include-IMR'] and     pars['IMR-posteriors'] and not any('IMR' in par for par in pars['ordering']): pars['ordering'].append('IMR')
     if not pars['ordering'] == []:
@@ -338,14 +337,13 @@ def corner_plots_sns(pars, SampDataFrame, PriorDataFrame, IMRDataFrame):
     fig = sns.pairplot(SampDataFrame.sort_values('ordering'),
         corner    = True,
         hue       = 'ordering',
-        #kind      = 'scatter',
         diag_kind = 'kde',
         vars      = labels_dict,
         palette   = colors,
         height    = height,
         dropna    = 1,
         plot_kws  = dict(alpha = 0),
-        diag_kws  = dict(alpha = pars['corner-settings']['alpha'], linewidth = pars['corner-settings']['linewidth']),
+        diag_kws  = dict(alpha = pars['corner-settings']['alpha'], linewidth = pars['corner-settings']['linewidth'], common_norm = False),
     )
     # Add 2D levels
     fig.map_lower(sns.kdeplot, levels = [0.1, 1], fill = False)
