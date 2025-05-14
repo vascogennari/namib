@@ -106,31 +106,36 @@ def Adapt_Samples(df, pars, event_keys, IMR_flag = False):
         return df
 
     def compute_qnms_from_remnant(df, pars):
-        if (set(['f_22', 'tau_22']) <= set(pars['parameters'])) and not (set(['f_22', 'tau_22']) <= set(df.keys())) and not (set(['f_t_0', 'tau_t_0']) <= set(df.keys())):
+        if (set(['f_220', 'tau_220']) <= set(pars['parameters'])) and not (set(['f_220', 'tau_220']) <= set(df.keys())) and not (set(['f_t_0', 'tau_t_0']) <= set(df.keys())):
             if not (set(['Mf', 'af']) <= set(df.keys())):
                 df = compute_remnant_from_IMR(df, pars)
-            df = compute_qnms_from_Mf_af(df, pars['modes'], pars, scaling = 1)
+            df = compute_qnms_from_Mf_af(df, pars['modes'], pars, scaling = 0)
         if (set(['f_t_0', 'tau_t_0']) <= set(pars['parameters'])) and not (set(['f_t_0', 'tau_t_0']) <= set(df.keys())):
             if not (set(['Mf', 'af']) <= set(df.keys())):
                 df = compute_remnant_from_IMR(df, pars)
             df = compute_qnms_from_Mf_af(df, [(2,2,0)], pars, scaling = 0)
-            df.rename(columns = {'f_22' : 'f_t_0', 'tau_22' : 'tau_t_0'}, inplace = True)
+            df.rename(columns = {'f_220' : 'f_t_0', 'tau_220' : 'tau_t_0'}, inplace = True)
             # if (set(['f_t_0', 'tau_t_0']) <= set(df.keys())):
             # df.rename(columns = {'f_t_0' : 'f_22', 'tau_t_0' : 'tau_22'}, inplace = True)
         return df
 
     def pyring_damped_sinusoids_conventions(df, pars):
-        if (set(['f_22', 'tau_22']) <= set(pars['parameters'])) and (set(['f_t_0', 'tau_t_0']) <= set(df.keys())):
+        if (set(['f_220', 'tau_220']) <= set(pars['parameters'])) and (set(['f_t_0', 'tau_t_0']) <= set(df.keys())):
             if pars['ds-scaling'] and (set(['f_t_0', 'tau_t_0']) <= set(df.keys())): df.tau_t_0 *= 1000  # Set time in [ms]
-            df.rename(columns = {'f_t_0' : 'f_22', 'tau_t_0' : 'tau_22'}, inplace = True)
+            df.rename(columns = {'f_t_0' : 'f_220', 'tau_t_0' : 'tau_220'}, inplace = True)
         if 'A2220' in set(pars['parameters']) and 'logA_t_0' in set(df.keys()):
             df['logA_t_0'] = df['logA_t_0'].apply(lambda x: np.exp(x))
             if pars['ds-scaling'] and 'logA_t_0' in set(df.keys()): df.logA_t_0 *= 1e10  # Scale amplitude as [1e-21]
-            df.rename(columns = {'logA_t_0' : 'A2220'}, inplace = True)    
+            df.rename(columns = {'logA_t_0' : 'A2220'}, inplace = True)
         if 'A2330' in set(pars['parameters']) and 'logA_t_1' in set(df.keys()):
             df['logA_t_1'] = df['logA_t_1'].apply(lambda x: np.exp(x))
             if pars['ds-scaling'] and 'logA_t_1' in set(df.keys()): df.logA_t_1 *= 1e10  # Scale amplitude as [1e-21]
             df.rename(columns = {'logA_t_1' : 'A2330'}, inplace = True)
+        if pars['AR-log-scaling']:
+            for mode in pars['modes']:
+                l, m, n = mode[0], mode[1], mode[2]
+                if not (mode == (2,2,0)):
+                    df[f'AR{l}{m}{n}'] = df[f'AR{l}{m}{n}'].apply(lambda x: np.log(x))
 
     def extrinsic_parameters_conventions(df, pars):
         if (set(['distance']) <= set(pars['parameters'])) and (set(['logdistance']) <= set(df.keys())):

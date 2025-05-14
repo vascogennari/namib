@@ -24,7 +24,9 @@ def rc_labelsizes(pars):
 
     return 0
 
-def labels_parameters(pars_list):
+def labels_parameters(pars):
+
+    pars_list = pars['parameters']
 
     labels      = []
     labels_dict = {}
@@ -38,6 +40,7 @@ def labels_parameters(pars_list):
         elif par == 'logA_t_1':    string = '$\\log\ A_{2}$'
         elif par == 'f_t_2':       string = '$f_{3}\ [Hz]$'
         elif par == 'tau_t_2':     string = '$\\tau_{3}\ [ms]$'
+        elif par == 'logA_t_2':    string = '$\\log\ A_{3}$'
 
         elif par == 'Mf':          string = '$M_f^\\mathrm{det}\ [M_{\odot}]$'
         elif par == 'af':          string = '$a_f$'
@@ -61,12 +64,24 @@ def labels_parameters(pars_list):
         elif par == 'A2440_1':     string = '$A^{(1)}_{440}$'
         elif par == 'A2440_2':     string = '$A^{(2)}_{440}$'
 
-        elif par == 'AR221':       string = '$A^R_{221}$'
-        elif par == 'AR210':       string = '$A^R_{210}$'
-        elif par == 'AR200':       string = '$A^R_{200}$'
-        elif par == 'AR330':       string = '$A^R_{330}$'
-        elif par == 'AR320':       string = '$A^R_{320}$'
-        elif par == 'AR440':       string = '$A^R_{440}$'
+        elif par == 'AR221':       
+            if not pars['AR-log-scaling']: string = '$A^R_{221}$'
+            else:                        string = '$\\log A^R_{221}$'
+        elif par == 'AR210':       
+            if not pars['AR-log-scaling']: string = '$A^R_{210}$'
+            else:                        string = '$\\log A^R_{210}$'
+        elif par == 'AR200':       
+            if not pars['AR-log-scaling']: string = '$A^R_{200}$'
+            else:                        string = '$\\log A^R_{200}$'
+        elif par == 'AR330':       
+            if not pars['AR-log-scaling']: string = '$A^R_{330}$'
+            else:                        string = '$\\log A^R_{330}$'
+        elif par == 'AR320':       
+            if not pars['AR-log-scaling']: string = '$A^R_{320}$'
+            else:                        string = '$\\log A^R_{320}$'
+        elif par == 'AR440':       
+            if not pars['AR-log-scaling']: string = '$A^R_{440}$'
+            else:                        string = '$\\log A^R_{440}$'
         
         elif par == 'phi2220':     string = '$\\phi_{220}$'
         elif par == 'phi2220_1':   string = '$\\phi^{(1)}_{220}$'
@@ -96,6 +111,8 @@ def labels_parameters(pars_list):
         
         elif par == 'f_22':        string = '$f_{22}\ [Hz]$'
         elif par == 'tau_22':      string = '$\\tau_{22}\ [ms]$'
+        elif par == 'f_220':       string = '$f_{220}\ [Hz]$'
+        elif par == 'tau_220':     string = '$\\tau_{220}\ [ms]$'
         elif par == 'f_33':        string = '$f_{33}\ [Hz]$'
         elif par == 'tau_33':      string = '$\\tau_{33}\ [ms]$'
         elif par == 'f_44':        string = '$f_{44}\ [Hz]$'

@@ -27,6 +27,7 @@ usage = """
 
         modes              List of modes for which the QNMs are computed. This option is used only when QNMs are computed from {Mf, af}. Default: [(2,2,0)]
         ds-scaling         Flag to convert the damping time in [ms] and scale amplitudes as [1e-21]. The option is used to compare samples from Damped Sinusoids with other models. Default: 0
+        AR-log-scaling     Flag to convert the amplitude ratio in log scale. Default: 0
         qnms-pyRing        Flag to use pyRing fits to compute the QNMs. Default: 1
         IMR-fits           Option to select the NR fits used to compute the remnant parameters from IMR smaples. Available options: ['JimenezForteza_TEOBPM', 'UIB2016', 'NRSur7dq4Remnant', 'IMRPhenomXPrecessing', 'HBR2016']. Default: 'JimenezForteza_TEOBPM'
 
@@ -54,7 +55,8 @@ usage = """
         BF-comparison      Flag to compute the Bayes factor between two competing compare options. The option is available only for violin plot. Default: 0
         evidence-top       Flag to insert the additional parameter as the top row. If 0, the parameter is inserted as the bottom row. This option follows both 'plot-cpnest' and 'BF-comparison'. Default: 0
         time-percentiles   Option to include a shaded region in the additional row of violin plot. This option follows both 'plot-cpnest' and 'BF-comparison'. Syntax: [-3.5, 3.0]. Default: []
-        automatic-bounds   Flag to automatically set the bounds on the parameters plot from the width of the posteriors. The option is currently implemeted only for the ridgeline plot. Default: 0
+        automatic-bounds   Flag to automatically set the bounds on the parameters plot from the width of the posteriors. Default: 0
+        min-max-bounds     Flag to automatically set the bounds on the parameters plot from the minimum and maximum of the posteriors. Default: 0
 
         horizontal-legend  Flag to set the legend horizontally in ridgeline plot. Default: 0
         event-name         Option to add string to the top corner of the plot. The option is implemented only in violin and TGR plots. Default: ''

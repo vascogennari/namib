@@ -129,12 +129,23 @@ def get_sigma_bounds(df, pars, keys, comp_pars, par):
                     bounds_max.append(median + dev * sig_p)
                     bounds_min.append(median - dev * sig_m)
 
-    med_min = np.median(bounds_min)
-    med_max = np.median(bounds_max)
-    var_min = np.var(   bounds_min)
-    var_max = np.var(   bounds_max)
+    if pars['automatic-bounds']:
 
-    return [med_min - np.sqrt(var_min), med_max + np.sqrt(var_max)]
+        med_min = np.median(bounds_min)
+        med_max = np.median(bounds_max)
+        var_min = np.var(   bounds_min)
+        var_max = np.var(   bounds_max)
+
+        return [med_min - np.sqrt(var_min), med_max + np.sqrt(var_max)]
+    
+    elif pars['min-max-bounds']:
+
+        min = np.min(bounds_min)
+        max = np.max(bounds_max)
+
+        return [min, max]
+
+
 
 def get_sigma_IMR(df, pars, keys):
 
@@ -201,7 +212,7 @@ def corner_plots(pars, SampDataFrame, PriorDataFrame, IMRDataFrame):
 
         range = None
         if not pars['bounds'] == []: range = pars['bounds']
-        labels, _ = lp.labels_parameters(pars['parameters'])
+        labels, _ = lp.labels_parameters(pars)
 
         flag = [(SampDataFrameComp[par] == 0).all() for par in pars['parameters']]
         if any(flag):
@@ -325,7 +336,7 @@ def corner_plots_sns(pars, SampDataFrame, PriorDataFrame, IMRDataFrame):
         if ((set(pars['ordering']) <= set(keys))) and (len(pars['ordering']) == len(keys)): keys = pars['ordering']
         else: raise ValueError('Invalid option for {stack_mode} ordering.'.format(stack_mode = pars['stack-mode']))
 
-    _, labels_dict = lp.labels_parameters(pars['parameters'])
+    _, labels_dict = lp.labels_parameters(pars)
 
     comp_pars = keys
     colors = lp.palettes(pars, colormap = False, number_colors = len(comp_pars))
@@ -345,9 +356,36 @@ def corner_plots_sns(pars, SampDataFrame, PriorDataFrame, IMRDataFrame):
         plot_kws  = dict(alpha = 0),
         diag_kws  = dict(alpha = pars['corner-settings']['alpha'], linewidth = pars['corner-settings']['linewidth'], common_norm = False),
     )
+
+    for i, var_x in enumerate(labels_dict):
+        for j, var_y in enumerate(labels_dict):
+            if j >= i: continue
+            ax = fig.axes[i, j]
+            for k, comp_par in enumerate(comp_pars):
+                sns.kdeplot(
+                    data        = SampDataFrame[SampDataFrame[pars['stack-mode']]==comp_par],
+                    x           = var_y,
+                    y           = var_x,
+                    ax          = ax,
+                    levels      = [0.1, 1],
+                    fill        = False,
+                    color       = colors[k]
+                )
+                sns.kdeplot(
+                    data        = SampDataFrame[SampDataFrame[pars['stack-mode']]==comp_par],
+                    x           = var_y,
+                    y           = var_x,
+                    ax          = ax,
+                    levels      = [0.1, 1],
+                    fill        = True,
+                    alpha       = pars['corner-settings']['alpha'],
+                    linewidth   = pars['corner-settings']['linewidth'],
+                    color       = colors[k]
+                )
+
     # Add 2D levels
-    fig.map_lower(sns.kdeplot, levels = [0.1, 1], fill = False)
-    fig.map_lower(sns.kdeplot, levels = [0.1, 1], fill = True, alpha = pars['corner-settings']['alpha'])
+    # fig.map_lower(sns.kdeplot, levels = [0.1, 1], fill = False)
+    # fig.map_lower(sns.kdeplot, levels = [0.1, 1], fill = True, alpha = pars['corner-settings']['alpha'])
 
     # Add legend
     fig._legend.remove()    # Remove default legend
@@ -386,7 +424,7 @@ def corner_plots_sns(pars, SampDataFrame, PriorDataFrame, IMRDataFrame):
         if not pars['bounds'] == []:
             fig.axes[pi, pi].set_xlim(pars['bounds'][pi])
             fig.axes[pi, pi].set_ylim(pars['bounds'][pi])
-        if pars['automatic-bounds']: 
+        if pars['automatic-bounds'] or pars['min-max-bounds']:
             bounds=get_sigma_bounds(SampDataFrame, pars, keys, comp_pars, par)
             fig.axes[pi, pi].set_xlim(bounds)
             fig.axes[pi, pi].set_ylim(bounds)
@@ -412,7 +450,7 @@ def violin_plots(pars, SampDataFrame, PriorDataFrame, IMRDataFrame, EvidenceData
     else:                            label_x = keys
 
     positions = np.arange(len(keys))
-    _, labels = lp.labels_parameters(pars['parameters'])
+    _, labels = lp.labels_parameters(pars)
     if not pars['bounds'] == []: bounds_dict = bounds_dictionary(pars)
 
     if pars['compare'] == '':
@@ -613,7 +651,7 @@ def ridgeline_plots(pars, SampDataFrame, PriorDataFrame, IMRDataFrame):
         if ((set(pars['ordering']) <= set(keys))) and (len(pars['ordering']) == len(keys)): keys = pars['ordering']
         else: raise ValueError('Invalid option for {stack_mode} ordering.'.format(stack_mode = pars['stack-mode']))
 
-    _, labels_dict = lp.labels_parameters(pars['parameters'])
+    _, labels_dict = lp.labels_parameters(pars)
     if pars['stack-mode'] == 'time':     label_y = np.array(sort_times_list(keys, labels = True), dtype = float)
     if pars['stack-mode'] == 'pipeline': label_y = np.array(sort_SNR_list(  keys, labels = True), dtype = float)
     else:                            label_y = keys
@@ -642,7 +680,7 @@ def ridgeline_plots(pars, SampDataFrame, PriorDataFrame, IMRDataFrame):
 
             if ax.ndim == 1: subset = ax[pi]
             else:            subset = ax[:,pi]
-            if pars['automatic-bounds']: bounds = get_sigma_bounds(SampDataFrame, pars, keys, comp_pars, par)
+            if pars['automatic-bounds'] or pars['min-max-bounds']: bounds = get_sigma_bounds(SampDataFrame, pars, keys, comp_pars, par)
             joyplot(SampDataFrame.sort_values('ordering'),
                 by        = 'ordering',
                 column    = par,
@@ -694,7 +732,7 @@ def ridgeline_plots(pars, SampDataFrame, PriorDataFrame, IMRDataFrame):
             if pi == 0: flag = True
             else:       flag = False
 
-            if pars['automatic-bounds']: bounds = get_sigma_bounds(SampDataFrame, pars, keys, comp_pars, par)
+            if pars['automatic-bounds'] or pars['min-max-bounds']: bounds = get_sigma_bounds(SampDataFrame, pars, keys, comp_pars, par)
             joyplot(SampDataFrame.sort_values('ordering'),
                 by        = 'ordering',
                 column    = comp_pars,

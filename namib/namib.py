@@ -44,6 +44,7 @@ def main():
 
         'modes'              : [(2,2,0)],
         'ds-scaling'         : 0,
+        'AR-log-scaling'     : 0,
         'qnms-pyRing'        : 1,
         'IMR-fits'           : 'JimenezForteza_TEOBPM',
         'IMR-fits-IMR'       : 'NRSur7dq4Remnant',
@@ -71,6 +72,7 @@ def main():
         'evidence-top'       : 0,
         'time-percentiles'   : [],
         'automatic-bounds'   : 0,
+        'min-max-bounds'     : 0,
         'IMR-posteriors'     : 0,
 
         'horizontal-legend'  : 0,
@@ -90,7 +92,7 @@ def main():
         if ('samp-dir' in key) or ('output' in key) or ('stack-mode' in key) or ('compare' in key):
             try: input_pars[key] = Config.get('input', key)
             except: pass
-        if ('screen-output' in key) or ('compare-hard' in key) or ('evidence' in key) or ('save-post' in key) or ('include-prior' in key) or ('include-IMR' in key) or ('ds-scaling' in key) or ('screen-medians' in key) or ('save-medians' in key) or ('qnms-pyRing' in key):
+        if ('screen-output' in key) or ('compare-hard' in key) or ('evidence' in key) or ('save-post' in key) or ('include-prior' in key) or ('include-IMR' in key) or ('ds-scaling' in key) or ('AR-log-scaling' in key) or ('screen-medians' in key) or ('save-medians' in key) or ('qnms-pyRing' in key):
             try: input_pars[key] = Config.getboolean('input', key)
             except: pass
         if ('downsample' in key):
@@ -99,7 +101,7 @@ def main():
         if ('parameters' in key) or ('modes' in key) or ('ordering' in key) or ('bounds' in key) or ('compare-ordering' in key ) or ('truths' in key) or ('IMR-fits' in key) or ('IMR-fits-IMR' in key):
             try: input_pars[key] = ast.literal_eval(Config.get('input', key))
             except: pass
-        if ('corner' in key) or ('violin' in key) or ('ridgeline' in key) or ('TGR-plot' in key) or ('BF-comparison' in key) or ('evidence-top' in key) or ('remove-xticks' in key) or ('remove-legend' in key) or ('horizontal-legend' in key) or ('fix-dimensions' in key) or ('corner-sns' in key) or ('automatic-bounds' in key) or ('IMR-posteriors' in key):
+        if ('corner' in key) or ('violin' in key) or ('ridgeline' in key) or ('TGR-plot' in key) or ('BF-comparison' in key) or ('evidence-top' in key) or ('remove-xticks' in key) or ('remove-legend' in key) or ('horizontal-legend' in key) or ('fix-dimensions' in key) or ('corner-sns' in key) or ('automatic-bounds' in key) or ('min-max-bounds' in key) or ('IMR-posteriors' in key):
             try: input_pars[key] = Config.getboolean('plots', key)
             except: pass
         if ('extra-row' in key) or ('single-prior' in key) or ('prior-color' in key) or ('event-name' in key) or ('truth-color' in key):
