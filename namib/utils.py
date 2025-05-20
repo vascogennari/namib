@@ -84,9 +84,7 @@ def Adapt_Samples(df, pars, event_keys, IMR_flag = False):
                         t=t.replace('M','')
                         t=float(t)*T_MSUN
                         df = compute_qnms_from_Mf_af(df, [(l,m,n)], pars, scaling = 0)
-                        t_all = 1.384782888599792242e+09
-                        t_22  = 1.384782888603606939e+09
-                        #delta_t_peak = 1.420878141218902588e+09 - 1.420878141219543457e+09
+                        t_22, t_all = pars['peaktime-22-all']
                         delta_t_peak = t_all - t_22
 
                         df[f'AR{l}{m}{n}']       = df[f'AR{l}{m}{n}'] * np.exp((t*df['Mf'] + delta_t_peak) * (1/df[f'tau_{l}{m}{n}'] - 1/df['tau_220']))

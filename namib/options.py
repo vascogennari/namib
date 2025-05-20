@@ -26,6 +26,7 @@ usage = """
         truths             List of true values of the selected parameters. Currently implemented only with corner-sns=0. Default: []
 
         modes              List of modes for which the QNMs are computed. This option is used only when QNMs are computed from {Mf, af}. Default: [(2,2,0)]
+        peaktime-22-all    List containing the peaktime for the 22 mode and the peaktime for all modes. Default: [0, 0],
         ds-scaling         Flag to convert the damping time in [ms] and scale amplitudes as [1e-21]. The option is used to compare samples from Damped Sinusoids with other models. Default: 0
         AR-log-scaling     Flag to convert the amplitude ratio in log scale. Default: 0
         qnms-pyRing        Flag to use pyRing fits to compute the QNMs. Default: 1
