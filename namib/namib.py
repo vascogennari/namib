@@ -45,10 +45,13 @@ def main():
         'modes'              : [(2,2,0)],
         'peaktime-22-all'    : [0, 0],
         'ds-scaling'         : 0,
+        'M-to-ms-factor'     : 1,
+        'freq-log-scaling'   : 0,
         'AR-log-scaling'     : 0,
         'qnms-pyRing'        : 1,
         'IMR-fits'           : 'JimenezForteza_TEOBPM',
         'IMR-fits-IMR'       : 'NRSur7dq4Remnant',
+        'Amp-Phase-fits'     : 'Cheung2023',
 
         'save-post'          : 0,
         'save-medians'       : 0,
@@ -61,6 +64,7 @@ def main():
         'ridgeline'          : 0,
         'TGR-plot'           : 0,
         'corner-sns'         : 1,
+        'spectroscopy'       : 0,
 
         'corner-settings'    : {'figsize':  8,       'figname': 'corner',    'figtitle': '', 'alpha': 0.5, 'smooth': 0,    'linewidth': 1},
         'violin-settings'    : {'figsize': (15, 25), 'figname': 'violin',    'figtitle': '', 'alpha': 0.5, 'rotation': 0,  'pad': -0.5},
@@ -93,16 +97,16 @@ def main():
         if ('samp-dir' in key) or ('output' in key) or ('stack-mode' in key) or ('compare' in key):
             try: input_pars[key] = Config.get('input', key)
             except: pass
-        if ('screen-output' in key) or ('compare-hard' in key) or ('evidence' in key) or ('save-post' in key) or ('include-prior' in key) or ('include-IMR' in key) or ('ds-scaling' in key) or ('AR-log-scaling' in key) or ('screen-medians' in key) or ('save-medians' in key) or ('qnms-pyRing' in key):
+        if ('screen-output' in key) or ('compare-hard' in key) or ('evidence' in key) or ('save-post' in key) or ('include-prior' in key) or ('include-IMR' in key) or ('ds-scaling' in key) or ('freq-log-scaling' in key) or ('AR-log-scaling' in key) or ('screen-medians' in key) or ('save-medians' in key) or ('qnms-pyRing' in key):
             try: input_pars[key] = Config.getboolean('input', key)
             except: pass
-        if ('downsample' in key):
+        if ('downsample' in key) or ('M-to-ms-factor' in key):
             try: input_pars[key] = Config.getfloat('input', key)
             except: pass
-        if ('parameters' in key) or ('modes' in key) or ('ordering' in key) or ('bounds' in key) or ('compare-ordering' in key ) or ('truths' in key) or ('IMR-fits' in key) or ('IMR-fits-IMR' in key) or ('peaktime-22-all' in key):
+        if ('parameters' in key) or ('modes' in key) or ('ordering' in key) or ('bounds' in key) or ('compare-ordering' in key ) or ('truths' in key) or ('IMR-fits' in key) or ('IMR-fits-IMR' in key) or ('Amp-Phase-fits' in key) or ('peaktime-22-all' in key):
             try: input_pars[key] = ast.literal_eval(Config.get('input', key))
             except: pass
-        if ('corner' in key) or ('violin' in key) or ('ridgeline' in key) or ('TGR-plot' in key) or ('BF-comparison' in key) or ('evidence-top' in key) or ('remove-xticks' in key) or ('remove-legend' in key) or ('horizontal-legend' in key) or ('fix-dimensions' in key) or ('corner-sns' in key) or ('automatic-bounds' in key) or ('min-max-bounds' in key) or ('IMR-posteriors' in key):
+        if ('corner' in key) or ('violin' in key) or ('ridgeline' in key) or ('TGR-plot' in key) or ('BF-comparison' in key) or ('evidence-top' in key) or ('remove-xticks' in key) or ('remove-legend' in key) or ('horizontal-legend' in key) or ('fix-dimensions' in key) or ('corner-sns' in key) or ('spectroscopy' in key) or ('automatic-bounds' in key) or ('min-max-bounds' in key) or ('IMR-posteriors' in key):
             try: input_pars[key] = Config.getboolean('plots', key)
             except: pass
         if ('extra-row' in key) or ('single-prior' in key) or ('prior-color' in key) or ('event-name' in key) or ('truth-color' in key):

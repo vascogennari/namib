@@ -28,9 +28,12 @@ usage = """
         modes              List of modes for which the QNMs are computed. This option is used only when QNMs are computed from {Mf, af}. Default: [(2,2,0)]
         peaktime-22-all    List containing the peaktime for the 22 mode and the peaktime for all modes. Default: [0, 0],
         ds-scaling         Flag to convert the damping time in [ms] and scale amplitudes as [1e-21]. The option is used to compare samples from Damped Sinusoids with other models. Default: 0
+        M-to-ms-factor     Flag to convert time entries from M_f units into ms. Default: 1
         AR-log-scaling     Flag to convert the amplitude ratio in log scale. Default: 0
         qnms-pyRing        Flag to use pyRing fits to compute the QNMs. Default: 1
-        IMR-fits           Option to select the NR fits used to compute the remnant parameters from IMR smaples. Available options: ['JimenezForteza_TEOBPM', 'UIB2016', 'NRSur7dq4Remnant', 'IMRPhenomXPrecessing', 'HBR2016']. Default: 'JimenezForteza_TEOBPM'
+        IMR-fits           Option to select the NR fits used to compute the remnant parameters from IMR samples. Available options: ['JimenezForteza_TEOBPM', 'UIB2016', 'NRSur7dq4Remnant', 'IMRPhenomXPrecessing', 'HBR2016']. Default: 'JimenezForteza_TEOBPM'
+        IMR-fits-IMR       Option to select the NR fits used to compute the remnant parameters from IMR samples. Available options: ['JimenezForteza_TEOBPM', 'UIB2016', 'NRSur7dq4Remnant', 'IMRPhenomXPrecessing', 'HBR2016']. Default: 'NRSur7dq4Remnant'
+        Amp-Phase-fits     Option to select the fits used to compute the amplitude and phases for selected modes from IMR samples. Available options: ['Cheung2023', 'MaganaZertuche2024']. Default: 'Cheung2023'
 
         save-post          Flag to save the imput samples filtered on the selected parameters. They are saved in 'output/reduced_posteriors'. Default: 0
         save-medians       Flag to save the medians of the selected parameters. They are saved in 'output/output_medians'. Default: 0

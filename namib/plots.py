@@ -39,6 +39,20 @@ def sort_times_list(input_keys, labels = False):
 
     return keys
 
+def convert_time_to_ms(comp_pars,conversion_factor):
+
+    tmp = []
+    for i, key in enumerate(comp_pars):
+        if 'IMR' not in key:
+            key = float(key.strip('M'))
+            key = round(key*conversion_factor,2)
+            key = str(key) + 'ms'
+        tmp.append(key)
+
+    return tmp
+
+
+
 def sort_events_list(input_keys):
 
     keys = sorted(input_keys)
@@ -354,7 +368,7 @@ def corner_plots_sns(pars, SampDataFrame, PriorDataFrame, IMRDataFrame):
         height    = height,
         dropna    = 1,
         plot_kws  = dict(alpha = 0),
-        diag_kws  = dict(alpha = pars['corner-settings']['alpha'], linewidth = pars['corner-settings']['linewidth'], common_norm = False),
+        diag_kws  = dict(alpha = pars['corner-settings']['alpha'], linewidth = pars['corner-settings']['linewidth'], common_norm = False, gridsize=1500, bw_adjust=2),
     )
 
     for i, var_x in enumerate(labels_dict):
@@ -389,8 +403,9 @@ def corner_plots_sns(pars, SampDataFrame, PriorDataFrame, IMRDataFrame):
 
     # Add legend
     fig._legend.remove()    # Remove default legend
-    patch = [mpatches.Patch(facecolor = colors[ci], edgecolor = 'k', alpha = pars['corner-settings']['alpha'], label = lp.labels_legend(comp_pars[ci])) for ci,c in enumerate(comp_pars)]
-    patch = [mpatches.Patch(facecolor = hex_to_RGB(colors[ci], pars['corner-settings']['alpha']), edgecolor = colors[ci], label = lp.labels_legend(comp_pars[ci])) for ci,c in enumerate(comp_pars)]
+    if (pars['stack-mode'] == 'time' and pars['M-to-ms-factor'] != 1):  comp_pars = convert_time_to_ms(comp_pars, pars['M-to-ms-factor'])
+    patch = [mpatches.Patch(facecolor = colors[ci], edgecolor = 'k', alpha = pars['corner-settings']['alpha'], label = lp.labels_legend(c)) for ci,c in enumerate(comp_pars)]
+    patch = [mpatches.Patch(facecolor = hex_to_RGB(colors[ci], pars['corner-settings']['alpha']), edgecolor = colors[ci], label = lp.labels_legend(c)) for ci,c in enumerate(comp_pars)]
     fig.axes[0, 0].legend(handles = patch, loc = 'center', frameon = False, bbox_to_anchor = (len(pars['parameters'])-0.5, 0.5))
 
     # Add truths if required

@@ -59,14 +59,19 @@ def Adapt_Samples(df, pars, event_keys, IMR_flag = False):
     def compute_phase_amplitude_from_IMR(df, pars):
         if any("AR" in par for par in pars['parameters']) and any("deltaphi" in par for par in pars['parameters']):
             if not (any("A2" in key for key in df.keys()) and any("phi2" in key for key in df.keys())):
-                if not (set(['eta', 'chi_p', 'chi_a']) <= set(df.keys())):
+                if not (set(['eta', 'chi_p', 'chi_a']) <= set(df.keys())) and pars['Amp-Phase-fits'] == 'Cheung2023' :
                     df = compute_progenitors_from_IMR(df, func = 'SymmetricMassRatio')
                     df = compute_progenitors_from_IMR(df, func = 'ChiSymmetric')
                     df = compute_progenitors_from_IMR(df, func = 'ChiAntiymmetric')
-                df = compute_phase_amplitude_from_progenitors(df, pars['modes'])
+                if not (set(['q']) <= set(df.keys())) and pars['Amp-Phase-fits'] == 'MaganaZertuche2024' :
+                    df = compute_progenitors_from_IMR(df, func = 'MassRatio')
+                df = compute_phase_amplitude_from_progenitors(df, pars['modes'], pars['Amp-Phase-fits'])
         return df
     
     def compute_phase_amplitude_test(df, pars, event_keys):
+        '''
+        Defining the variables relevant for the amplitude-phase consistency test presented in Forteza et al https://arxiv.org/pdf/2205.14910
+        '''
         if (any("A2" in key for key in df.keys()) and any("phi2" in key for key in df.keys())):
             for mode in pars['modes']:
                 l, m, n = mode[0], mode[1], mode[2]
@@ -80,16 +85,35 @@ def Adapt_Samples(df, pars, event_keys, IMR_flag = False):
                     df[f'deltaphi{l}{m}{n}'] = (m/2.)*df['phi2220'] - df[f'phi2{l}{m}{n}']
 
                     if IMR_flag == False:
-                        t=event_keys['time']
-                        t=t.replace('M','')
-                        t=float(t)*T_MSUN
+                        '''
+                        We need to rescale Kerr samples to the reference time of the fits used for the IMR
+                        The transformation is given in equations (3)-(4) of Forteza et al.
+                        '''
+                        t  = event_keys['time']
+                        t  = t.replace('M','')
+                        t  = float(t)*T_MSUN
                         df = compute_qnms_from_Mf_af(df, [(l,m,n)], pars, scaling = 0)
-                        t_22, t_all = pars['peaktime-22-all']
-                        delta_t_peak = t_all - t_22
 
-                        df[f'AR{l}{m}{n}']       = df[f'AR{l}{m}{n}'] * np.exp((t*df['Mf'] + delta_t_peak) * (1/df[f'tau_{l}{m}{n}'] - 1/df['tau_220']))
-                        df[f'deltaphi{l}{m}{n}'] = df[f'deltaphi{l}{m}{n}'] - 2. * np.pi * ((m/2.)*df['f_220'] - df[f'f_{l}{m}{n}']) * (t*df['Mf'] + delta_t_peak)
+                        if pars['Amp-Phase-fits'] == 'Cheung2023':
+                            '''
+                            The fits of Cheung et al. are extracted at the peak of the strain of the 22
+                            '''
+                            t_22, t_all = pars['peaktime-22-all']
+                            delta_t_peak = t*df['Mf'] + t_all - t_22
+                        elif pars['Amp-Phase-fits'] == 'MaganaZertuche2024':
+                            '''
+                            The fits of Magana Zertuche et al. are extracted at 20M past the peak of the strain of the sum of all the lm mode for l=[2,4] 
+                            '''
+                            delta_t_peak = -(t - 20.*T_MSUN)*df['Mf']
 
+                        df[f'AR{l}{m}{n}']       = df[f'AR{l}{m}{n}'] * np.exp(delta_t_peak * (1/df[f'tau_{l}{m}{n}'] - 1/df['tau_220']))
+                        df[f'deltaphi{l}{m}{n}'] = df[f'deltaphi{l}{m}{n}'] - 2. * np.pi * ((m/2.)*df['f_220'] - df[f'f_{l}{m}{n}']) * delta_t_peak
+                        
+                    '''
+                    As explained in the appendix of Forteza et al (section 3), the bounds of deltaphi are:
+                        - [0,2pi] for even m
+                        - [0, pi] for odd  m
+                    '''
                     nsamp = len(df)
                     deltaphi = df[f'deltaphi{l}{m}{n}']
                     if (m % 2 == 0): 
@@ -118,8 +142,8 @@ def Adapt_Samples(df, pars, event_keys, IMR_flag = False):
         return df
 
     def pyring_damped_sinusoids_conventions(df, pars):
+        if pars['ds-scaling'] and (set(['f_t_0', 'tau_t_0']) <= set(df.keys())): df.tau_t_0 *= 1000  # Set time in [ms]
         if (set(['f_220', 'tau_220']) <= set(pars['parameters'])) and (set(['f_t_0', 'tau_t_0']) <= set(df.keys())):
-            if pars['ds-scaling'] and (set(['f_t_0', 'tau_t_0']) <= set(df.keys())): df.tau_t_0 *= 1000  # Set time in [ms]
             df.rename(columns = {'f_t_0' : 'f_220', 'tau_t_0' : 'tau_220'}, inplace = True)
         if 'A2220' in set(pars['parameters']) and 'logA_t_0' in set(df.keys()):
             df['logA_t_0'] = df['logA_t_0'].apply(lambda x: np.exp(x))
@@ -129,6 +153,10 @@ def Adapt_Samples(df, pars, event_keys, IMR_flag = False):
             df['logA_t_1'] = df['logA_t_1'].apply(lambda x: np.exp(x))
             if pars['ds-scaling'] and 'logA_t_1' in set(df.keys()): df.logA_t_1 *= 1e10  # Scale amplitude as [1e-21]
             df.rename(columns = {'logA_t_1' : 'A2330'}, inplace = True)
+        if pars['freq-log-scaling']:
+            df['f_t_0'] = df['f_t_0'].apply(lambda x: np.log(x))
+            #df['f_t_1'] = df['f_t_1'].apply(lambda x: np.log(x))
+            #df['f_t_2'] = df['f_t_2'].apply(lambda x: np.log(x))
         if pars['AR-log-scaling']:
             for mode in pars['modes']:
                 l, m, n = mode[0], mode[1], mode[2]
@@ -207,8 +235,9 @@ def read_posteriors_event(file_path, pars, event_keys, IMR_flag = False):
             try:
                 #tmp = f['C01:IMRPhenomPv2']['posterior_samples']
                 tmp = f['bilby-NRSur7dq4']['posterior_samples']
+                #tmp = f['C00:NRSur7dq4']['posterior_samples']
             except:
-                tmp = f['combined']['posterior_samples']   # IMPROVE ME: Check the CPNest version
+                tmp = f['C00:Mixed']['posterior_samples']   # IMPROVE ME: Check the CPNest version
                 if pars['include-prior']:
                     try:    tmpp = f['combined']['prior_samples']
                     except: raise ValueError('Invalid option for prior reading: cannot find prior samples. Exiting...')
@@ -539,59 +568,91 @@ def compute_progenitors_from_IMR(df, func = None):
 
     return df
 
-def phase_amplitude_fits(eta,chi_p,chi_m,mode):
-    '''
-    Compute amplitude and phase fits from eta, chi_p and chi_m
-    uses the fits of Cheung et al [https://arxiv.org/abs/2310.04489]
-    '''
-    delta = np.sqrt(1-4*eta)
+def phase_amplitude_fits(df, mode, Amp_Phase_Fits, fit = None):
 
-    Amps = {(2,2,0): 4.004 + 1.349*chi_p + 0.333*chi_m - 1.325*eta**2 - 1.369*eta*chi_m + 2.622*chi_p*chi_m - 32.74*eta**2*chi_p + 4.313*eta*chi_p**2 - 25.18*eta*chi_p*chi_m + 83.37*eta**3*chi_p - 13.39*eta**2*chi_p**2 + 58.01*eta**2*chi_p*chi_m - 0.3837 *eta*chi_p**3 - 0.2075* chi_p**4,
-            
-            (2,2,1): 15.46 - 407*eta**2 + 55.43*eta*chi_p - 413.5*eta*chi_m + 14.82*chi_p**2 - 65.08*chi_p*chi_m + 17.99*chi_m**2 + 1731*eta**3 + 4245*eta**2*chi_m + 876.8*eta*chi_p*chi_m - 72.06*eta*chi_m**2 + 11.46*chi_p**3 + 101.2*chi_p*chi_m**2 -2.499*chi_m**3 - 10310*eta**3*chi_m - 2485*eta**2*chi_p*chi_m - 400*eta*chi_p*chi_m**2,
-            
-            (2,1,0): 0.9376*abs(chi_m) + delta*(6.697 - 148.3*eta - 1.035*chi_m + 1603*eta**2 - 0.96*eta*chi_p + 3.022*chi_p*chi_m - 4.27*chi_m**2 - 7388*eta**3 - 37.87*eta**2*chi_m - 15.85*eta*chi_p*chi_m + 12060* eta**4 - 13.17*eta*chi_p*chi_m**2 + 11.61*eta*chi_m**3 - 2.666*chi_p**2*chi_m**2 + 4.661*chi_m**4),
-            
-            (3,3,0): 0.2115*abs(chi_m) + delta*(1.82 + 0.6007*chi_p + 0.4653*chi_m + 16.49*eta**2 + 0.9369*chi_p*chi_m - 0.2701*chi_m**2 - 53.16*eta**3 - 4.201*eta**2*chi_m + 2.18*eta*chi_p**2 - 6.289*eta*chi_p*chi_m ),
-            
-            (3,2,0): 0.7695 - 3.308*eta - 1.446*eta*chi_p - 61.87*eta**3 + 72.14*eta**2*chi_p - 127.1*eta**2*chi_m - 2.769*eta*chi_p*chi_m + 0.3681*eta*chi_m**2 - 0.5065*chi_p*chi_m**2 + 0.5483*chi_m**3 + 293.4*eta**4 - 527.6*eta**3*chi_p + 1110*eta**3*chi_m + 11.14*eta**2*chi_p*chi_m + 2.18*eta*chi_p*chi_m**2 - 2.023*eta*chi_m**3 + 1014*eta**4*chi_p - 2407*eta**4*chi_m,
-            
-            (4,4,0): 0.6505 + 2.978*eta*chi_m + 0.4262*chi_p*chi_m + 106.1*eta**3 + 67.45*eta**2*chi_p - 12.08*eta**2*chi_m - 1.738*eta*chi_p*chi_m - 2041*eta**4 - 614.2*eta**3*chi_p + 5974*eta**5 + 1387*eta**4*chi_p
-            
-            }
+    if Amp_Phase_Fits == 'Cheung2023':
+        '''
+        Compute amplitude and phase fits from eta, chi_p and chi_m
+        uses the fits of Cheung et al [https://arxiv.org/abs/2310.04489]
+        '''
 
-    phases =   {(2,2,0): 0.,
-    
-                (2,2,1): 3.918 + 30.68*eta + 1.65*chi_p + 2.251*chi_m - 196.8*eta**2 - 15.94*eta*chi_p - 35.86*eta*chi_m - 0.2809*chi_p**2 - 2.797*chi_p*chi_m + 324.6*eta**3 + 32.04*eta**2*chi_p + 107*eta**2*chi_m + 11.19*eta*chi_p*chi_m - 0.2427*chi_p**3,
+        eta   = df.eta
+        chi_p = df.chi_s
+        chi_m = df.chi_a
+
+        delta = np.sqrt(1-4*eta)
+
+        Amps = {(2,2,0): 4.004 + 1.349*chi_p + 0.333*chi_m - 1.325*eta**2 - 1.369*eta*chi_m + 2.622*chi_p*chi_m - 32.74*eta**2*chi_p + 4.313*eta*chi_p**2 - 25.18*eta*chi_p*chi_m + 83.37*eta**3*chi_p - 13.39*eta**2*chi_p**2 + 58.01*eta**2*chi_p*chi_m - 0.3837 *eta*chi_p**3 - 0.2075* chi_p**4,
                 
-                (2,1,0): 4.282 + 2.075*eta - 0.8584*chi_p - 5.04*eta*chi_m - 1.626*chi_p*chi_m - 4.319*eta**2*chi_p + 21.01*eta**2*chi_m - 2.27*eta*chi_p**2 + 5.414*eta*chi_p*chi_m,
+                (2,2,1): 15.46 - 407*eta**2 + 55.43*eta*chi_p - 413.5*eta*chi_m + 14.82*chi_p**2 - 65.08*chi_p*chi_m + 17.99*chi_m**2 + 1731*eta**3 + 4245*eta**2*chi_m + 876.8*eta*chi_p*chi_m - 72.06*eta*chi_m**2 + 11.46*chi_p**3 + 101.2*chi_p*chi_m**2 -2.499*chi_m**3 - 10310*eta**3*chi_m - 2485*eta**2*chi_p*chi_m - 400*eta*chi_p*chi_m**2,
                 
-                (3,3,0): 0.08988 + 1.049*eta*chi_p + 40.79*eta**3,
-                 
-                (3,2,0): -32.08 + 889.7*eta - 81.88*chi_p + 93.05*chi_m - 9292*eta**2 + 1584*eta*chi_p - 1817*eta*chi_m - 0.3888*chi_m**2 + 40350*eta**3 - 9588*eta**2*chi_p + 10930*eta**2*chi_m - 6.121*eta*chi_p**2 - 60250*eta**4 + 18190*eta**3*chi_p - 20600*eta**3*chi_m,
-                 
-                (4,4,0): 153.6 - 6463*eta + 114700*eta**2 - 1053000*eta**3 + 5278000*eta**4 + 478.4*eta**3*chi_p - 13680000*eta**5 - 1960*eta**4*chi_p + 65.4*eta**4*chi_m + 14320000*eta**6
-                 
+                (2,1,0): 0.9376*abs(chi_m) + delta*(6.697 - 148.3*eta - 1.035*chi_m + 1603*eta**2 - 0.96*eta*chi_p + 3.022*chi_p*chi_m - 4.27*chi_m**2 - 7388*eta**3 - 37.87*eta**2*chi_m - 15.85*eta*chi_p*chi_m + 12060* eta**4 - 13.17*eta*chi_p*chi_m**2 + 11.61*eta*chi_m**3 - 2.666*chi_p**2*chi_m**2 + 4.661*chi_m**4),
+                
+                (3,3,0): 0.2115*abs(chi_m) + delta*(1.82 + 0.6007*chi_p + 0.4653*chi_m + 16.49*eta**2 + 0.9369*chi_p*chi_m - 0.2701*chi_m**2 - 53.16*eta**3 - 4.201*eta**2*chi_m + 2.18*eta*chi_p**2 - 6.289*eta*chi_p*chi_m ),
+                
+                (3,2,0): 0.7695 - 3.308*eta - 1.446*eta*chi_p - 61.87*eta**3 + 72.14*eta**2*chi_p - 127.1*eta**2*chi_m - 2.769*eta*chi_p*chi_m + 0.3681*eta*chi_m**2 - 0.5065*chi_p*chi_m**2 + 0.5483*chi_m**3 + 293.4*eta**4 - 527.6*eta**3*chi_p + 1110*eta**3*chi_m + 11.14*eta**2*chi_p*chi_m + 2.18*eta*chi_p*chi_m**2 - 2.023*eta*chi_m**3 + 1014*eta**4*chi_p - 2407*eta**4*chi_m,
+                
+                (4,4,0): 0.6505 + 2.978*eta*chi_m + 0.4262*chi_p*chi_m + 106.1*eta**3 + 67.45*eta**2*chi_p - 12.08*eta**2*chi_m - 1.738*eta*chi_p*chi_m - 2041*eta**4 - 614.2*eta**3*chi_p + 5974*eta**5 + 1387*eta**4*chi_p
+                
                 }
 
-    Amp = eta*Amps[mode]
-    phi = 0.5*phases[mode]
+        phases =   {(2,2,0): 0.,
+        
+                    (2,2,1): 3.918 + 30.68*eta + 1.65*chi_p + 2.251*chi_m - 196.8*eta**2 - 15.94*eta*chi_p - 35.86*eta*chi_m - 0.2809*chi_p**2 - 2.797*chi_p*chi_m + 324.6*eta**3 + 32.04*eta**2*chi_p + 107*eta**2*chi_m + 11.19*eta*chi_p*chi_m - 0.2427*chi_p**3,
+                    
+                    (2,1,0): 4.282 + 2.075*eta - 0.8584*chi_p - 5.04*eta*chi_m - 1.626*chi_p*chi_m - 4.319*eta**2*chi_p + 21.01*eta**2*chi_m - 2.27*eta*chi_p**2 + 5.414*eta*chi_p*chi_m,
+                    
+                    (3,3,0): 0.08988 + 1.049*eta*chi_p + 40.79*eta**3,
+                    
+                    (3,2,0): -32.08 + 889.7*eta - 81.88*chi_p + 93.05*chi_m - 9292*eta**2 + 1584*eta*chi_p - 1817*eta*chi_m - 0.3888*chi_m**2 + 40350*eta**3 - 9588*eta**2*chi_p + 10930*eta**2*chi_m - 6.121*eta*chi_p**2 - 60250*eta**4 + 18190*eta**3*chi_p - 20600*eta**3*chi_m,
+                    
+                    (4,4,0): 153.6 - 6463*eta + 114700*eta**2 - 1053000*eta**3 + 5278000*eta**4 + 478.4*eta**3*chi_p - 13680000*eta**5 - 1960*eta**4*chi_p + 65.4*eta**4*chi_m + 14320000*eta**6
+                    
+                    }
+
+        Amp = eta*Amps[mode]
+        phi = 0.5*phases[mode]
+    
+    elif Amp_Phase_Fits == 'MaganaZertuche2024':
+        '''
+        Compute amplitude and phase fits from q, chi1_z and chi2_z (where m1 > m2)
+        uses the interpolants of NRSur3dq8_RD, Magana Zertuche et al [https://arxiv.org/pdf/2408.05300]
+        '''
+        import cmath
+        
+        q    = df.q
+        chi1 = [0, 0, df.chi1]
+        chi2 = [0, 0, df.chi2]
+        mode = mode + (1,)
+        
+        _, _, QNM_dict, _, _, _ = fit.all(1/q, chi1, chi2, modes=[mode])
+
+        Acmp = QNM_dict[mode]
+        Amp  = np.abs(Acmp)
+        phi  = cmath.phase(Acmp)
 
     return Amp, phi
 
-def compute_phase_amplitude_from_progenitors(df,modes):
+def compute_phase_amplitude_from_progenitors(df, modes, Amp_Phase_Fits):
 
     nsamp = len(df)
     A   = np.zeros(nsamp)
     phi = np.zeros(nsamp)
+
+    if Amp_Phase_Fits == 'MaganaZertuche2024':
+        import surfinBH
+
+        fit = surfinBH.LoadFits('NRSur3dq8_RD')
+    else: fit = None
 
     for mode in modes:
         l, m, n = mode[0], mode[1], mode[2]
 
         for i in range(nsamp):
 
-            eta,chi_p,chi_m = df.eta[i], df.chi_s[i], df.chi_a[i]
-            A[i], phi[i] = phase_amplitude_fits(eta,chi_p,chi_m,mode)
+            # eta,chi_p,chi_m = df.eta[i], df.chi_s[i], df.chi_a[i]
+            # A[i], phi[i] = phase_amplitude_fits(eta,chi_p,chi_m,mode)
+            A[i], phi[i] = phase_amplitude_fits(df.iloc[i], mode, Amp_Phase_Fits, fit)
 
         df.insert(0, 'A2{}{}{}'.format(l,m,n), A)
         df.insert(0, 'phi2{}{}{}'.format(l,m,n), phi)
@@ -898,8 +959,8 @@ class Plots:
     def __init__(self, pars, SampDataFrame, PriorDataFrame, EvidenceDataFrame, IMRDataFrame):
         
         if pars['corner']:
-            if pars['corner-sns']: plots.corner_plots_sns(pars, SampDataFrame, PriorDataFrame, IMRDataFrame)
-            else:                  plots.corner_plots(    pars, SampDataFrame, PriorDataFrame, IMRDataFrame)
-        if pars['violin']:         plots.violin_plots(    pars, SampDataFrame, PriorDataFrame, IMRDataFrame, EvidenceDataFrame)
-        if pars['ridgeline']:      plots.ridgeline_plots( pars, SampDataFrame, PriorDataFrame, IMRDataFrame)
-        if pars['TGR-plot']:       plots.TGR_plots(       pars, SampDataFrame)
+            if pars['corner-sns'] or pars['spectroscopy']: plots.corner_plots_sns(pars, SampDataFrame, PriorDataFrame, IMRDataFrame)
+            else:                                          plots.corner_plots(    pars, SampDataFrame, PriorDataFrame, IMRDataFrame)
+        if pars['violin']:                                 plots.violin_plots(    pars, SampDataFrame, PriorDataFrame, IMRDataFrame, EvidenceDataFrame)
+        if pars['ridgeline']:                              plots.ridgeline_plots( pars, SampDataFrame, PriorDataFrame, IMRDataFrame)
+        if pars['TGR-plot']:                               plots.TGR_plots(       pars, SampDataFrame)
