@@ -121,7 +121,7 @@ def get_sigma_bounds(df, pars, keys, comp_pars, par):
     if pars['compare'] == '':
         for key in keys:
             samps = np.array(df[df[pars['stack-mode']] == key][par])
-            samps = samps[~np.isnan(samps)]
+            #samps = samps[~np.isnan(samps)]
 
             if samps.size > 1:
                 median = np.percentile(samps, 50)
@@ -134,7 +134,7 @@ def get_sigma_bounds(df, pars, keys, comp_pars, par):
             for comp in comp_pars:
                 tmp = df[df[pars['stack-mode']] == key]
                 samps = np.array(tmp[tmp[pars['compare']] == comp][par])
-                samps = samps[~np.isnan(samps)]
+                #samps = samps[~np.isnan(samps)]
 
                 if samps.size > 1:
                     median = np.percentile(samps, 50)
