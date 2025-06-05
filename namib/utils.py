@@ -237,25 +237,24 @@ def read_posteriors_event(file_path, pars, event_keys, IMR_flag = False):
     filename = os.path.basename(os.path.normpath(file_path))
     if ('.txt' in filename) or ('.dat' in filename):
         load = np.genfromtxt(file_path, names = True)
-    if '.h5' in filename:
+    if '.h5' in filename or '.hdf5' in filename:
         with h5py.File(file_path, 'r') as f:
-            try:
-                #tmp = f['C01:IMRPhenomPv2']['posterior_samples']
-                tmp = f['bilby-NRSur7dq4']['posterior_samples']
-                #tmp = f['C00:NRSur7dq4']['posterior_samples']
-            except:
-                tmp = f['C00:Mixed']['posterior_samples']   # IMPROVE ME: Check the CPNest version
-                if pars['include-prior']:
-                    try:    tmpp = f['combined']['prior_samples']
-                    except: raise ValueError('Invalid option for prior reading: cannot find prior samples. Exiting...')
+            if 'posterior' in f:
+                tmp = f['posterior']
+            elif 'posterior_samples' in f:
+                tmp = f['posterior_samples'][()]
+            else: raise ValueError('Invalid option for prior reading: cannot find prior samples. Exiting...')
+            if pars['include-prior']:
+                try:    tmpp = f['combined']['prior_samples']
+                except: raise ValueError('Invalid option for prior reading: cannot find prior samples. Exiting...')
             load = np.array(tmp)
             if pars['include-prior']: loadp = np.array(tmpp)
-    if '.hdf5' in filename:
-        with h5py.File(file_path, 'r') as f:
-            try:
-                tmp = f['posterior']
-            except: raise ValueError('Invalid structure for samples reading: cannot find posterior samples. Exiting...')
-            load = {key: np.array(tmp[key]) for key in tmp.keys()}
+    # if '.hdf5' in filename:
+    #     with h5py.File(file_path, 'r') as f:
+    #         try:
+    #             tmp = f['posterior']
+    #         except: raise ValueError('Invalid structure for samples reading: cannot find posterior samples. Exiting...')
+    #         load = {key: np.array(tmp[key]) for key in tmp.keys()}
 
     df = pd.DataFrame(load)
     df = downsampling(df, pars)    # Downsample the df if required
