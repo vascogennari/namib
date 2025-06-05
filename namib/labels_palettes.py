@@ -27,7 +27,7 @@ def rc_labelsizes(pars):
 def labels_parameters(pars):
 
     pars_list = pars['parameters']
-
+    
     labels      = []
     labels_dict = {}
     for par in pars_list:
@@ -262,6 +262,8 @@ def labels_legend(par):
 
         elif par == 'IMR-NRSur7dq4':                 label = '$\mathrm{IMR\ NRSur7dq4}$'
         elif par == 'IMR-combined':                  label = '$\mathrm{IMR\ combined}$'
+        elif par == 'IMR-220':                       label = '$\mathrm{IMR\ }(\\ell,m,n) = (2,2,0)$'
+        elif par == 'IMR-200':                       label = '$\mathrm{IMR\ }(\\ell,m,n) = (2,0,0)$'
         elif par == 'NRSur7dq4':                     label = '$\mathrm{NRSur7dq4}$'
         elif par == 'SEOBv5PHM':                     label = '$\mathrm{SEOBv5PHM}$'
 

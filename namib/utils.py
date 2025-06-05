@@ -135,10 +135,17 @@ def Adapt_Samples(df, pars, event_keys, IMR_flag = False):
         if (set(['f_t_0', 'tau_t_0']) <= set(pars['parameters'])) and not (set(['f_t_0', 'tau_t_0']) <= set(df.keys())):
             if not (set(['Mf', 'af']) <= set(df.keys())):
                 df = compute_remnant_from_IMR(df, pars)
-            df = compute_qnms_from_Mf_af(df, [(2,2,0)], pars, scaling = 0)
-            df.rename(columns = {'f_220' : 'f_t_0', 'tau_220' : 'tau_t_0'}, inplace = True)
-            # if (set(['f_t_0', 'tau_t_0']) <= set(df.keys())):
-            # df.rename(columns = {'f_t_0' : 'f_22', 'tau_t_0' : 'tau_22'}, inplace = True)
+            for mode in pars['modes']:
+                l, m, n = mode[0], mode[1], mode[2]
+                dflmn = compute_qnms_from_Mf_af(df, [(l,m,n)], pars, scaling = 0)
+                df    = df.drop([f'f_{l}{m}{n}', f'tau_{l}{m}{n}'], axis=1)
+                dflmn = dflmn.assign(mode = f"({l},{m},{n})")
+                dflmn.rename(columns = {f'f_{l}{m}{n}' : 'f_t_0', f'tau_{l}{m}{n}' : 'tau_t_0'}, inplace = True)
+                if (mode == (2,2,0)):
+                    dfN = dflmn
+                else:
+                    dfN = pd.concat([dfN, dflmn], ignore_index=True)
+            df = dfN
         return df
 
     def pyring_damped_sinusoids_conventions(df, pars):
@@ -214,11 +221,11 @@ def Adapt_Samples(df, pars, event_keys, IMR_flag = False):
     compute_dependent_parameters(         df, pars)
     if pars['TGR-plot']: TGR_plot(        df, pars)
 
-    if not (set(pars['parameters']).difference(df.keys()) == set()):
-        additional_pars = set(pars['parameters']).difference(df.keys())
-        for additional_par in additional_pars:
-            df.insert(0, additional_par, np.nan)
-            df[additional_par][0] = 0
+    # if not (set(pars['parameters']).difference(df.keys()) == set()):
+    #     additional_pars = set(pars['parameters']).difference(df.keys())
+    #     for additional_par in additional_pars:
+    #         df.insert(0, additional_par, np.nan)
+    #         df[additional_par][0] = 0
 
     return df
 
@@ -253,12 +260,14 @@ def read_posteriors_event(file_path, pars, event_keys, IMR_flag = False):
     df = pd.DataFrame(load)
     df = downsampling(df, pars)    # Downsample the df if required
     df = Adapt_Samples(df, pars, event_keys, IMR_flag = IMR_flag)
-    df = df.filter(items = pars['parameters'])
+    items = pars['parameters']
+    if 'mode' in df.keys():      items = items + ['mode']
+    df = df.filter(items = items)
 
     if pars['include-prior']:
         dfp = pd.DataFrame(loadp)
         dfp = Adapt_Samples(dfp, pars, event_keys)
-        dfp = dfp.filter(items = pars['parameters'])
+        dfp = dfp.filter(items = items)
     else:
         dfp = pd.DataFrame()
 
@@ -920,7 +929,15 @@ class Posteriors:
                                 else:
                                     self.SampDataFrame = pd.concat([self.SampDataFrame, EventDataFrame], ignore_index=True)
                         else:
-                            EventDataFrame = EventDataFrame0.assign(par = IMR_keys['model'])
+                            if pars['spectroscopy'] == 0:
+                                EventDataFrame = EventDataFrame0.assign(par = IMR_keys['model'])
+                            else:
+                                mode_keys = {}
+                                for mode in pars['modes']:
+                                    l, m, n = mode[0], mode[1], mode[2]
+                                    mode_keys[f"({l},{m},{n})"] = IMR_keys['model'] + f"-{l}{m}{n}"
+                                EventDataFrame0['par'] = EventDataFrame0['mode'].map(mode_keys)
+                                EventDataFrame = EventDataFrame0
                             EventDataFrame.rename(columns={'par': pars['stack-mode']}, inplace = True)
                             if not pars['compare'] == '':
                                 if pars['compare'] in IMR_keys.keys():
