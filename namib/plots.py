@@ -172,7 +172,8 @@ def get_sigma_IMR(df, pars, keys):
             for par in pars['parameters']:
                 samps = df.loc[lambda df: df[pars['stack-mode']] == key, :]
                 samps = np.array(samps[par])
-                samps = samps[~np.isnan(samps)]
+                #samps = samps[~pd.isnull(samps[par])]
+                #samps = np.array(samps)
 
                 median = np.percentile(samps, 50)
                 sig_p  = np.percentile(samps, 95) - median
@@ -186,7 +187,9 @@ def get_sigma_IMR(df, pars, keys):
 
         for par in pars['parameters']:
             samps = np.array(df[par])
-            samps = samps[~np.isnan(samps)]
+            #samps = df[par]
+            #samps = samps[~pd.isnull(samps)]
+            #samps = np.array(samps)
 
             median = np.percentile(samps, 50)
             sig_p  = np.percentile(samps, 95) - median
