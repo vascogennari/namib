@@ -121,7 +121,7 @@ def get_sigma_bounds(df, pars, keys, comp_pars, par):
     if pars['compare'] == '':
         for key in keys:
             samps = np.array(df[df[pars['stack-mode']] == key][par])
-            #samps = samps[~np.isnan(samps)]
+            samps = samps[~np.isnan(samps)]
 
             if samps.size > 1:
                 median = np.percentile(samps, 50)
@@ -134,7 +134,7 @@ def get_sigma_bounds(df, pars, keys, comp_pars, par):
             for comp in comp_pars:
                 tmp = df[df[pars['stack-mode']] == key]
                 samps = np.array(tmp[tmp[pars['compare']] == comp][par])
-                #samps = samps[~np.isnan(samps)]
+                samps = samps[~np.isnan(samps)]
 
                 if samps.size > 1:
                     median = np.percentile(samps, 50)
@@ -172,8 +172,7 @@ def get_sigma_IMR(df, pars, keys):
             for par in pars['parameters']:
                 samps = df.loc[lambda df: df[pars['stack-mode']] == key, :]
                 samps = np.array(samps[par])
-                #samps = samps[~pd.isnull(samps[par])]
-                #samps = np.array(samps)
+                samps = samps[~np.isnan(samps)]
 
                 median = np.percentile(samps, 50)
                 sig_p  = np.percentile(samps, 95) - median
@@ -187,9 +186,7 @@ def get_sigma_IMR(df, pars, keys):
 
         for par in pars['parameters']:
             samps = np.array(df[par])
-            #samps = df[par]
-            #samps = samps[~pd.isnull(samps)]
-            #samps = np.array(samps)
+            samps = samps[~np.isnan(samps)]
 
             median = np.percentile(samps, 50)
             sig_p  = np.percentile(samps, 95) - median
@@ -371,7 +368,7 @@ def corner_plots_sns(pars, SampDataFrame, PriorDataFrame, IMRDataFrame):
         height    = height,
         dropna    = 1,
         plot_kws  = dict(alpha = 0),
-        diag_kws  = dict(alpha = pars['corner-settings']['alpha'], linewidth = pars['corner-settings']['linewidth'], common_norm = False, gridsize=3000),
+        diag_kws  = dict(alpha = pars['corner-settings']['alpha'], linewidth = pars['corner-settings']['linewidth'], common_norm = False),
     )
 
     for i, var_x in enumerate(labels_dict):

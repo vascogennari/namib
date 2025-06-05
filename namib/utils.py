@@ -221,11 +221,11 @@ def Adapt_Samples(df, pars, event_keys, IMR_flag = False):
     compute_dependent_parameters(         df, pars)
     if pars['TGR-plot']: TGR_plot(        df, pars)
 
-    # if not (set(pars['parameters']).difference(df.keys()) == set()):
-    #     additional_pars = set(pars['parameters']).difference(df.keys())
-    #     for additional_par in additional_pars:
-    #         df.insert(0, additional_par, np.nan)
-    #         df[additional_par][0] = 0
+    if not (set(pars['parameters']).difference(df.keys()) == set()):
+        additional_pars = set(pars['parameters']).difference(df.keys())
+        for additional_par in additional_pars:
+            df.insert(0, additional_par, np.nan)
+            df[additional_par][0] = 0
 
     return df
 
@@ -243,7 +243,9 @@ def read_posteriors_event(file_path, pars, event_keys, IMR_flag = False):
                 tmp = f['posterior']
             elif 'posterior_samples' in f:
                 tmp = f['posterior_samples'][()]
-            else: raise ValueError('Invalid option for prior reading: cannot find prior samples. Exiting...')
+            elif 'C00:Mixed' in f:
+                tmp = f['C00:Mixed']['posterior_samples']
+            else: raise ValueError('Invalid option for prior reading: cannot find posterior samples. Exiting...')
             if pars['include-prior']:
                 try:    tmpp = f['combined']['prior_samples']
                 except: raise ValueError('Invalid option for prior reading: cannot find prior samples. Exiting...')
