@@ -147,6 +147,12 @@ def Adapt_Samples(df, pars, event_keys, IMR_flag = False):
                     dfN = pd.concat([dfN, dflmn], ignore_index=True)
             df = dfN
         return df
+    
+    def compute_damped_sinusoids_ratios(df, pars):
+        if (set(['ratio_f_t_0', 'ratio_tau_t_0']) <= set(pars['parameters'])) and not (set(['ratio_f_t_0', 'ratio_tau_t_0']) <= set(df.keys())) and (set(['f_t_0', 'tau_t_0']) <= set(df.keys())) and (set(['f_t_1', 'tau_t_1']) <= set(df.keys())):
+                df[  'ratio_f_t_0'] = df[  'f_t_1']/df[  'f_t_0']
+                df['ratio_tau_t_0'] = df['tau_t_1']/df['tau_t_0']
+        return df
 
     def pyring_damped_sinusoids_conventions(df, pars):
         if pars['ds-scaling'] and (set(['f_t_0', 'tau_t_0']) <= set(df.keys())): df.tau_t_0 *= 1000  # Set time in [ms]
@@ -215,6 +221,7 @@ def Adapt_Samples(df, pars, event_keys, IMR_flag = False):
     df = compute_phase_amplitude_from_IMR(df, pars)
     df = compute_phase_amplitude_test(    df, pars, event_keys)
     df = compute_qnms_from_remnant(       df, pars)
+    df = compute_damped_sinusoids_ratios( df, pars)
     pyring_damped_sinusoids_conventions(  df, pars)
     extrinsic_parameters_conventions(     df, pars)
     set_positive_spins(                   df, pars)
