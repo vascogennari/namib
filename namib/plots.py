@@ -46,7 +46,7 @@ def convert_time_to_ms(comp_pars,conversion_factor):
         if 'IMR' not in key:
             key = float(key.strip('M'))
             key = round(key*conversion_factor,2)
-            key = str(key) + 'ms'
+            key = str(key) + ' [ms]'
         tmp.append(key)
 
     return tmp
@@ -348,7 +348,7 @@ def corner_plots_sns(pars, SampDataFrame, PriorDataFrame, IMRDataFrame):
     if pars['include-IMR'] and     pars['IMR-posteriors'] and not any('IMR' in par for par in pars['ordering']): pars['ordering'].append('IMR')
     if not pars['ordering'] == []:
         if ((set(pars['ordering']) <= set(keys))) and (len(pars['ordering']) == len(keys)): keys = pars['ordering']
-        else: raise ValueError('Invalid option for {stack_mode} ordering.'.format(stack_mode = pars['stack-mode']))
+        else: raise ValueError('Invalid option for {} ordering.'.format(pars['stack-mode']))
 
     _, labels_dict = lp.labels_parameters(pars)
 
@@ -368,7 +368,7 @@ def corner_plots_sns(pars, SampDataFrame, PriorDataFrame, IMRDataFrame):
         height    = height,
         dropna    = 1,
         plot_kws  = dict(alpha = 0),
-        diag_kws  = dict(alpha = pars['corner-settings']['alpha'], linewidth = pars['corner-settings']['linewidth'], common_norm = False),
+        diag_kws  = dict(alpha = pars['corner-settings']['alpha'], linewidth = pars['corner-settings']['linewidth'], common_norm = False, gridsize= 3000),
     )
 
     for i, var_x in enumerate(labels_dict):

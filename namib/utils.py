@@ -489,7 +489,10 @@ def compute_Mf_af_from_IMR(df, pars, IMR_fits):
 def compute_qnms_from_Mf_af(df, modes, pars, scaling = 1):
     '''
     Compute QNMs frequency and damping time from Mf and af for one mode (l,m,n)
-    using the qnm python package [https://github.com/duetosymmetry/qnm]
+    Available options: 
+        - the qnm python package [https://github.com/duetosymmetry/qnm]
+        - QNM fits from pyRing
+        - QNM interpolants from pyRing
     '''
     nsamp = len(df)
 
@@ -497,21 +500,44 @@ def compute_qnms_from_Mf_af(df, modes, pars, scaling = 1):
         l, m, n = mode[0], mode[1], mode[2]
         omg = np.zeros(nsamp)
         tau = np.zeros(nsamp)
+
+        if pars['qnms-values'] == 'pyRing-interpolants':
+            '''
+            If using pyRing interpolants, load them in advance 
+            '''
+            try:
+                import pyRing.utils    as putils
+            except:
+                raise ValueError('Unable to find the pyRing installation for the QNMs fits. Please either install pyRing or change the option for "qnms-values".')
+            interpolate_freq, interpolate_tau = putils.qnm_interpolate(2,l,m,n)
+            qnm_interpolants = {}
+            qnm_interpolants[(2,l,m,n)]  = {'freq': interpolate_freq, 'tau': interpolate_tau}
+        
         for i in range(nsamp):
             Mf, af = df.Mf[i], df.af[i]
-            if not pars['qnms-pyRing']:
-                Warning('Using qnm fits to compute the remnant samples [Mf, af]. This option is still experimental and it is currently very slow: we suggest to use the option "qnms-pyRing".')
+            if pars['qnms-values'] == 'qnm':
+                Warning('Using qnm fits to compute the remnant samples [Mf, af]. This option is still experimental and it is currently very slow: we suggest to use the option "qnms-values" = "pyRing-fits".')
                 omg[i], tau[i] = get_qnms(Mf, af, l, m, n)
-            else:
+            elif pars['qnms-values'] == 'pyRing-fits':
                 try:
                     import pyRing.waveform as wf
                 except:
-                    raise ValueError('Unable to find the pyRing installation for the QNMs fits. Please either install pyRing or disactivate the option "qnms-pyRing".')
+                    raise ValueError('Unable to find the pyRing installation for the QNMs fits. Please either install pyRing or change the option for "qnms-values".')
                 omg[i] = wf.QNM_fit(l, m, n).f(Mf, af)                # [Hz]
                 if scaling == 1:
                     tau[i] = wf.QNM_fit(l, m, n).tau(Mf, af) * 1000   # [ms]
                 else:
                     tau[i] = wf.QNM_fit(l, m, n).tau(Mf, af)          # [s]
+            elif pars['qnms-values'] == 'pyRing-interpolants':
+                try:
+                    import pyRing.waveform as wf
+                except:
+                    raise ValueError('Unable to find the pyRing installation for the QNMs fits. Please either install pyRing or change the option for "qnms-values".')
+                omg[i] = wf.QNM(2,l,m,n,qnm_interpolants).f(Mf, af)                # [Hz]
+                if scaling == 1:
+                    tau[i] = wf.QNM(2,l,m,n,qnm_interpolants).tau(Mf, af) * 1000   # [ms]
+                else:
+                    tau[i] = wf.QNM(2,l,m,n,qnm_interpolants).tau(Mf, af)          # [s]
 
         df.insert(0, 'f_{}{}{}'.format(l,m,n),   omg)
         df.insert(0, 'tau_{}{}{}'.format(l,m,n), tau)
