@@ -734,7 +734,8 @@ def reconstructed_distributions(pars, CurvesDictionary):
     if not pars['injected-pop'] == '':
         try:
             injected_pop = np.loadtxt(pars['injected-pop'], unpack = True)
-            m_array, pdf_array = injected_pop[0], injected_pop[1]
+            m1_array, q_array, z_array, pdf_m1_array, pdf_q_array, pdf_z_array = injected_pop[0], injected_pop[1], injected_pop[2], injected_pop[3], injected_pop[4], injected_pop[5]
+            x_array, y_array = [m1_array, q_array, z_array], [pdf_m1_array, pdf_q_array, pdf_z_array]
         except:
             raise ValueError('Injected population file not found: {}.'.format(pars['injected-pop']))
     # Load data.
@@ -743,7 +744,7 @@ def reconstructed_distributions(pars, CurvesDictionary):
             import pickle
             with open(pars['data-histogram'], 'rb') as f: tmp = pickle.load(f)
             if pars['log10-PDF']:
-                data_hist = [np.log10(tmp['m1s']), np.log10(tmp['q']), tmp['z']]
+                data_hist = [np.log10(tmp['m1s']), np.log10(tmp['m1s']/tmp['m2s']), tmp['z']]
             else:
                 raise ValueError('Data histograms are currently only implemented for log10 distributions.')
         except:
@@ -768,8 +769,7 @@ def reconstructed_distributions(pars, CurvesDictionary):
                 ax[pi].plot(        CurvesDataFrameFilt['x'], CurvesDataFrameFilt['y'][   pars['percentiles']['m' ]],                                                         color = colors[ki], lw    = 0.7)
             
             # Plot the injected population.
-            if par == 'PrimaryMassDistribution':
-                if not pars['injected-pop'] == '': ax[pi].plot(m_array, pdf_array, alpha = 0.5, lw = 1.2, color = pars['truth-color'], ls = '--', label = 'Injected population')
+            if not pars['injected-pop'] == '': ax[pi].plot(x_array[pi], y_array[pi], alpha = 0.5, lw = 1.4, color = pars['truth-color'], ls = '--', label = 'Injected population')
             
             ax[pi].set_xlabel(labels[par]['x'])
             ax[pi].set_ylabel(labels[par]['y'])
@@ -781,7 +781,7 @@ def reconstructed_distributions(pars, CurvesDictionary):
                     ax[pi].set_yscale('log')
                     ax[pi].set_ylim(1e-5, 2 )
                 if 'DetectorFrame' in par: ax[pi].set_ylim(0.5e-3, 0.1)
-
+    
     if   not pars['injected-pop']   == '':
         from matplotlib.lines import Line2D
         patch = [mpatches.Patch(facecolor = colors[2],  edgecolor = 'k', alpha = 0.5, label = lp.labels_legend('alpha100-sigma30')), mpatches.Patch(facecolor = colors[1], edgecolor = 'k', alpha = 0.5, label = lp.labels_legend('alpha12-sigma10')), mpatches.Patch(facecolor = colors[0], edgecolor = 'k', alpha = 0.5, label = lp.labels_legend('alpha8-sigma6')), Line2D([0], [0], color = pars['truth-color'], linestyle = '--', linewidth = 1.2, alpha = 0.8, label = lp.labels_legend('injected_pop'))]
