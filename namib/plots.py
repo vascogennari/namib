@@ -7,6 +7,7 @@ import numpy as np, os, pandas as pd
 from statsmodels.graphics.boxplots import violinplot
 from joypy import joyplot
 import namib.utils as utils, namib.labels_palettes as lp
+import matplotlib.colors as mcolors
 
 
 def sort_times_list(input_keys, labels = False):
@@ -212,26 +213,55 @@ def corner_plots_sns(pars, SampDataFrame, PriorDataFrame):
 
     comp_pars = keys
     colors = lp.palettes(pars, colormap = False, number_colors = len(comp_pars))
-    SampDataFrame['ordering'] = pd.Categorical(SampDataFrame[pars['stack-mode']], categories = keys, ordered = True)
+    SampDataFrame['ordering'] = pd.Categorical(SampDataFrame[pars['stack-mode']], categories = comp_pars, ordered = True)
 
     lp.rc_labelsizes(pars)    # Set label sizes of matplotlib RC parameters
     height = pars['corner-settings']['figsize'] / len(pars['parameters'])    # The figure size in seaborn is controlled by that of individual plots
 
+    # Plot diagonal elements
     fig = sns.pairplot(SampDataFrame.sort_values('ordering'),
-        corner    = True,
-        hue       = 'ordering',
-        kind      = 'kde',
-        diag_kind = 'kde',
-        vars      = labels_dict,
-        palette   = colors,
-        height    = height,
-        dropna    = 1,
-        plot_kws  = dict(alpha = 0),
-        diag_kws  = dict(alpha = pars['corner-settings']['alpha'], linewidth = pars['corner-settings']['linewidth']),
-    )
-    # Add 2D levels
-    fig.map_lower(sns.kdeplot, levels = [0.01, 1], fill = False)
-    fig.map_lower(sns.kdeplot, levels = [0.01, 1], fill = True, alpha = pars['corner-settings']['alpha'])
+            corner    = True,
+            hue       = 'ordering',
+            diag_kind = 'kde',
+            vars      = labels_dict,
+            palette   = colors,
+            height    = height,
+            dropna    = 1,
+            plot_kws  = dict(s = 0),
+            diag_kws  = dict(alpha = pars['corner-settings']['alpha'], linewidth = pars['corner-settings']['linewidth'], common_norm = False, gridsize= 3000),
+        )
+
+    for i, var_x in enumerate(labels_dict):
+        for j, var_y in enumerate(labels_dict):
+            if j >= i: continue
+            ax = fig.axes[i, j]
+            for k, comp_par in enumerate(list(reversed(comp_pars))):
+                colors_r = list(reversed(colors)) # Colors are already correctly assigned to samples both in pairplot and kdeplot, but the order is which they are plotted is different
+                # Plot 2D level curves
+                sns.kdeplot(
+                    data        = SampDataFrame[SampDataFrame[pars['stack-mode']]==comp_par],
+                    x           = var_y,
+                    y           = var_x,
+                    ax          = ax,
+                    levels      = [0.1, 1],
+                    fill        = False,
+                    color       = colors_r[k],
+                    common_norm = False
+                )
+                # Fill 2D level curves
+                rgba = mcolors.to_rgba(colors_r[k], pars['corner-settings']['alpha'])
+                cmap = mcolors.ListedColormap([rgba]) # Use same color for the 2D fill
+                sns.kdeplot(
+                    data        = SampDataFrame[SampDataFrame[pars['stack-mode']]==comp_par],
+                    x           = var_y,
+                    y           = var_x,
+                    ax          = ax,
+                    levels      = [0.1, 1],
+                    fill        = True,
+                    linewidth   = pars['corner-settings']['linewidth'],
+                    cmap        = cmap,
+                    common_norm = False
+                )
 
     # Add legend
     fig._legend.remove()    # Remove default legend
@@ -243,10 +273,10 @@ def corner_plots_sns(pars, SampDataFrame, PriorDataFrame):
         for pi,_ in enumerate(pars['parameters']):
             for qi,_ in enumerate(pars['parameters']):
                 if pi == qi: # Diagonal elements
-                    fig.axes[pi, qi].axvline(pars['truths'][qi], ls = '--', lw = 0.7, alpha = 0.5, color = pars['truth-color'])
+                    fig.axes[pi, qi].axvline(pars['truths'][qi], ls = '--', lw = 1, alpha = 0.8, color = pars['truth-color'])
                 elif pi > qi:
-                    fig.axes[pi, qi].axvline(pars['truths'][qi], ls = '--', lw = 0.7, alpha = 0.5, color = pars['truth-color'])
-                    fig.axes[pi, qi].axhline(pars['truths'][pi], ls = '--', lw = 0.7, alpha = 0.5, color = pars['truth-color'])
+                    fig.axes[pi, qi].axvline(pars['truths'][qi], ls = '--', lw = 1, alpha = 0.8, color = pars['truth-color'])
+                    fig.axes[pi, qi].axhline(pars['truths'][pi], ls = '--', lw = 1, alpha = 0.8, color = pars['truth-color'])
 
     for pi,par in enumerate(pars['parameters']):
         # Set the bounds

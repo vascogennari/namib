@@ -9,7 +9,7 @@ rcParams["ytick.direction"] = "in"
 rcParams["legend.fontsize"] = 15
 rcParams["legend.frameon"]  = False
 rcParams["legend.loc"]      = "best"
-rcParams["axes.labelsize"]  = 20
+rcParams["axes.labelsize"]  = 15
 rcParams["axes.grid"]       = True
 rcParams["grid.alpha"]      = 0.6
 rcParams["grid.linestyle"]  = "dotted"
@@ -115,6 +115,10 @@ def labels_parameters(pars_list):
         elif par == 'mu_z1':        string = '$\\mu_{z_1}\ [M_{\odot}]$'
         elif par == 'sigma_z0':     string = '$\\sigma\ [M_{\odot}]$'#'$\\sigma_{z_0}\ [M_{\odot}]$'
         elif par == 'sigma_z1':     string = '$\\sigma_{z_1}\ [M_{\odot}]$'
+        elif par == 'mu_a_z0':      string = '$\\mu_{a}\ [M_{\odot}]$'
+        elif par == 'mu_b_z0':      string = '$\\mu_{b}\ [M_{\odot}]$'
+        elif par == 'sigma_a_z0':   string = '$\\sigma_{a}\ [M_{\odot}]$'
+        elif par == 'sigma_b_z0':   string = '$\\sigma_{b}\ [M_{\odot}]$'
         elif par == 'lambda_peak':  string = '$\\lambda_{p}$'
         elif par == 'mix_z0':       string = '$mix_{z_0}$'#'$mix$'
         elif par == 'mix_z1':       string = '$mix_{z_1}$'
@@ -139,6 +143,14 @@ def labels_parameters(pars_list):
         elif par == 'gamma':        string = '$\\gamma$'
         elif par == 'a_gamma':      string = '$a_{\\gamma}$'
         elif par == 'theta':        string = '$\\theta$'
+        elif par == 'a_johnson':    string = '$a_{\\mathrm{j}}$'
+        elif par == 'b_johnson':    string = '$b_{\\mathrm{j}}$'
+        elif par == 'loc_johnson':  string = '$loc_{\\mathrm{j}}$'
+        elif par == 'scale_johnson':string = '$scale_{\\mathrm{j}}$'
+        elif par == 'a':            string = '$a_{z}$'
+        elif par == 'b':            string = '$b_{z}$'
+        elif par == 'loc':          string = '$loc_{z}$'
+        elif par == 'scale':        string = '$scale_{z}$'
 
         else:
             raise ValueError('At least one of the selected parameters does not have its corresponding label. Please, fix it in labels_palettes.py')
@@ -176,6 +188,7 @@ def labels_legend(par):
         elif par == '22-21':     label = '$(2,2),(2,1)$'
         elif par == '22-21-33':  label = '$(2,2),(2,1),(3,3)$'
         elif par == '22-21-33-44-55':  label = '$(2,2),(2,1),(3,3),(4,4),(5,5)$'
+        elif par == 'HM':        label = '$\mathrm{HM}$'
 
         elif par == '220':       label = '$(2,2,0)$'
         elif par == '220-330':   label = '$(2,2,0),(3,3,0)$'
@@ -194,7 +207,8 @@ def labels_legend(par):
 
         elif par == '22-do22':   label = '$\\delta\\omega_{22}$'
         elif par == '22-dt22':   label = '$\\delta\\tau_{22}$'
-        elif par == '22-do22-dt22': label = '$\\delta\\omega_{22},\ \\delta\\tau_{22}$'
+        elif par == '22-do22-dt22': label = '$(2,2),\ \{\\delta\\omega_{22},\ \\delta\\tau_{22}\}$'
+        elif par == 'HM-do22-dt22':  label = '$\mathrm{HM},\ \{\\delta\\omega_{22},\ \\delta\\tau_{22}\}$'
 
         elif par == 'EdGB':      label = '$\mathrm{EdGB}$'
 
@@ -207,9 +221,11 @@ def labels_legend(par):
         elif par == 'LVK-RD':    label = '$\mathrm{LVK\ RD}$'
         elif par == 'LVK-IMR':   label = '$\mathrm{LVK\ IMR}$'
         elif par == 'IMR':       label = '$\mathrm{IMR}$'
+        elif par == 'KerrBinary':     label = '$\mathrm{KerrBinary}$'
+        elif par == 'KerrPostmerger': label = '$\mathrm{KerrPostmerger}$'
 
-        elif par == 'NRSur7dq4':   label = '$\mathrm{NRSur7dq4}$'
-        elif par == 'SEOBv5PHM':   label = '$\mathrm{SEOBv5PHM}$'
+        elif par == 'NRSur7dq4':  label = '$\mathrm{NRSur7dq4}$'
+        elif par == 'SEOBv5PHM':  label = '$\mathrm{SEOBv5PHM}$'
 
         # Cosmology
         elif par == 'beta':               label = '$\\beta\ \mathrm{function}$'
@@ -251,7 +267,7 @@ def labels_legend(par):
         elif par == 'smoothed':           label = '$\mathrm{PL\ PL\ PL,\ Smoothing}$'
 
         elif par == '90yrs-Johnson':        label = '$\mathrm{JD\ (90yrs)}$'
-        elif par == '65yrs-DoublePowerlaw': label = '$\mathrm{DPL\ (65yrs)}$'
+        elif par == '90yrs-DoublePowerlaw': label = '$\mathrm{DPL\ (90yrs)}$'
 
         # FIXME: to remove
         elif par == 'injected_pop':       label = '$\mathrm{Injected\ population}$'
