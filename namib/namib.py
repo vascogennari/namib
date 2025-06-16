@@ -25,6 +25,7 @@ def main():
         # [input]
 
         'samp-dir'           : '',
+        'custom-sampdir'     : 0, 
         'output'             : '',
         'screen-output'      : 0,
 
@@ -97,7 +98,7 @@ def main():
         if ('samp-dir' in key) or ('output' in key) or ('stack-mode' in key) or ('compare' in key):
             try: input_pars[key] = Config.get('input', key)
             except: pass
-        if ('screen-output' in key) or ('compare-hard' in key) or ('evidence' in key) or ('save-post' in key) or ('include-prior' in key) or ('include-IMR' in key) or ('ds-scaling' in key) or ('freq-log-scaling' in key) or ('AR-log-scaling' in key) or ('screen-medians' in key) or ('save-medians' in key):
+        if ('custom-sampdir' in key) or ('screen-output' in key) or ('compare-hard' in key) or ('evidence' in key) or ('save-post' in key) or ('include-prior' in key) or ('include-IMR' in key) or ('ds-scaling' in key) or ('freq-log-scaling' in key) or ('AR-log-scaling' in key) or ('screen-medians' in key) or ('save-medians' in key):
             try: input_pars[key] = Config.getboolean('input', key)
             except: pass
         if ('downsample' in key) or ('M-to-ms-factor' in key):
@@ -124,9 +125,14 @@ def main():
     print('\nn a m i b\n')
     print(('Reading config file:\n{}'.format(config_file)))
 
-    if not os.path.exists(input_pars['samp-dir']):
-        raise ValueError('\nSamples directory {} not found.\n'.format(input_pars['samp-dir']))
-    else: print('\nPosteriors are read from:\n{}'.format(input_pars['samp-dir']))
+    if not input_pars['custom-sampdir']:
+        if not os.path.exists(input_pars['samp-dir']):
+            raise ValueError('\nSamples directory {} not found.\n'.format(input_pars['samp-dir']))
+        else: print('\nPosteriors are read from:\n{}'.format(input_pars['samp-dir']))
+    else:
+        if not os.path.exists(input_pars['samp-dir']):
+            raise ValueError('\nSamples dictionary {} not found.\n'.format(input_pars['samp-dir']))
+        else: print('\nReading posteriors from samples dictionary:\n{}'.format(input_pars['samp-dir']))
 
     # Read the posteriors and create the .txt files with the reduced posteriors
     PostOutput = Posteriors(input_pars)

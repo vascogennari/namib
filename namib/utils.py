@@ -876,7 +876,14 @@ class Posteriors:
     '''
     def __init__(self, pars):
 
-        dir_path = pars['samp-dir']
+        if not pars['custom-sampdir']:
+            dir_path  = pars['samp-dir']
+            file_list = os.listdir(dir_path)
+        else:
+            import json
+            with open(pars['samp-dir']) as json_DICT_PATH: DICT_PATH = json.load(json_DICT_PATH)
+            file_list = DICT_PATH.keys()
+
         self.SampDataFrame     = pd.DataFrame(columns = pars['parameters'])
         self.PriorDataFrame    = pd.DataFrame(columns = pars['parameters'])
         self.IMRDataFrame      = pd.DataFrame(columns = pars['parameters'])
@@ -886,7 +893,7 @@ class Posteriors:
         stack_mode_keys = list()
 
         if not (pars['include-IMR'] == 0 and pars['stack-mode'] in IMR_keys.keys()) and pars['ridgeline'] == 1:
-            for file in os.listdir(dir_path):
+            for file in file_list:
                 if not ((file == '.DS_Store') or (file == 'noise_evidences') or (file == 'ignore') or (file == 'SNR_samples') or (fnmatch.fnmatch(file, '*IMR*'))):
                     keys = file.split('_')
                     keys[-1] = keys[-1].split('.')[0]
@@ -894,10 +901,11 @@ class Posteriors:
                         if (key == pars['stack-mode'] and (keys[i] not in stack_mode_keys)):
                             stack_mode_keys.append(keys[i])
                     
-        for file in tqdm(os.listdir(dir_path), desc = 'Reading Posteriors'):
+        for file in tqdm(file_list, desc = 'Reading Posteriors'):
             if not ((file == '.DS_Store') or (file == 'noise_evidences') or (file == 'ignore') or (file == 'SNR_samples') or (fnmatch.fnmatch(file, '*_IMR*'))):
 
-                file_path = os.path.join(dir_path, file)
+                if not pars['custom-sampdir']: file_path = os.path.join(dir_path, file)
+                else:                          file_path = DICT_PATH[file]
                 keys = file.split('_')
                 keys[-1] = keys[-1].split('.')[0]
                 for i,key in enumerate(single_evt_keys.keys()):
@@ -926,7 +934,8 @@ class Posteriors:
             # Case when there is one IMR analysis to compare separately.
             if  (fnmatch.fnmatch(file, '*_IMR*') and not pars['include-IMR'] == 0):
 
-                file_path = os.path.join(dir_path, file)
+                if not pars['custom-sampdir']: file_path = os.path.join(dir_path, file)
+                else:                          file_path = DICT_PATH[file]
                 keys = file.split('_')
                 keys[-1] = keys[-1].split('.')[0]
                 for i,key in enumerate(IMR_keys.keys()):

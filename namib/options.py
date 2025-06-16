@@ -8,6 +8,7 @@ usage = """
     # ----- #
 
         samp-dir           Directory from which input samples are read. The path is relative to the 'samples' namib directory. Default: ''
+        custom-sampdir     Flag to read the samples location from a pre-filled dictionary. It must be a json file connecting the namib name to the posteriors path. It must be located at the location given at 'samp dir'. Default: 0
         output             Directory in which the output is saved. The path is relative to the 'results' namib directory. Default: ''
         screen-output      Flag to deviate the standard output and error to file. Default: 0
 
