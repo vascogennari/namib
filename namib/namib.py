@@ -45,6 +45,7 @@ def main():
 
         'modes'              : [(2,2,0)],
         'peaktime-22-all'    : [0, 0],
+        'time-shift'         : {},
         'ds-scaling'         : 0,
         'M-to-ms-factor'     : 1,
         'freq-log-scaling'   : 0,
@@ -104,7 +105,7 @@ def main():
         if ('downsample' in key) or ('M-to-ms-factor' in key):
             try: input_pars[key] = Config.getfloat('input', key)
             except: pass
-        if ('parameters' in key) or ('modes' in key) or ('ordering' in key) or ('bounds' in key) or ('compare-ordering' in key ) or ('truths' in key) or ('qnms-values' in key) or ('IMR-fits' in key) or ('IMR-fits-IMR' in key) or ('Amp-Phase-fits' in key) or ('peaktime-22-all' in key):
+        if ('parameters' in key) or ('modes' in key) or ('ordering' in key) or ('bounds' in key) or ('compare-ordering' in key ) or ('truths' in key) or ('qnms-values' in key) or ('IMR-fits' in key) or ('IMR-fits-IMR' in key) or ('Amp-Phase-fits' in key) or ('peaktime-22-all' in key) or ('time-shift' in key):
             try: input_pars[key] = ast.literal_eval(Config.get('input', key))
             except: pass
         if ('corner' in key) or ('violin' in key) or ('ridgeline' in key) or ('TGR-plot' in key) or ('BF-comparison' in key) or ('evidence-top' in key) or ('remove-xticks' in key) or ('remove-legend' in key) or ('horizontal-legend' in key) or ('fix-dimensions' in key) or ('corner-sns' in key) or ('spectroscopy' in key) or ('automatic-bounds' in key) or ('min-max-bounds' in key) or ('IMR-posteriors' in key):

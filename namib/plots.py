@@ -46,7 +46,7 @@ def convert_time_to_ms(comp_pars,conversion_factor):
         if 'IMR' not in key:
             key = float(key.strip('M'))
             key = round(key*conversion_factor,2)
-            key = str(key) + ' [ms]'
+            key = str(key) + '\mathrm{ [ms]}'
         tmp.append(key)
 
     return tmp
@@ -528,6 +528,8 @@ def violin_plots(pars, SampDataFrame, PriorDataFrame, IMRDataFrame, EvidenceData
             SampDataFrameComp_R = SampDataFrame[SampDataFrame[pars['compare']] == comp_pars[1]]
 
         for pi,par in enumerate(params):
+            if len(params) == 1: ax_param = ax
+            else:                ax_param = ax[pi]
             if (not par == 'BF_comparison') and (not par == pars['extra-row']):
                 SampDataFrameFilt_L = SampDataFrameComp_L[par]
                 SampDataFrameFilt_R = SampDataFrameComp_R[par]
@@ -541,25 +543,25 @@ def violin_plots(pars, SampDataFrame, PriorDataFrame, IMRDataFrame, EvidenceData
                             labels       = label_x,
                             show_boxplot = False,
                             side         = 'left',
-                            ax           = ax[pi],
+                            ax           = ax_param,
                             plot_opts    = plot_opts_L)
                     violinplot(samp_R,
                             positions    = positions,
                             labels       = label_x,
                             show_boxplot = False,
                             side         = 'right',
-                            ax           = ax[pi],
+                            ax           = ax_param,
                             plot_opts    = plot_opts_R)
-                    ax[pi].set_ylabel(labels[par])
-                    if not pars['bounds'] == []:   ax[pi].set_ylim(bounds_dict[par])
-                    if not (pi == len(params )-1): ax[pi].xaxis.set_visible(False)
+                    ax_param.set_ylabel(labels[par])
+                    if not pars['bounds'] == []:   ax_param.set_ylim(bounds_dict[par])
+                    if not (pi == len(params )-1): ax_param.xaxis.set_visible(False)
             else:
                 if par == 'BF_comparison':
                     EvidenceDataFrame['ordering'] = pd.Categorical(EvidenceDataFrame[pars['stack-mode']], categories = keys, ordered = True)
                     value     = EvidenceDataFrame[EvidenceDataFrame[pars['compare']] == comp_pars[0]].sort_values('ordering').Bayes_factor
                     value_err = EvidenceDataFrame[EvidenceDataFrame[pars['compare']] == comp_pars[0]].sort_values('ordering').Bayes_factor_error
                     label_evidence = lp.labels_parameters_evidence(par)
-                    ax[pi].errorbar(
+                    ax_param.errorbar(
                         keys                  ,
                         value                 ,
                         value_err             ,
@@ -575,9 +577,9 @@ def violin_plots(pars, SampDataFrame, PriorDataFrame, IMRDataFrame, EvidenceData
                         alpha      = pars['violin-settings']['alpha'],
                     )
                     cs = [colors[1] if b > 0 else colors[0] for b in value]
-                    ax[pi].scatter(keys, value, s = 50, c = cs, alpha = pars['violin-settings']['alpha'])
-                    ax[pi].set_ylabel(label_evidence)
-                    if pars['remove-xticks']:  ax[pi].set_xticklabels([])
+                    ax_param.scatter(keys, value, s = 50, c = cs, alpha = pars['violin-settings']['alpha'])
+                    ax_param.set_ylabel(label_evidence)
+                    if pars['remove-xticks']:  ax_param.set_xticklabels([])
                 elif par == pars['extra-row']:
                     EvidenceDataFrame['ordering'] = pd.Categorical(EvidenceDataFrame[pars['stack-mode']], categories = keys, ordered = True)
                     for c,comp in enumerate(comp_pars):
@@ -592,7 +594,7 @@ def violin_plots(pars, SampDataFrame, PriorDataFrame, IMRDataFrame, EvidenceData
                             value     = EvidenceDataFrame[EvidenceDataFrame[pars['compare']] == comp].sort_values('ordering').maxL
                             value_err = 0
                         label_evidence = lp.labels_parameters_evidence(par)
-                        ax[pi].errorbar(
+                        ax_param.errorbar(
                             keys                  ,
                             value                 ,
                             value_err             ,
@@ -607,12 +609,12 @@ def violin_plots(pars, SampDataFrame, PriorDataFrame, IMRDataFrame, EvidenceData
                             mec        = 'k'      ,
                             alpha      = pars['violin-settings']['alpha'],
                         )
-                        ax[pi].scatter(keys, value, s = 50, c = colors[ci], alpha = pars['violin-settings']['alpha'])
-                    ax[pi].set_ylabel(label_evidence)
+                        ax_param.scatter(keys, value, s = 50, c = colors[ci], alpha = pars['violin-settings']['alpha'])
+                    ax_param.set_ylabel(label_evidence)
                 if not pars['time-percentiles'] == []:
-                    a = convert_time_percentiles(pars['time-percentiles'][0], ax[pi].get_xticks(), label_x)
-                    b = convert_time_percentiles(pars['time-percentiles'][1], ax[pi].get_xticks(), label_x)
-                    ax[pi].axvspan(a, b, alpha = 0.1, color = '#BA9934')
+                    a = convert_time_percentiles(pars['time-percentiles'][0], ax_param.get_xticks(), label_x)
+                    b = convert_time_percentiles(pars['time-percentiles'][1], ax_param.get_xticks(), label_x)
+                    ax_param.axvspan(a, b, alpha = 0.1, color = '#BA9934')
 
     [l.set_rotation(pars['violin-settings']['rotation']) for l in ax[len(params)-1].get_xticklabels()]
     if not pars['remove-xticks'] and pars['stack-mode'] == 'time': plt.xlabel('$Time\ [M_{f}]$')
@@ -687,14 +689,16 @@ def ridgeline_plots(pars, SampDataFrame, PriorDataFrame, IMRDataFrame):
         if pars['compare'] == '':
             comp_pars = keys
             colors = lp.palettes(pars, colormap = True, number_colors = 0)
+            print(colors)
             SampDataFrame['ordering'] = pd.Categorical(SampDataFrame[pars['stack-mode']], categories = keys, ordered = True)
             if pars['stack-mode'] == 'time':
                 SampDataFrame['ordering'] = SampDataFrame['ordering'].map(lambda x: x.replace('M', '$'))
                 SampDataFrame['ordering'] = SampDataFrame['ordering'].map(lambda x: '$'+x)
             else: SampDataFrame['ordering'] = SampDataFrame['ordering'].map(lambda x: '$'+x+'$')
 
-            if ax.ndim == 1: subset = ax[pi]
-            else:            subset = ax[:,pi]
+            if len(keys) == 1: subset = ax
+            elif ax.ndim == 1: subset = ax
+            else:              subset = ax[:,pi]
             if pars['automatic-bounds'] or pars['min-max-bounds']: bounds = get_sigma_bounds(SampDataFrame, pars, keys, comp_pars, par)
             joyplot(SampDataFrame.sort_values('ordering'),
                 by        = 'ordering',
@@ -742,8 +746,9 @@ def ridgeline_plots(pars, SampDataFrame, PriorDataFrame, IMRDataFrame):
                 SampDataFrame['ordering'] = SampDataFrame['ordering'].map(lambda x: x.replace('B' , '\mathrm{B}$' ))
             else: SampDataFrame['ordering'] = SampDataFrame['ordering'].map(lambda x: '$'+x+'$')
 
-            if ax.ndim == 1: subset = ax[pi]
-            else:            subset = ax[:,pi]
+            if len(keys) == 1: subset = ax
+            elif ax.ndim == 1: subset = ax
+            else:              subset = ax[:,pi]
             if pi == 0: flag = True
             else:       flag = False
 
@@ -766,35 +771,54 @@ def ridgeline_plots(pars, SampDataFrame, PriorDataFrame, IMRDataFrame):
                 title     = pars['ridgeline-settings']['figtitle']
             )
 
-        if ax.ndim == 1:
-            ax[pi].xaxis.set_visible(True)
-            ax[pi].grid(visible = False)
-            ax[pi].set_xlabel(labels_dict[par])
-            ax[pi].tick_params(axis = 'x', which = 'major', labelsize = pars['label-sizes']['xtick'], direction = 'inout', length=3, width=1, zorder = 2)
-            if not pars['truths'] == []:         ax[pi].axvline(pars['truths'][pi], ls = '--', lw = 1.5, alpha = 0.5, color = pars['truth-color'])  # Plot truth values
+        if len(keys) == 1:
+            ax.xaxis.set_visible(True)
+            ax.grid(visible = False)
+            ax.set_xlabel(labels_dict[par])
+            ax.tick_params(axis = 'x', labelsize = pars['label-sizes']['xtick'], direction = 'inout', length=10, width=0.5, zorder = 20)
+            if not pars['truths'] == []: ax.axvline(pars['truths'][pi], ls = '--', lw = 1.5, alpha = 0.5, color = pars['truth-color'])  # Plot truth values
             if pars['include-IMR'] and not pars['IMR-posteriors']:
-                ax[pi].axvline(CI[par]['median'],  ymin=0.05, ymax=0.9, ls = '-',  alpha = 0.6, lw = 1., color = pars['truth-color'], zorder = 10)
-                ax[pi].axvline(CI[par]['90-low'],  ymin=0.05, ymax=0.9, ls = '--', alpha = 0.2, lw = 1., color = pars['truth-color'], zorder = 10)
-                ax[pi].axvline(CI[par]['90-high'], ymin=0.05, ymax=0.9, ls = '--', alpha = 0.2 ,lw = 1., color = pars['truth-color'], zorder = 10)
+                ax.axvline(CI[par]['median'],  ymin=0.05, ymax=0.9, ls = '-',  alpha = 0.6, lw = 1., color = pars['truth-color'], zorder = 10)
+                ax.axvline(CI[par]['90-low'],  ymin=0.05, ymax=0.9, ls = '--', alpha = 0.2, lw = 1., color = pars['truth-color'], zorder = 10)
+                ax.axvline(CI[par]['90-high'], ymin=0.05, ymax=0.9, ls = '--', alpha = 0.2 ,lw = 1., color = pars['truth-color'], zorder = 10)
         else:
             for ni,key in enumerate(keys):
-                ax[ni][pi].xaxis.set_visible(True)
-                ax[ni][pi].grid(visible = False)
-                if ni<len(keys)-1:
-                    ax[ni][pi].xaxis.set_ticklabels([])
-                else:
-                    ax[ni][pi].set_xlabel(labels_dict[par])
-                ax[ni][pi].tick_params(axis = 'x', labelsize = pars['label-sizes']['xtick'], direction = 'inout', length=10, width=0.5, zorder = 20)
-                if not pars['truths'] == []: ax[ni][pi].axvline(pars['truths'][pi], ls = '--', lw = 1.5, alpha = 0.5, color = pars['truth-color'])  # Plot truth values
-                if pars['include-IMR'] and not pars['IMR-posteriors']:
-                    if pars['stack-mode'] in ('event', 'pipeline', 'model'):
-                        ax[ni][pi].axvline(CI[key][par]['median'],  ymin=0.05, ymax=0.9, ls = '-',  alpha = 0.6, lw = 1., color = pars['truth-color'], zorder = 10)
-                        ax[ni][pi].axvline(CI[key][par]['90-low'],  ymin=0.05, ymax=0.9, ls = '--', alpha = 0.2, lw = 1., color = pars['truth-color'], zorder = 10)
-                        ax[ni][pi].axvline(CI[key][par]['90-high'], ymin=0.05, ymax=0.9, ls = '--', alpha = 0.2 ,lw = 1., color = pars['truth-color'], zorder = 10)
+                if ax.ndim == 1:
+                    ax[ni].xaxis.set_visible(True)
+                    ax[ni].grid(visible = False)
+                    if ni<len(keys)-1:
+                        ax[ni].xaxis.set_ticklabels([])
                     else:
-                        ax[ni][pi].axvline(CI[par]['median'],  ymin=0.05, ymax=0.9, ls = '-',  alpha = 0.6, lw = 1., color = pars['truth-color'], zorder = 10)
-                        ax[ni][pi].axvline(CI[par]['90-low'],  ymin=0.05, ymax=0.9, ls = '--', alpha = 0.2, lw = 1., color = pars['truth-color'], zorder = 10)
-                        ax[ni][pi].axvline(CI[par]['90-high'], ymin=0.05, ymax=0.9, ls = '--', alpha = 0.2 ,lw = 1., color = pars['truth-color'], zorder = 10)
+                        ax[ni].set_xlabel(labels_dict[par])
+                    ax[ni].tick_params(axis = 'x', labelsize = pars['label-sizes']['xtick'], direction = 'inout', length=10, width=0.5, zorder = 20)
+                    if not pars['truths'] == []: ax[ni].axvline(pars['truths'][pi], ls = '--', lw = 1.5, alpha = 0.5, color = pars['truth-color'])  # Plot truth values
+                    if pars['include-IMR'] and not pars['IMR-posteriors']:
+                        if pars['stack-mode'] in ('event', 'pipeline', 'model'):
+                            ax[ni].axvline(CI[key][par]['median'],  ymin=0.05, ymax=0.9, ls = '-',  alpha = 0.6, lw = 1., color = pars['truth-color'], zorder = 10)
+                            ax[ni].axvline(CI[key][par]['90-low'],  ymin=0.05, ymax=0.9, ls = '--', alpha = 0.2, lw = 1., color = pars['truth-color'], zorder = 10)
+                            ax[ni].axvline(CI[key][par]['90-high'], ymin=0.05, ymax=0.9, ls = '--', alpha = 0.2 ,lw = 1., color = pars['truth-color'], zorder = 10)
+                        else:
+                            ax[ni].axvline(CI[par]['median'],  ymin=0.05, ymax=0.9, ls = '-',  alpha = 0.6, lw = 1., color = pars['truth-color'], zorder = 10)
+                            ax[ni].axvline(CI[par]['90-low'],  ymin=0.05, ymax=0.9, ls = '--', alpha = 0.2, lw = 1., color = pars['truth-color'], zorder = 10)
+                            ax[ni].axvline(CI[par]['90-high'], ymin=0.05, ymax=0.9, ls = '--', alpha = 0.2 ,lw = 1., color = pars['truth-color'], zorder = 10)
+                else:
+                    ax[ni][pi].xaxis.set_visible(True)
+                    ax[ni][pi].grid(visible = False)
+                    if ni<len(keys)-1:
+                        ax[ni][pi].xaxis.set_ticklabels([])
+                    else:
+                        ax[ni][pi].set_xlabel(labels_dict[par])
+                    ax[ni][pi].tick_params(axis = 'x', labelsize = pars['label-sizes']['xtick'], direction = 'inout', length=10, width=0.5, zorder = 20)
+                    if not pars['truths'] == []: ax[ni][pi].axvline(pars['truths'][pi], ls = '--', lw = 1.5, alpha = 0.5, color = pars['truth-color'])  # Plot truth values
+                    if pars['include-IMR'] and not pars['IMR-posteriors']:
+                        if pars['stack-mode'] in ('event', 'pipeline', 'model'):
+                            ax[ni][pi].axvline(CI[key][par]['median'],  ymin=0.05, ymax=0.9, ls = '-',  alpha = 0.6, lw = 1., color = pars['truth-color'], zorder = 10)
+                            ax[ni][pi].axvline(CI[key][par]['90-low'],  ymin=0.05, ymax=0.9, ls = '--', alpha = 0.2, lw = 1., color = pars['truth-color'], zorder = 10)
+                            ax[ni][pi].axvline(CI[key][par]['90-high'], ymin=0.05, ymax=0.9, ls = '--', alpha = 0.2 ,lw = 1., color = pars['truth-color'], zorder = 10)
+                        else:
+                            ax[ni][pi].axvline(CI[par]['median'],  ymin=0.05, ymax=0.9, ls = '-',  alpha = 0.6, lw = 1., color = pars['truth-color'], zorder = 10)
+                            ax[ni][pi].axvline(CI[par]['90-low'],  ymin=0.05, ymax=0.9, ls = '--', alpha = 0.2, lw = 1., color = pars['truth-color'], zorder = 10)
+                            ax[ni][pi].axvline(CI[par]['90-high'], ymin=0.05, ymax=0.9, ls = '--', alpha = 0.2 ,lw = 1., color = pars['truth-color'], zorder = 10)
 
     if pars['compare'] == '': colors = lp.palettes(pars, colormap = False, number_colors = len(comp_pars))
     patch = [mpatches.Patch(facecolor = colors[ci], edgecolor = 'k', alpha = pars['ridgeline-settings']['alpha'], label = lp.labels_legend(comp_pars[ci])) for ci,c in enumerate(comp_pars)]
@@ -809,9 +833,10 @@ def ridgeline_plots(pars, SampDataFrame, PriorDataFrame, IMRDataFrame):
     fig.axes[0].legend(handles = patch, loc = 2, frameon = False, ncol = ncol, borderaxespad = pars['ridgeline-settings']['borderaxespad'])
 
     if pars['remove-legend']: fig.axes[0].get_legend().remove()
-    if pars['stack-mode'] == 'time' and ax.ndim != 1:
-        if ax.ndim == 1: ax[0].set_ylabel('$Time\ [M_{f}]$')
-        else:            ax[round(len(keys)/2)][0].set_ylabel('$Time\ [M_{f}]$')
+    if pars['stack-mode'] == 'time':
+        if len(keys) == 1: ax.set_ylabel('$Time\ [M_{f}]$')
+        elif ax.ndim == 1: ax[0].set_ylabel('$Time\ [M_{f}]$')
+        else:              ax[round(len(keys)/2)][0].set_ylabel('$Time\ [M_{f}]$')
 
     utils.create_directory(pars['plots-dir'], 'PNG')
     for extension in ['pdf', 'png']:

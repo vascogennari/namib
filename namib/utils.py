@@ -4,6 +4,7 @@ import fnmatch
 import numpy as np
 from tqdm import tqdm
 import qnm
+import cmath
 from astropy import constants as const
 
 import namib.plots as plots
@@ -35,6 +36,8 @@ def Adapt_Samples(df, pars, event_keys, IMR_flag = False):
             df.rename(columns = {'a_1' : 'chi1', 'a_2' : 'chi2'}, inplace = True)
         if (set(['final_mass', 'final_spin']) <= set(df.keys())):
             df.rename(columns = {'final_mass': 'Mf', 'final_spin': 'af'}, inplace=True)
+        if (set(['M_f', 'chi_f']) <= set(df.keys())):
+            df.rename(columns = {'M_f': 'Mf', 'chi_f': 'af'}, inplace=True)
 
     def granite_conventions(df, pars):
         if (set(['m1_detect', 'm2_detect']) <= set(df.keys())):
@@ -55,6 +58,15 @@ def Adapt_Samples(df, pars, event_keys, IMR_flag = False):
                 df = remove_mass_ratio_over_threshold(df)
             df = compute_Mf_af_from_IMR(df, pars, IMR_fits)
         return df
+    
+    def compute_area_from_remnant(df,pars):
+        if set(['area_m']) <= set(pars['parameters']) and set(['Area_f']) <= set(df.keys()):
+            df.rename(columns = {'Area_f' : 'area_m'}, inplace = True)
+        if set(['area_m']) <= set(pars['parameters']) and not set(['area_m']) <= set(df.keys()):
+            if not (set(['Mf', 'af']) <= set(df.keys())):
+                df = compute_remnant_from_IMR(df, pars)
+            df = compute_area_from_Mf_af(df)
+        return df
 
     def compute_phase_amplitude_from_IMR(df, pars):
         if any("AR" in par for par in pars['parameters']) and any("deltaphi" in par for par in pars['parameters']):
@@ -68,16 +80,42 @@ def Adapt_Samples(df, pars, event_keys, IMR_flag = False):
                 df = compute_phase_amplitude_from_progenitors(df, pars['modes'], pars['Amp-Phase-fits'])
         return df
     
+    def rescale_amplitudes(df, pars, event_keys):
+        if set(['A220']) <= set(pars['parameters']) and not set(['A220']) <= set(df.keys()):
+
+            t       = event_keys['time']
+            delta_t = pars['time-shift'][f'{t}']
+
+            for mode in pars['modes']:
+                l, m, n = mode[0], mode[1], mode[2]
+                if not set([f'f_{l}{m}{n}']) <= set(df.keys()): df = compute_qnms_from_Mf_af(df, [(l,m,n)], pars, scaling = 0)
+                if set([f'A2{l}{m}{n}_1', f'A2{l}{m}{n}_2'])  <= set(df.keys()) and not set([f'A{l}{m}{n}'])  <= set(df.keys()): 
+                    df = compute_rescaled_amplitudes(df, l, m, n)
+                    df[f'A{l}{m}{n}'] = df[f'A{l}{m}{n}'] * np.exp( - delta_t * 1/df[f'tau_{l}{m}{n}'])
+        return df
+
+    def compute_rescaled_amplitudes(df, l, m, n):
+        
+        nsamp = len(df)
+        Amp = np.zeros(nsamp)
+
+        for i in range(nsamp):
+            A1, A2, phi1, phi2 = df[f'A2{l}{m}{n}_1'][i], df[f'A2{l}{m}{n}_2'][i], df[f'phi2{l}{m}{n}_1'][i], df[f'phi2{l}{m}{n}_2'][i]
+            Amp[i] = np.sqrt( A1**2 + A2**2 )
+
+        df.insert(0, 'A{}{}{}'.format(l,m,n), Amp)
+        return df
+    
     def compute_phase_amplitude_test(df, pars, event_keys):
         '''
         Defining the variables relevant for the amplitude-phase consistency test presented in Forteza et al https://arxiv.org/pdf/2205.14910
         '''
-        if (any("A2" in key for key in df.keys()) and any("phi2" in key for key in df.keys())):
+        if (any("A2" in key for key in df.keys()) and any("phi2" in key for key in df.keys())) and (any("AR" in key for key in pars['parameters']) and any("deltaphi" in key for key in pars['parameters'])):
             for mode in pars['modes']:
                 l, m, n = mode[0], mode[1], mode[2]
                 if (mode == (2,2,0)):
                     if IMR_flag == False:
-                        df = compute_qnms_from_Mf_af(df, [(l,m,n)], pars, scaling = 0)
+                        if not set([f'f_{l}{m}{n}']) <= set(df.keys()): df = compute_qnms_from_Mf_af(df, [(l,m,n)], pars, scaling = 0)
 
                 if not (mode == (2,2,0)):
 
@@ -92,7 +130,7 @@ def Adapt_Samples(df, pars, event_keys, IMR_flag = False):
                         t  = event_keys['time']
                         t  = t.replace('M','')
                         t  = float(t)*T_MSUN
-                        df = compute_qnms_from_Mf_af(df, [(l,m,n)], pars, scaling = 0)
+                        if not set([f'f_{l}{m}{n}']) <= set(df.keys()): df = compute_qnms_from_Mf_af(df, [(l,m,n)], pars, scaling = 0)
 
                         if pars['Amp-Phase-fits'] == 'Cheung2023':
                             '''
@@ -218,6 +256,8 @@ def Adapt_Samples(df, pars, event_keys, IMR_flag = False):
     granite_conventions(                  df, pars)
     if (set(['Mf', 'af']) <= set(pars['parameters'])):
         df = compute_remnant_from_IMR(    df, pars)
+    df = compute_area_from_remnant(       df, pars)
+    df = rescale_amplitudes(              df, pars, event_keys)
     df = compute_phase_amplitude_from_IMR(df, pars)
     df = compute_phase_amplitude_test(    df, pars, event_keys)
     df = compute_qnms_from_remnant(       df, pars)
@@ -244,7 +284,7 @@ def read_posteriors_event(file_path, pars, event_keys, IMR_flag = False):
     filename = os.path.basename(os.path.normpath(file_path))
     if ('.txt' in filename) or ('.dat' in filename):
         load = np.genfromtxt(file_path, names = True)
-    if '.h5' in filename or '.hdf5' in filename:
+    if '.h5' in filename: # or '.hdf5' in filename:
         with h5py.File(file_path, 'r') as f:
             if 'posterior' in f:
                 tmp = f['posterior']
@@ -252,18 +292,22 @@ def read_posteriors_event(file_path, pars, event_keys, IMR_flag = False):
                 tmp = f['posterior_samples'][()]
             elif 'C00:Mixed' in f:
                 tmp = f['C00:Mixed']['posterior_samples']
+            elif 'bilby-NRSur7dq4_high_f_cal' in f:
+                tmp = f['bilby-NRSur7dq4_high_f_cal']['posterior_samples']
             else: raise ValueError('Invalid option for prior reading: cannot find posterior samples. Exiting...')
             if pars['include-prior']:
                 try:    tmpp = f['combined']['prior_samples']
                 except: raise ValueError('Invalid option for prior reading: cannot find prior samples. Exiting...')
             load = np.array(tmp)
             if pars['include-prior']: loadp = np.array(tmpp)
-    # if '.hdf5' in filename:
-    #     with h5py.File(file_path, 'r') as f:
-    #         try:
-    #             tmp = f['posterior']
-    #         except: raise ValueError('Invalid structure for samples reading: cannot find posterior samples. Exiting...')
-    #         load = {key: np.array(tmp[key]) for key in tmp.keys()}
+    if '.hdf5' in filename:
+        with h5py.File(file_path, 'r') as f:
+            if 'posterior' in f:
+                tmp = f['posterior']
+            elif 'Area_f' in f:
+                tmp = f
+            else: raise ValueError('Invalid structure for samples reading: cannot find posterior samples. Exiting...')
+            load = {key: np.array(tmp[key]) for key in tmp.keys()}
 
     df = pd.DataFrame(load)
     df = downsampling(df, pars)    # Downsample the df if required
@@ -483,6 +527,22 @@ def compute_Mf_af_from_IMR(df, pars, IMR_fits):
 
     df.insert(0, 'Mf', Mf)
     df.insert(0, 'af', af)
+
+    return df
+
+def compute_area_from_Mf_af(df):
+
+    nsamp  = len(df)
+    L_MSUN = const.M_sun.value * const.G.value / const.c.value**2
+
+    area_m = np.zeros(nsamp)
+
+    for i in range(nsamp):
+
+        Mf, af = df.Mf[i], df.af[i]
+        area_m[i] = 8 * np.pi * L_MSUN**2 * Mf**2 * (1 + np.sqrt(1 - af**2))/1e6  # km^2
+
+    df.insert(0, 'area_m', area_m)
 
     return df
 
