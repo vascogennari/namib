@@ -123,6 +123,8 @@ def labels_parameters(pars):
         elif par == 'tau_22':      string = '$\\tau_{22}\ \\mathrm{[ms]}$'
         elif par == 'f_220':       string = '$f_{220}\ \\mathrm[Hz]$'
         elif par == 'tau_220':     string = '$\\tau_{220}\ \\mathrm{[ms]}$'
+        elif par == 'f_221':       string = '$f_{221}\ \\mathrm[Hz]$'
+        elif par == 'tau_221':     string = '$\\tau_{221}\ \\mathrm{[ms]}$'
         elif par == 'f_33':        string = '$f_{33}\ \\mathrm[Hz]$'
         elif par == 'tau_33':      string = '$\\tau_{33}\ \\mathrm{[ms]}$'
         elif par == 'f_44':        string = '$f_{44}\ \\mathrm[Hz]$'

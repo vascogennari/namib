@@ -60,8 +60,8 @@ def Adapt_Samples(df, pars, event_keys, IMR_flag = False):
         return df
     
     def compute_area_from_remnant(df,pars):
-        if set(['area_m']) <= set(pars['parameters']) and set(['Area_f']) <= set(df.keys()):
-            df.rename(columns = {'Area_f' : 'area_m'}, inplace = True)
+        # if set(['area_m']) <= set(pars['parameters']) and set(['Area_f']) <= set(df.keys()):
+            # df.rename(columns = {'Area_f' : 'area_m'}, inplace = True)
         if set(['area_m']) <= set(pars['parameters']) and not set(['area_m']) <= set(df.keys()):
             if not (set(['Mf', 'af']) <= set(df.keys())):
                 df = compute_remnant_from_IMR(df, pars)
@@ -83,25 +83,29 @@ def Adapt_Samples(df, pars, event_keys, IMR_flag = False):
     def rescale_amplitudes(df, pars, event_keys):
         if set(['A220']) <= set(pars['parameters']) and not set(['A220']) <= set(df.keys()):
 
-            t       = event_keys['time']
-            delta_t = pars['time-shift'][f'{t}']
+            #t       = event_keys['time']
+            #delta_t = pars['time-shift'][f'{t}']
 
             for mode in pars['modes']:
                 l, m, n = mode[0], mode[1], mode[2]
-                if not set([f'f_{l}{m}{n}']) <= set(df.keys()): df = compute_qnms_from_Mf_af(df, [(l,m,n)], pars, scaling = 0)
+                #if not set([f'f_{l}{m}{n}']) <= set(df.keys()): df = compute_qnms_from_Mf_af(df, [(l,m,n)], pars, scaling = 0)
                 if set([f'A2{l}{m}{n}_1', f'A2{l}{m}{n}_2'])  <= set(df.keys()) and not set([f'A{l}{m}{n}'])  <= set(df.keys()): 
                     df = compute_rescaled_amplitudes(df, l, m, n)
-                    df[f'A{l}{m}{n}'] = df[f'A{l}{m}{n}'] * np.exp( - delta_t * 1/df[f'tau_{l}{m}{n}'])
+                    #df[f'A{l}{m}{n}'] = df[f'A{l}{m}{n}'] * np.exp( - delta_t * 1/df[f'tau_{l}{m}{n}'])
         return df
 
     def compute_rescaled_amplitudes(df, l, m, n):
+
+        import pyRing.waveform as wf
         
         nsamp = len(df)
         Amp = np.zeros(nsamp)
 
         for i in range(nsamp):
-            A1, A2, phi1, phi2 = df[f'A2{l}{m}{n}_1'][i], df[f'A2{l}{m}{n}_2'][i], df[f'phi2{l}{m}{n}_1'][i], df[f'phi2{l}{m}{n}_2'][i]
-            Amp[i] = np.sqrt( A1**2 + A2**2 )
+            A1, A2, iota = df[f'A2{l}{m}{n}_1'][i], df[f'A2{l}{m}{n}_2'][i], np.arccos(df['cosiota'][i])
+            Slm  = np.real(wf.SWSH(2,l, m)(iota, 0))
+            Slmm = np.real(wf.SWSH(2,l,-m)(iota, 0))
+            Amp[i] = Slm*A1 + Slmm*A2
 
         df.insert(0, 'A{}{}{}'.format(l,m,n), Amp)
         return df
@@ -188,8 +192,25 @@ def Adapt_Samples(df, pars, event_keys, IMR_flag = False):
     
     def compute_damped_sinusoids_ratios(df, pars):
         if (set(['ratio_f_t_0', 'ratio_tau_t_0']) <= set(pars['parameters'])) and not (set(['ratio_f_t_0', 'ratio_tau_t_0']) <= set(df.keys())) and (set(['f_t_0', 'tau_t_0']) <= set(df.keys())) and (set(['f_t_1', 'tau_t_1']) <= set(df.keys())):
-                df[  'ratio_f_t_0'] = df[  'f_t_1']/df[  'f_t_0']
-                df['ratio_tau_t_0'] = df['tau_t_1']/df['tau_t_0']
+            
+            nsamp = len(df)
+            F_t_0 = np.zeros(nsamp)
+            T_t_0 = np.zeros(nsamp)
+
+            for i in range(nsamp):
+                f_t_0, tau_t_0, f_t_1, tau_t_1 = df['f_t_0'], df['tau_t_0'], df['f_t_1'], df['tau_t_1']
+                if tau_t_0 < tau_t_1:
+                    F_t_0[i] =   f_t_0/  f_t_1
+                    T_t_0[i] = tau_t_1/tau_t_0
+                else:
+                    F_t_0[i] =   f_t_1/  f_t_0
+                    T_t_0[i] = tau_t_0/tau_t_1
+
+            df.insert(0,   'ratio_f_t_0', F_t_0)
+            df.insert(0, 'ratio_tau_t_0', T_t_0)
+            
+            # df[  'ratio_f_t_0'] = df[  'f_t_1']/df[  'f_t_0']
+            # df['ratio_tau_t_0'] = df['tau_t_1']/df['tau_t_0']
         return df
 
     def pyring_damped_sinusoids_conventions(df, pars):
