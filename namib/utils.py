@@ -198,12 +198,12 @@ def Adapt_Samples(df, pars, event_keys, IMR_flag = False):
             T_t_0 = np.zeros(nsamp)
 
             for i in range(nsamp):
-                f_t_0, tau_t_0, f_t_1, tau_t_1 = df['f_t_0'], df['tau_t_0'], df['f_t_1'], df['tau_t_1']
+                f_t_0, tau_t_0, f_t_1, tau_t_1 = df['f_t_0'][i], df['tau_t_0'][i], df['f_t_1'][i], df['tau_t_1'][i]
                 if tau_t_0 < tau_t_1:
-                    F_t_0[i] =   f_t_0/  f_t_1
+                    F_t_0[i] =   f_t_0/f_t_1
                     T_t_0[i] = tau_t_1/tau_t_0
                 else:
-                    F_t_0[i] =   f_t_1/  f_t_0
+                    F_t_0[i] =   f_t_1/f_t_0
                     T_t_0[i] = tau_t_0/tau_t_1
 
             df.insert(0,   'ratio_f_t_0', F_t_0)
