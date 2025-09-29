@@ -1,4 +1,4 @@
-surfinBH==1.1.8
+surfinBH==1.2.6
 pyRingGW==2.3.0
 numpy==1.23.5
 statsmodels==0.13.5

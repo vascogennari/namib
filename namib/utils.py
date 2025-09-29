@@ -34,6 +34,8 @@ def Adapt_Samples(df, pars, event_keys, IMR_flag = False):
             df.insert(0, 'iota', np.arccos(df.cos_theta_jn))
         if (set(['a_1', 'a_2']) <= set(df.keys())):
             df.rename(columns = {'a_1' : 'chi1', 'a_2' : 'chi2'}, inplace = True)
+        # if (set(['spin_1z', 'spin_2z']) <= set(df.keys())):
+        #     df.rename(columns = {'spin_1z' : 'chi1', 'spin_2z' : 'chi2'}, inplace = True)
         if (set(['final_mass', 'final_spin']) <= set(df.keys())):
             df.rename(columns = {'final_mass': 'Mf', 'final_spin': 'af'}, inplace=True)
         if (set(['M_f', 'chi_f']) <= set(df.keys())):
@@ -69,7 +71,7 @@ def Adapt_Samples(df, pars, event_keys, IMR_flag = False):
         return df
 
     def compute_phase_amplitude_from_IMR(df, pars):
-        if any("AR" in par for par in pars['parameters']) and any("deltaphi" in par for par in pars['parameters']):
+        if any("AR" in par for par in pars['parameters']) and any("deltaphi" in par for par in pars['parameters']) or (any("A2" in key for key in pars['parameters']) and any("phi2" in key for key in pars['parameters'])):
             if not (any("A2" in key for key in df.keys()) and any("phi2" in key for key in df.keys())):
                 if not (set(['eta', 'chi_p', 'chi_a']) <= set(df.keys())) and pars['Amp-Phase-fits'] == 'Cheung2023' :
                     df = compute_progenitors_from_IMR(df, func = 'SymmetricMassRatio')
@@ -182,6 +184,8 @@ def Adapt_Samples(df, pars, event_keys, IMR_flag = False):
                 dflmn = compute_qnms_from_Mf_af(df, [(l,m,n)], pars, scaling = 0)
                 df    = df.drop([f'f_{l}{m}{n}', f'tau_{l}{m}{n}'], axis=1)
                 dflmn = dflmn.assign(mode = f"({l},{m},{n})")
+                dflmn[  'f_t_1'] = dflmn[  f'f_{l}{m}{n}']
+                dflmn['tau_t_1'] = dflmn[f'tau_{l}{m}{n}']
                 dflmn.rename(columns = {f'f_{l}{m}{n}' : 'f_t_0', f'tau_{l}{m}{n}' : 'tau_t_0'}, inplace = True)
                 if (mode == (2,2,0)):
                     dfN = dflmn
@@ -193,24 +197,24 @@ def Adapt_Samples(df, pars, event_keys, IMR_flag = False):
     def compute_damped_sinusoids_ratios(df, pars):
         if (set(['ratio_f_t_0', 'ratio_tau_t_0']) <= set(pars['parameters'])) and not (set(['ratio_f_t_0', 'ratio_tau_t_0']) <= set(df.keys())) and (set(['f_t_0', 'tau_t_0']) <= set(df.keys())) and (set(['f_t_1', 'tau_t_1']) <= set(df.keys())):
             
-            nsamp = len(df)
-            F_t_0 = np.zeros(nsamp)
-            T_t_0 = np.zeros(nsamp)
+            # nsamp = len(df)
+            # F_t_0 = np.zeros(nsamp)
+            # T_t_0 = np.zeros(nsamp)
 
-            for i in range(nsamp):
-                f_t_0, tau_t_0, f_t_1, tau_t_1 = df['f_t_0'][i], df['tau_t_0'][i], df['f_t_1'][i], df['tau_t_1'][i]
-                if tau_t_0 < tau_t_1:
-                    F_t_0[i] =   f_t_0/f_t_1
-                    T_t_0[i] = tau_t_1/tau_t_0
-                else:
-                    F_t_0[i] =   f_t_1/f_t_0
-                    T_t_0[i] = tau_t_0/tau_t_1
+            # for i in range(nsamp):
+            #     f_t_0, tau_t_0, f_t_1, tau_t_1 = df['f_t_0'][i], df['tau_t_0'][i], df['f_t_1'][i], df['tau_t_1'][i]
+            #     if tau_t_0 < tau_t_1:
+            #         F_t_0[i] =   f_t_0/f_t_1
+            #         T_t_0[i] = tau_t_1/tau_t_0
+            #     else:
+            #         F_t_0[i] =   f_t_1/f_t_0
+            #         T_t_0[i] = tau_t_0/tau_t_1
 
-            df.insert(0,   'ratio_f_t_0', F_t_0)
-            df.insert(0, 'ratio_tau_t_0', T_t_0)
+            # df.insert(0,   'ratio_f_t_0', F_t_0)
+            # df.insert(0, 'ratio_tau_t_0', T_t_0)
             
-            # df[  'ratio_f_t_0'] = df[  'f_t_1']/df[  'f_t_0']
-            # df['ratio_tau_t_0'] = df['tau_t_1']/df['tau_t_0']
+            df[  'ratio_f_t_0'] = df[  'f_t_1']/df[  'f_t_0']
+            df['ratio_tau_t_0'] = df['tau_t_1']/df['tau_t_0']
         return df
 
     def pyring_damped_sinusoids_conventions(df, pars):
@@ -262,16 +266,16 @@ def Adapt_Samples(df, pars, event_keys, IMR_flag = False):
             df = compute_progenitors_from_IMR(df, func = 'ChiAntiymmetric')
 
     # FIXME: Implement as a separate option non related to the TGR plot, for all the possible modes.
-    def TGR_plot(df, pars):
-        if (set(['f_22'])   <= set(pars['parameters'])) and (set(['domega_220']) <= set(df.keys())):
-            try:    df.f_22   *= 1. + df.domega_220
-            except: pass
-        if (set(['f_33'])   <= set(pars['parameters'])) and (set(['domega_330']) <= set(df.keys())):
-            try:    df.f_33   *= 1. + df.domega_330
-            except: pass
-        if (set(['tau_22']) <= set(pars['parameters'])) and (set(['dtau_220'])   <= set(df.keys())):
-            try:    df.tau_22 *= 1. + df.dtau_220
-            except: pass
+    def compute_bGR_f_and_tau(df, pars):
+        if (any("domega" in key for key in df.keys()) or any("dtau" in key for key in df.keys())):
+            for mode in pars['modes-w-deviation']:
+                l, m, n = mode[0], mode[1], mode[2]
+            
+                if set([f'f_{l}{m}{n}',f'tau_{l}{m}{n}']) <= set(pars['parameters']) and (set([f'domega_{l}{m}{n}']) <= set(df.keys()) or set([f'dtau_{l}{m}{n}']) <= set(df.keys())):
+                    try:    df[  f'f_{l}{m}{n}'] *= 1. + df[f'domega_{l}{m}{n}']
+                    except: pass
+                    try:    df[f'tau_{l}{m}{n}'] *= 1. + df[  f'dtau_{l}{m}{n}']
+                    except: pass
 
     LVK_conventions(                      df, pars)
     granite_conventions(                  df, pars)
@@ -287,7 +291,7 @@ def Adapt_Samples(df, pars, event_keys, IMR_flag = False):
     extrinsic_parameters_conventions(     df, pars)
     set_positive_spins(                   df, pars)
     compute_dependent_parameters(         df, pars)
-    if pars['TGR-plot']: TGR_plot(        df, pars)
+    compute_bGR_f_and_tau(                df, pars)
 
     if not (set(pars['parameters']).difference(df.keys()) == set()):
         additional_pars = set(pars['parameters']).difference(df.keys())
@@ -315,6 +319,8 @@ def read_posteriors_event(file_path, pars, event_keys, IMR_flag = False):
                 tmp = f['C00:Mixed']['posterior_samples']
             elif 'bilby-NRSur7dq4_high_f_cal' in f:
                 tmp = f['bilby-NRSur7dq4_high_f_cal']['posterior_samples']
+            elif 'bilby-IMRPhenomXPHM-SpinTaylor-3' in f:
+                tmp = f['bilby-IMRPhenomXPHM-SpinTaylor-3']['posterior_samples']
             else: raise ValueError('Invalid option for prior reading: cannot find posterior samples. Exiting...')
             if pars['include-prior']:
                 try:    tmpp = f['combined']['prior_samples']
