@@ -24,6 +24,9 @@ def Adapt_Samples(df, pars, event_keys, IMR_flag = False):
     else:        IMR_fits = pars['IMR-fits']
 
     def LVK_conventions(df, pars):
+
+        ''' Adapts IMR samples to namib internal conventions '''
+
         if (set(['mass_1', 'mass_2']) <= set(df.keys())):
             df.rename(columns = {'mass_1' : 'm1', 'mass_2' : 'm2'}, inplace = True)
         if (set(['distance']) <= set(pars['parameters'])) and (set(['luminosity_distance']) <= set(df.keys())):
@@ -41,7 +44,7 @@ def Adapt_Samples(df, pars, event_keys, IMR_flag = False):
         if (set(['M_f', 'chi_f']) <= set(df.keys())):
             df.rename(columns = {'M_f': 'Mf', 'chi_f': 'af'}, inplace=True)
 
-    def granite_conventions(df, pars):
+    def granite_conventions(df):
         if (set(['m1_detect', 'm2_detect']) <= set(df.keys())):
             df.rename(columns = {'m1_detect' : 'm1', 'm2_detect' : 'm2'}, inplace = True)
         if (set(['s1z', 's2z']) <= set(df.keys())):
@@ -50,6 +53,9 @@ def Adapt_Samples(df, pars, event_keys, IMR_flag = False):
             df.rename(columns = {'spin1' : 'chi1', 'spin2' : 'chi2'}, inplace = True)
 
     def compute_remnant_from_IMR(df, pars):
+
+        ''' Compute remnant properties of IMR samples if not present. Different fits available '''
+
         if not (set(['Mf', 'af']) <= set(df.keys())) and not (set(['f_t_0', 'tau_t_0']) <= set(df.keys())):
             if IMR_fits == 'IMRPhenomXPrecessing':
                 if not (set(['eta', 'chi_p']) <= set(df.keys())):
@@ -62,8 +68,11 @@ def Adapt_Samples(df, pars, event_keys, IMR_flag = False):
         return df
     
     def compute_area_from_remnant(df,pars):
-        # if set(['area_m']) <= set(pars['parameters']) and set(['Area_f']) <= set(df.keys()):
-            # df.rename(columns = {'Area_f' : 'area_m'}, inplace = True)
+
+        ''' Compute BH area of from remnant properties if not present. Adapt samples to namib conventions '''
+
+        if set(['area_m']) <= set(pars['parameters']) and set(['Area_f']) <= set(df.keys()):
+            df.rename(columns = {'Area_f' : 'area_m'}, inplace = True)
         if set(['area_m']) <= set(pars['parameters']) and not set(['area_m']) <= set(df.keys()):
             if not (set(['Mf', 'af']) <= set(df.keys())):
                 df = compute_remnant_from_IMR(df, pars)
@@ -71,6 +80,9 @@ def Adapt_Samples(df, pars, event_keys, IMR_flag = False):
         return df
 
     def compute_phase_amplitude_from_IMR(df, pars):
+
+        ''' Compute modes and amplitude phases of IMR samples if not present. Different fits available [Cheung2023, MaganaZertuche2024] '''
+
         if any("AR" in par for par in pars['parameters']) and any("deltaphi" in par for par in pars['parameters']) or (any("A2" in key for key in pars['parameters']) and any("phi2" in key for key in pars['parameters'])):
             if not (any("A2" in key for key in df.keys()) and any("phi2" in key for key in df.keys())):
                 if not (set(['eta', 'chi_p', 'chi_a']) <= set(df.keys())) and pars['Amp-Phase-fits'] == 'Cheung2023' :
@@ -82,21 +94,21 @@ def Adapt_Samples(df, pars, event_keys, IMR_flag = False):
                 df = compute_phase_amplitude_from_progenitors(df, pars['modes'], pars['Amp-Phase-fits'])
         return df
     
-    def rescale_amplitudes(df, pars, event_keys):
-        if set(['A220']) <= set(pars['parameters']) and not set(['A220']) <= set(df.keys()):
+    def rescale_amplitudes(df, pars):
 
-            #t       = event_keys['time']
-            #delta_t = pars['time-shift'][f'{t}']
+        ''' Spans over different modes for computations of rescaled amplitudes. Only activated for Kerr precessing runs and on selected modes '''
+
+        if set(['A220']) <= set(pars['parameters']) and not set(['A220']) <= set(df.keys()):
 
             for mode in pars['modes']:
                 l, m, n = mode[0], mode[1], mode[2]
-                #if not set([f'f_{l}{m}{n}']) <= set(df.keys()): df = compute_qnms_from_Mf_af(df, [(l,m,n)], pars, scaling = 0)
                 if set([f'A2{l}{m}{n}_1', f'A2{l}{m}{n}_2'])  <= set(df.keys()) and not set([f'A{l}{m}{n}'])  <= set(df.keys()): 
                     df = compute_rescaled_amplitudes(df, l, m, n)
-                    #df[f'A{l}{m}{n}'] = df[f'A{l}{m}{n}'] * np.exp( - delta_t * 1/df[f'tau_{l}{m}{n}'])
         return df
 
     def compute_rescaled_amplitudes(df, l, m, n):
+
+        ''' Rescales Kerr analysis amplitudes to the conventions of arxiv:2208.03372 '''
 
         import pyRing.waveform as wf
         
@@ -173,10 +185,17 @@ def Adapt_Samples(df, pars, event_keys, IMR_flag = False):
 
     def compute_qnms_from_remnant(df, pars):
         if (set(['f_220', 'tau_220']) <= set(pars['parameters'])) and not (set(['f_220', 'tau_220']) <= set(df.keys())) and not (set(['f_t_0', 'tau_t_0']) <= set(df.keys())):
+        
+            ''' This is the case in which the (l,m,n) QNM in pars['modes'] are plotted. '''
+        
             if not (set(['Mf', 'af']) <= set(df.keys())):
                 df = compute_remnant_from_IMR(df, pars)
             df = compute_qnms_from_Mf_af(df, pars['modes'], pars, scaling = 0)
+
         if (set(['f_t_0', 'tau_t_0']) <= set(pars['parameters'])) and not (set(['f_t_0', 'tau_t_0']) <= set(df.keys())):
+        
+            ''' This is the case for the spectroscopy plot, in which the (l,m,n) QNM in pars['modes'] are assigned to [f_t_0, tau_t_0]. '''
+        
             if not (set(['Mf', 'af']) <= set(df.keys())):
                 df = compute_remnant_from_IMR(df, pars)
             for mode in pars['modes']:
@@ -195,44 +214,52 @@ def Adapt_Samples(df, pars, event_keys, IMR_flag = False):
         return df
     
     def compute_damped_sinusoids_ratios(df, pars):
+
+        ''' Computes ratios of damped sinusoids frequencies and damping times '''
+
         if (set(['ratio_f_t_0', 'ratio_tau_t_0']) <= set(pars['parameters'])) and not (set(['ratio_f_t_0', 'ratio_tau_t_0']) <= set(df.keys())) and (set(['f_t_0', 'tau_t_0']) <= set(df.keys())) and (set(['f_t_1', 'tau_t_1']) <= set(df.keys())):
             
-            # nsamp = len(df)
-            # F_t_0 = np.zeros(nsamp)
-            # T_t_0 = np.zeros(nsamp)
+            nsamp = len(df)
+            F_t_0 = np.zeros(nsamp)
+            T_t_0 = np.zeros(nsamp)
 
-            # for i in range(nsamp):
-            #     f_t_0, tau_t_0, f_t_1, tau_t_1 = df['f_t_0'][i], df['tau_t_0'][i], df['f_t_1'][i], df['tau_t_1'][i]
-            #     if tau_t_0 < tau_t_1:
-            #         F_t_0[i] =   f_t_0/f_t_1
-            #         T_t_0[i] = tau_t_1/tau_t_0
-            #     else:
-            #         F_t_0[i] =   f_t_1/f_t_0
-            #         T_t_0[i] = tau_t_0/tau_t_1
+            for i in range(nsamp):
+                f_t_0, tau_t_0, f_t_1, tau_t_1 = df['f_t_0'][i], df['tau_t_0'][i], df['f_t_1'][i], df['tau_t_1'][i]
+                if tau_t_0 / tau_t_1 < f_t_1 / f_t_0:
+                    F_t_0[i] =   f_t_1 / f_t_0
+                    T_t_0[i] = tau_t_1/tau_t_0
+                else:
+                    F_t_0[i] =   f_t_0/f_t_1
+                    T_t_0[i] = tau_t_0/tau_t_1
 
-            # df.insert(0,   'ratio_f_t_0', F_t_0)
-            # df.insert(0, 'ratio_tau_t_0', T_t_0)
-            
-            df[  'ratio_f_t_0'] = df[  'f_t_1']/df[  'f_t_0']
-            df['ratio_tau_t_0'] = df['tau_t_1']/df['tau_t_0']
+            df.insert(0,   'ratio_f_t_0', F_t_0)
+            df.insert(0, 'ratio_tau_t_0', T_t_0)
+
         return df
 
     def pyring_damped_sinusoids_conventions(df, pars):
+
         if pars['ds-scaling'] and (set(['f_t_0', 'tau_t_0']) <= set(df.keys())): df.tau_t_0 *= 1000  # Set time in [ms]
+        
         if (set(['f_220', 'tau_220']) <= set(pars['parameters'])) and (set(['f_t_0', 'tau_t_0']) <= set(df.keys())):
+            
+            ''' Converts the first DS mode in samples for (2,2,0) '''
+
             df.rename(columns = {'f_t_0' : 'f_220', 'tau_t_0' : 'tau_220'}, inplace = True)
+        
         if 'A2220' in set(pars['parameters']) and 'logA_t_0' in set(df.keys()):
             df['logA_t_0'] = df['logA_t_0'].apply(lambda x: np.exp(x))
             if pars['ds-scaling'] and 'logA_t_0' in set(df.keys()): df.logA_t_0 *= 1e10  # Scale amplitude as [1e-21]
             df.rename(columns = {'logA_t_0' : 'A2220'}, inplace = True)
+        
         if 'A2330' in set(pars['parameters']) and 'logA_t_1' in set(df.keys()):
             df['logA_t_1'] = df['logA_t_1'].apply(lambda x: np.exp(x))
             if pars['ds-scaling'] and 'logA_t_1' in set(df.keys()): df.logA_t_1 *= 1e10  # Scale amplitude as [1e-21]
             df.rename(columns = {'logA_t_1' : 'A2330'}, inplace = True)
+        
         if pars['freq-log-scaling']:
             df['f_t_0'] = df['f_t_0'].apply(lambda x: np.log(x))
-            #df['f_t_1'] = df['f_t_1'].apply(lambda x: np.log(x))
-            #df['f_t_2'] = df['f_t_2'].apply(lambda x: np.log(x))
+        
         if pars['AR-log-scaling']:
             for mode in pars['modes']:
                 l, m, n = mode[0], mode[1], mode[2]
@@ -265,8 +292,10 @@ def Adapt_Samples(df, pars, event_keys, IMR_flag = False):
         if (set(['chi_a']) <= set(pars['parameters'])) and (set(['m1', 'm2', 'chi1', 'chi2']) <= set(df.keys())):
             df = compute_progenitors_from_IMR(df, func = 'ChiAntiymmetric')
 
-    # FIXME: Implement as a separate option non related to the TGR plot, for all the possible modes.
     def compute_bGR_f_and_tau(df, pars):
+        
+        ''' Correcting the (l,m,n) QNMs in pars['modes-w-deviation'] by their corresponding deviation. '''
+
         if (any("domega" in key for key in df.keys()) or any("dtau" in key for key in df.keys())):
             for mode in pars['modes-w-deviation']:
                 l, m, n = mode[0], mode[1], mode[2]
@@ -293,6 +322,7 @@ def Adapt_Samples(df, pars, event_keys, IMR_flag = False):
     compute_dependent_parameters(         df, pars)
     compute_bGR_f_and_tau(                df, pars)
 
+    ''' If a data frame does not contain a parameter it adds a column with NaN corresponding to that parameter '''
     if not (set(pars['parameters']).difference(df.keys()) == set()):
         additional_pars = set(pars['parameters']).difference(df.keys())
         for additional_par in additional_pars:
@@ -315,8 +345,14 @@ def read_posteriors_event(file_path, pars, event_keys, IMR_flag = False):
                 tmp = f['posterior']
             elif 'posterior_samples' in f:
                 tmp = f['posterior_samples'][()]
+            elif 'C01:SEOBNRv4PHM' in f:
+                tmp = f['C01:SEOBNRv4PHM']['posterior_samples']
+            elif 'C01:IMRPhenomXPHM' in f:
+                tmp = f['C01:IMRPhenomXPHM']['posterior_samples']
             elif 'C00:Mixed' in f:
                 tmp = f['C00:Mixed']['posterior_samples']
+            elif 'C01:Mixed' in f:
+                tmp = f['C01:Mixed']['posterior_samples']
             elif 'bilby-NRSur7dq4_high_f_cal' in f:
                 tmp = f['bilby-NRSur7dq4_high_f_cal']['posterior_samples']
             elif 'bilby-IMRPhenomXPHM-SpinTaylor-3' in f:
@@ -340,8 +376,8 @@ def read_posteriors_event(file_path, pars, event_keys, IMR_flag = False):
     df = downsampling(df, pars)    # Downsample the df if required
     df = Adapt_Samples(df, pars, event_keys, IMR_flag = IMR_flag)
     items = pars['parameters']
-    if 'mode' in df.keys():      items = items + ['mode']
-    df = df.filter(items = items)
+    if 'mode' in df.keys():      items = items + ['mode']           # Adding the mode to the parameters is necessary for spectroscopy plot
+    df = df.filter(items = items)                                   # Remove parameters in the data frame that are not going to be plotted
 
     if pars['include-prior']:
         dfp = pd.DataFrame(loadp)
@@ -439,30 +475,11 @@ def add_parameters_to_event(evt_df, new_params_list, new_params_samps):
     
     return df
 
-def compute_Mf_af_NRSur(df):
-    try:    from pesummary.gw.conversions.nrutils import NRSur_fit
-    except: raise ValueError('Unable to find the NRSur remnant fits. Please either install pesummary and  make sure that the LAL_DATA_PATH is properly set, or use a different option for the remnant fits.')
-
-    if not (set(['m1', 'm2', 'chi1', 'chi2', 'tilt_1', 'tilt_2', 'phi_12', 'phi_jl', 'theta_jn', 'phase']) <= set(df.columns)):
-        raise ValueError('The IMR samples are not compatible with the selected remnant fits. Please make sure they are consistent.')
-
-    fits = NRSur_fit(df.m1, df.m2, df.chi1, df.chi2, df.tilt_1, df.tilt_2, df.phi_12, df.phi_jl, df.theta_jn, df.phase,
-                        20.0, np.full_like(df.m1, 20.0),
-                        model       = 'NRSur7dq4Remnant',
-                        approximant = 'IMRPhenomXPHM')
-
-    Mf = fits['final_mass']
-    af = fits['final_spin']
-    
-    df.insert(0, 'Mf', Mf)
-    df.insert(0, 'af', af)
-
-    return df
-
 def compute_Mf_af_from_IMR(df, pars, IMR_fits):
     '''
     Compute Mf and af of the remnant BH from IMR parameters. Both aligned-spin and precessing fits are implemented.
     Current options are: JimenezForteza_TEOBPM, UIB2016, NRSur7dq4Remnant, IMRPhenomXPrecessing.
+    Default option is NRSur7dq4Remnant
     '''
     # Aligned-spin fits.
     if   IMR_fits == 'JimenezForteza_TEOBPM':
@@ -577,9 +594,9 @@ def compute_qnms_from_Mf_af(df, modes, pars, scaling = 1):
     '''
     Compute QNMs frequency and damping time from Mf and af for one mode (l,m,n)
     Available options: 
-        - the qnm python package [https://github.com/duetosymmetry/qnm]
-        - QNM fits from pyRing
+        - QNM fits from pyRing (default option)
         - QNM interpolants from pyRing
+        - the qnm python package [https://github.com/duetosymmetry/qnm]
     '''
     nsamp = len(df)
 
@@ -602,10 +619,7 @@ def compute_qnms_from_Mf_af(df, modes, pars, scaling = 1):
         
         for i in range(nsamp):
             Mf, af = df.Mf[i], df.af[i]
-            if pars['qnms-values'] == 'qnm':
-                Warning('Using qnm fits to compute the remnant samples [Mf, af]. This option is still experimental and it is currently very slow: we suggest to use the option "qnms-values" = "pyRing-fits".')
-                omg[i], tau[i] = get_qnms(Mf, af, l, m, n)
-            elif pars['qnms-values'] == 'pyRing-fits':
+            if pars['qnms-values'] == 'pyRing-fits':      # This is the default option in namib
                 try:
                     import pyRing.waveform as wf
                 except:
@@ -625,6 +639,9 @@ def compute_qnms_from_Mf_af(df, modes, pars, scaling = 1):
                     tau[i] = wf.QNM(2,l,m,n,qnm_interpolants).tau(Mf, af) * 1000   # [ms]
                 else:
                     tau[i] = wf.QNM(2,l,m,n,qnm_interpolants).tau(Mf, af)          # [s]
+            elif pars['qnms-values'] == 'qnm':
+                Warning('Using qnm fits to compute the remnant samples [Mf, af]. This option is still experimental and it is currently very slow: we suggest to use the option "qnms-values" = "pyRing-fits".')
+                omg[i], tau[i] = get_qnms(Mf, af, l, m, n)
 
         df.insert(0, 'f_{}{}{}'.format(l,m,n),   omg)
         df.insert(0, 'tau_{}{}{}'.format(l,m,n), tau)
@@ -778,11 +795,7 @@ def compute_phase_amplitude_from_progenitors(df, modes, Amp_Phase_Fits):
     for mode in modes:
         l, m, n = mode[0], mode[1], mode[2]
 
-        for i in range(nsamp):
-
-            # eta,chi_p,chi_m = df.eta[i], df.chi_s[i], df.chi_a[i]
-            # A[i], phi[i] = phase_amplitude_fits(eta,chi_p,chi_m,mode)
-            A[i], phi[i] = phase_amplitude_fits(df.iloc[i], mode, Amp_Phase_Fits, fit)
+        for i in range(nsamp): A[i], phi[i] = phase_amplitude_fits(df.iloc[i], mode, Amp_Phase_Fits, fit)
 
         df.insert(0, 'A2{}{}{}'.format(l,m,n), A)
         df.insert(0, 'phi2{}{}{}'.format(l,m,n), phi)

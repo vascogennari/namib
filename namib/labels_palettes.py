@@ -145,6 +145,7 @@ def labels_parameters(pars):
 
         elif par == 'logdistance': string = '$ln d_L\ [Mpc]$'
         elif par == 'distance':    string = '$d_L\ [Gpc]$'
+        elif par == 'luminosity_distance':    string = '$d_L\ [Gpc]$'
         elif par == 'psi':         string = '$\\psi$'
         elif par == 'phase_22':    string = '$\\phi_{22}$'
         elif par == 'phase_33':    string = '$\\phi_{33}$'
@@ -249,6 +250,9 @@ def labels_legend(par):
         elif par == '220-200':                       label = '$(2,2,0),(2,0,0)$'
         elif par == '220-320':                       label = '$(2,2,0),(3,2,0)$'
         elif par == '220-440':                       label = '$(2,2,0),(4,4,0)$'
+        elif par == '220-220x220':                   label = '$(2,2,0),(2,2,0)\\times(2,2,0)$'
+        elif par == '220-220x220-amp':               label = '$(2,2,0),(2,2,0)\\times(2,2,0)-\\mathrm{amp}$'
+        elif par == '221-220x220-amp':               label = '$(2,2,0),(2,2,1),(2,2,0)\\times(2,2,0)-\\mathrm{amp}$'
 
         elif par == 'GR':                            label = '$\mathrm{GR}$'
         elif par == 'nGR':                           label = '$\mathrm{nGR}$'

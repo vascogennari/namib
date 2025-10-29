@@ -738,13 +738,12 @@ def ridgeline_plots(pars, SampDataFrame, PriorDataFrame, IMRDataFrame):
                     SampDataFrame.loc[SampDataFrame[pars['compare']] == comp, [elems]] = np.nan
             SampDataFrame['ordering'] = pd.Categorical(SampDataFrame[pars['stack-mode']], categories = keys, ordered = True)
             if pars['stack-mode'] == 'time':
-                SampDataFrame['ordering'] = SampDataFrame['ordering'].map(lambda x: x.replace('M', '$'))
-                SampDataFrame['ordering'] = SampDataFrame['ordering'].map(lambda x: '$'+x)
+                SampDataFrame['ordering'] = SampDataFrame['ordering'].map(lambda x: x.replace('M', ''))
             if pars['stack-mode'] == 'event':
-                SampDataFrame['ordering'] = SampDataFrame['ordering'].map(lambda x: x.replace('GW', '$\mathrm{GW}'))
-                SampDataFrame['ordering'] = SampDataFrame['ordering'].map(lambda x: x.replace('A' , '\mathrm{A}$' ))
-                SampDataFrame['ordering'] = SampDataFrame['ordering'].map(lambda x: x.replace('B' , '\mathrm{B}$' ))
-            else: SampDataFrame['ordering'] = SampDataFrame['ordering'].map(lambda x: '$'+x+'$')
+                SampDataFrame['ordering'] = SampDataFrame['ordering'].map(lambda x: x.replace('GW', '\mathrm{GW}'))
+                SampDataFrame['ordering'] = SampDataFrame['ordering'].map(lambda x: x.replace('A' , '\mathrm{A}' ))
+                SampDataFrame['ordering'] = SampDataFrame['ordering'].map(lambda x: x.replace('B' , '\mathrm{B}' ))
+            SampDataFrame['ordering'] = SampDataFrame['ordering'].map(lambda x: '$'+x+'$')
 
             if len(keys) == 1: subset = ax
             elif ax.ndim == 1: subset = ax
