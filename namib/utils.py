@@ -307,11 +307,11 @@ def Adapt_Samples(df, pars, event_keys, IMR_flag = False):
                     except: pass
 
     LVK_conventions(                      df, pars)
-    granite_conventions(                  df, pars)
+    granite_conventions(                  df)
     if (set(['Mf', 'af']) <= set(pars['parameters'])):
         df = compute_remnant_from_IMR(    df, pars)
     df = compute_area_from_remnant(       df, pars)
-    df = rescale_amplitudes(              df, pars, event_keys)
+    df = rescale_amplitudes(              df, pars)
     df = compute_phase_amplitude_from_IMR(df, pars)
     df = compute_phase_amplitude_test(    df, pars, event_keys)
     df = compute_qnms_from_remnant(       df, pars)
