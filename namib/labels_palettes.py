@@ -43,8 +43,12 @@ def labels_parameters(pars):
         elif par == 'f_t_2':         string = '$f_{3}\ \\mathrm[Hz]$'
         elif par == 'tau_t_2':       string = '$\\tau_{3}\ \\mathrm{[ms]}$'
         elif par == 'logA_t_2':      string = '$\\log\ A_{3}$'
-        elif par == 'ratio_f_t_0':   string = '$f_{2}/f_{1}$'
-        elif par == 'ratio_tau_t_0': string = '$\\tau_{2}/\\tau_{1}$'
+        elif par == 'ratio_f_t_0':
+            if not pars['ratio-log-scaling']: string = '$f_{2}/f_{1}$'
+            else:                             string = '$\\log f_{2}/f_{1}$'
+        elif par == 'ratio_tau_t_0':
+            if not pars['ratio-log-scaling']: string = '$\\tau_{1}/\\tau_{2}$'
+            else:                             string = '$\\log \\tau_{1}/\\tau_{2}$'
 
         elif par == 'Mf':          string = '$M_f^\\mathrm{det}\ [M_{\odot}]$'
         elif par == 'af':          string = '$a_f$'

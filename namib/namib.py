@@ -50,6 +50,7 @@ def main():
         'ds-scaling'         : 0,
         'M-to-ms-factor'     : 1,
         'freq-log-scaling'   : 0,
+        'ratio-log-scaling'  : 0,
         'AR-log-scaling'     : 0,
         'qnms-values'        : 'pyRing-fits',
         'IMR-fits'           : 'JimenezForteza_TEOBPM',
@@ -100,7 +101,7 @@ def main():
         if ('samp-dir' in key) or ('output' in key) or ('stack-mode' in key) or ('compare' in key):
             try: input_pars[key] = Config.get('input', key)
             except: pass
-        if ('custom-sampdir' in key) or ('screen-output' in key) or ('compare-hard' in key) or ('evidence' in key) or ('save-post' in key) or ('include-prior' in key) or ('include-IMR' in key) or ('ds-scaling' in key) or ('freq-log-scaling' in key) or ('AR-log-scaling' in key) or ('screen-medians' in key) or ('save-medians' in key):
+        if ('custom-sampdir' in key) or ('screen-output' in key) or ('compare-hard' in key) or ('evidence' in key) or ('save-post' in key) or ('include-prior' in key) or ('include-IMR' in key) or ('ds-scaling' in key) or ('freq-log-scaling' in key) or ('ratio-log-scaling' in key) or ('AR-log-scaling' in key) or ('screen-medians' in key) or ('save-medians' in key):
             try: input_pars[key] = Config.getboolean('input', key)
             except: pass
         if ('downsample' in key) or ('M-to-ms-factor' in key):

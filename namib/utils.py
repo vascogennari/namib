@@ -190,7 +190,7 @@ def Adapt_Samples(df, pars, event_keys, IMR_flag = False):
         
             if not (set(['Mf', 'af']) <= set(df.keys())):
                 df = compute_remnant_from_IMR(df, pars)
-            df = compute_qnms_from_Mf_af(df, pars['modes'], pars, scaling = 0)
+            df = compute_qnms_from_Mf_af(df, pars['modes'], pars, scaling = 1)
 
         if (set(['f_t_0', 'tau_t_0']) <= set(pars['parameters'])) and not (set(['f_t_0', 'tau_t_0']) <= set(df.keys())):
         
@@ -259,6 +259,10 @@ def Adapt_Samples(df, pars, event_keys, IMR_flag = False):
         
         if pars['freq-log-scaling']:
             df['f_t_0'] = df['f_t_0'].apply(lambda x: np.log(x))
+        
+        if pars['ratio-log-scaling']:
+            df[  'ratio_f_t_0'] = df[  'ratio_f_t_0'].apply(lambda x: np.log(x))
+            df['ratio_tau_t_0'] = df['ratio_tau_t_0'].apply(lambda x: np.log(x))
         
         if pars['AR-log-scaling']:
             for mode in pars['modes']:
@@ -343,6 +347,8 @@ def read_posteriors_event(file_path, pars, event_keys, IMR_flag = False):
         with h5py.File(file_path, 'r') as f:
             if 'posterior' in f:
                 tmp = f['posterior']
+            if 'combined' in f:
+                tmp = f['combined']['posterior_samples']
             elif 'posterior_samples' in f:
                 tmp = f['posterior_samples'][()]
             elif 'C01:SEOBNRv4PHM' in f:

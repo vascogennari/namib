@@ -31,7 +31,6 @@ usage = """
         peaktime-22-all    List containing the peaktime for the 22 mode and the peaktime for all modes. Default: [0, 0],
         ds-scaling         Flag to convert the damping time in [ms] and scale amplitudes as [1e-21]. The option is used to compare samples from Damped Sinusoids with other models. Default: 0
         M-to-ms-factor     Flag to convert time entries from M_f units into ms. Default: 1
-        AR-log-scaling     Flag to convert the amplitude ratio in log scale. Default: 0
         qnms-values        Option to to compute the QNMs. Available options: ['pyRing-fits', 'pyRing-interpolants', 'qnm']. Default: 'pyRing-fits'
         IMR-fits           Option to select the NR fits used to compute the remnant parameters from IMR samples. Available options: ['JimenezForteza_TEOBPM', 'UIB2016', 'NRSur7dq4Remnant', 'IMRPhenomXPrecessing', 'HBR2016']. Default: 'JimenezForteza_TEOBPM'
         IMR-fits-IMR       Option to select the NR fits used to compute the remnant parameters from IMR samples. Available options: ['JimenezForteza_TEOBPM', 'UIB2016', 'NRSur7dq4Remnant', 'IMRPhenomXPrecessing', 'HBR2016']. Default: 'NRSur7dq4Remnant'
@@ -51,7 +50,7 @@ usage = """
         TGR-plot           Flag to produce TGR plot. Default: 0
         corner-sns         Flag to produce corner plot with seaborn. Default: 1
 
-        corner-settings    Dictionary for additional corner settings. Options with seaborn: {'figsize', 'figname', 'figtitle', 'alpha', 'linewidth'}. Options with corner: {'figsize', 'figname', 'figtitle', 'smooth'}. Default: {'figsize': 8, 'figname': 'corner', 'figtitle': '', 'alpha': 0.5, 'smooth': 0, 'linewidth': 1}
+        corner-settings    Dictionary for additional corner settings. Options with seaborn: {'figsize', 'figname', 'figtitle', 'alpha', 'linewidth', 'x-log-scaling', 'y-log-scaling'}. Options with corner: {'figsize', 'figname', 'figtitle', 'smooth'}. Default: {'figsize': 8, 'figname': 'corner', 'figtitle': '', 'alpha': 0.5, 'smooth': 0, 'linewidth': 1, 'x-log-scaling': 0, 'y-log-scaling': 0}
         violin-settings    Dictionary for additional violin settings. Options: {'figsize', 'figname', 'figtitle', 'alpha', 'rotation', 'pad'}. Default: {'figsize': (15, 25), 'figname': 'violin', 'figtitle': '', 'alpha': 0.5, 'rotation': 0, 'pad': -0.5}
         ridgeline-settings Dictionary for additional ridgeline settings. Options: {'figsize', 'figname', 'figtitle', 'alpha', 'overlap', 'fade', 'borderaxespad'}. Default: {'figsize': (20, 10), 'figname': 'ridgeline', 'figtitle': '', 'alpha': 0.5, 'overlap': 0.5, 'fade': 0, 'borderaxespad': 0.5}
         label-sizes        Dictionary to set labels size. Options: {'xtick', 'ytick', 'legend', 'axes', 'font'}. Default: {'xtick': 15, 'ytick': 15, 'legend': 15, 'axes': 15, 'font': 15}
