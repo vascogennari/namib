@@ -26,9 +26,6 @@ def sort_times_list(input_keys, labels = False):
     sorted_array = np.sort(tmp)
 
     # Clean the array and re-add the M
-    # switch = False
-    # for key in input_keys:
-    #     if '.' in key: switch = True
     keys = [0] * num_keys
     for i, key in enumerate(sorted_array):
         if not key == 999:
@@ -255,7 +252,6 @@ def corner_plots(pars, SampDataFrame, PriorDataFrame, IMRDataFrame):
                 labels           = labels,
                 color            = colors[i],
                 show_titles      = True,
-                #title_kwargs     = {"fontsize": 22},
                 use_math_text    = True,
                 no_fill_contours = True,
                 smooth           = pars['corner-settings']['smooth'],
