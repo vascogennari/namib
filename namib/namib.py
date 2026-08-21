@@ -75,6 +75,7 @@ def main():
         'ridgeline-settings' : {'figsize': (20, 10), 'figname': 'ridgeline', 'figtitle': '', 'alpha': 0.5, 'overlap': 0.5, 'fade': 0, 'borderaxespad': 0.5},
         'label-sizes'        : {'xtick': 15, 'ytick': 15, 'legend': 15, 'axes': 15, 'font': 15},
         'palette'            : 'crest',
+        'extension'          : ['pdf', 'png'],
 
         'extra-row'          : '',
         'BF-comparison'      : 0,
@@ -116,7 +117,7 @@ def main():
         if ('extra-row' in key) or ('single-prior' in key) or ('prior-color' in key) or ('event-name' in key) or ('truth-color' in key):
             try: input_pars[key] = Config.get('plots', key)
             except: pass
-        if ('palette' in key) or ('time-percentiles' in key) or ('corner-settings' in key) or ('violin-settings' in key) or ('ridgeline-settings' in key) or ('label-sizes' in key):
+        if ('palette' in key) or ('extension' in key) or ('time-percentiles' in key) or ('corner-settings' in key) or ('violin-settings' in key) or ('ridgeline-settings' in key) or ('label-sizes' in key):
             try: input_pars[key] = ast.literal_eval(Config.get('plots', key))
             except: pass
 

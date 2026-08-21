@@ -31,10 +31,10 @@ usage = """
         peaktime-22-all    List containing the peaktime for the 22 mode and the peaktime for all modes. Default: [0, 0],
         ds-scaling         Flag to convert the damping time in [ms] and scale amplitudes as [1e-21]. The option is used to compare samples from Damped Sinusoids with other models. Default: 0
         M-to-ms-factor     Flag to convert time entries from M_f units into ms. Default: 1
-        qnms-values        Option to to compute the QNMs. Available options: ['pyRing-fits', 'pyRing-interpolants', 'qnm']. Default: 'pyRing-fits'
+        qnms-values        Option to to compute the QNMs. Available options: ['pyRing-fits', 'pyRing-interpolants', 'pyRing-TEOB-fits', 'qnm']. Default: 'pyRing-fits'
         IMR-fits           Option to select the NR fits used to compute the remnant parameters from IMR samples. Available options: ['JimenezForteza_TEOBPM', 'UIB2016', 'NRSur7dq4Remnant', 'IMRPhenomXPrecessing', 'HBR2016']. Default: 'JimenezForteza_TEOBPM'
         IMR-fits-IMR       Option to select the NR fits used to compute the remnant parameters from IMR samples. Available options: ['JimenezForteza_TEOBPM', 'UIB2016', 'NRSur7dq4Remnant', 'IMRPhenomXPrecessing', 'HBR2016']. Default: 'NRSur7dq4Remnant'
-        Amp-Phase-fits     Option to select the fits used to compute the amplitude and phases for selected modes from IMR samples. Available options: ['Cheung2023', 'MaganaZertuche2024']. Default: 'Cheung2023'
+        Amp-Phase-fits     Option to select the fits used to compute the amplitude and phases for selected modes from IMR samples. Available options: ['Cheung2023', 'MaganaZertuche2024', 'TEOBPM']. Default: 'Cheung2023'
 
         save-post          Flag to save the imput samples filtered on the selected parameters. They are saved in 'output/reduced_posteriors'. Default: 0
         save-medians       Flag to save the medians of the selected parameters. They are saved in 'output/output_medians'. Default: 0
@@ -55,7 +55,8 @@ usage = """
         ridgeline-settings Dictionary for additional ridgeline settings. Options: {'figsize', 'figname', 'figtitle', 'alpha', 'overlap', 'fade', 'borderaxespad'}. Default: {'figsize': (20, 10), 'figname': 'ridgeline', 'figtitle': '', 'alpha': 0.5, 'overlap': 0.5, 'fade': 0, 'borderaxespad': 0.5}
         label-sizes        Dictionary to set labels size. Options: {'xtick', 'ytick', 'legend', 'axes', 'font'}. Default: {'xtick': 15, 'ytick': 15, 'legend': 15, 'axes': 15, 'font': 15}
         palette            Option to set the colors used in the plots. If string is passed colors are read from that colormap, otherwise a list of colors needs to be passed. Syntax: 'cmap_name' or ['#AB3507', '#0771AB', ...]. Default: 'crest'
-        
+        extension          Option to set the extensions of the output file. Default: [pdf, png]
+                
         extra-row          Option to include extra row with additional parameter in violin plot. Available options: ['bayes-factor', 'information', 'likelihood']. Default: ''
         BF-comparison      Flag to compute the Bayes factor between two competing compare options. The option is available only for violin plot. Default: 0
         evidence-top       Flag to insert the additional parameter as the top row. If 0, the parameter is inserted as the bottom row. This option follows both 'plot-cpnest' and 'BF-comparison'. Default: 0

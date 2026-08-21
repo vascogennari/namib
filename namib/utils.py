@@ -83,7 +83,7 @@ def Adapt_Samples(df, pars, event_keys, IMR_flag = False):
 
         ''' Compute modes and amplitude phases of IMR samples if not present. Different fits available [Cheung2023, MaganaZertuche2024] '''
 
-        if any("AR" in par for par in pars['parameters']) and any("deltaphi" in par for par in pars['parameters']) or (any("A2" in key for key in pars['parameters']) and any("phi2" in key for key in pars['parameters'])):
+        if any("AR" in par for par in pars['parameters']) and any("deltaphi" in par for par in pars['parameters']) or (any("A2" in key for key in pars['parameters']) or any("phi2" in key for key in pars['parameters'])):
             if not (any("A2" in key for key in df.keys()) and any("phi2" in key for key in df.keys())):
                 if not (set(['eta', 'chi_p', 'chi_a']) <= set(df.keys())) and pars['Amp-Phase-fits'] == 'Cheung2023' :
                     df = compute_progenitors_from_IMR(df, func = 'SymmetricMassRatio')
@@ -201,6 +201,7 @@ def Adapt_Samples(df, pars, event_keys, IMR_flag = False):
             for mode in pars['modes']:
                 l, m, n = mode[0], mode[1], mode[2]
                 dflmn = compute_qnms_from_Mf_af(df, [(l,m,n)], pars, scaling = 0)
+                compute_bGR_f_and_tau(dflmn, pars)
                 df    = df.drop([f'f_{l}{m}{n}', f'tau_{l}{m}{n}'], axis=1)
                 dflmn = dflmn.assign(mode = f"({l},{m},{n})")
                 dflmn[  'f_t_1'] = dflmn[  f'f_{l}{m}{n}']
@@ -304,7 +305,7 @@ def Adapt_Samples(df, pars, event_keys, IMR_flag = False):
             for mode in pars['modes-w-deviation']:
                 l, m, n = mode[0], mode[1], mode[2]
             
-                if set([f'f_{l}{m}{n}',f'tau_{l}{m}{n}']) <= set(pars['parameters']) and (set([f'domega_{l}{m}{n}']) <= set(df.keys()) or set([f'dtau_{l}{m}{n}']) <= set(df.keys())):
+                if set([f'f_{l}{m}{n}',f'tau_{l}{m}{n}']) <= set(df.keys()) and (set([f'domega_{l}{m}{n}']) <= set(df.keys()) or set([f'dtau_{l}{m}{n}']) <= set(df.keys())):
                     try:    df[  f'f_{l}{m}{n}'] *= 1. + df[f'domega_{l}{m}{n}']
                     except: pass
                     try:    df[f'tau_{l}{m}{n}'] *= 1. + df[  f'dtau_{l}{m}{n}']
@@ -645,6 +646,26 @@ def compute_qnms_from_Mf_af(df, modes, pars, scaling = 1):
                     tau[i] = wf.QNM(2,l,m,n,qnm_interpolants).tau(Mf, af) * 1000   # [ms]
                 else:
                     tau[i] = wf.QNM(2,l,m,n,qnm_interpolants).tau(Mf, af)          # [s]
+            elif pars['qnms-values'] == 'pyRing-TEOB-fits':
+                try:
+                    import pyRing.waveform as wf
+                except:
+                    raise ValueError('Unable to find the pyRing installation for the QNMs fits. Please either install pyRing or change the option for "qnms-values".')
+
+                TEOB_quantities = _setup_TEOB_quantities(df.iloc[i], 0)
+                TEOB = wf.TEOBPM(*TEOB_quantities)
+
+                fit_coefficients = TEOB.fit_coefficients[(l,m)]
+
+                omega_r = fit_coefficients['omega1']
+                omega_i = fit_coefficients['alpha1']
+
+                omg[i] = omega_r/(2*np.pi*TEOB.Mf)   # [Hz]
+                if scaling == 1:
+                    tau[i] = TEOB.Mf/omega_i * 1000  # [ms]
+                else:
+                    tau[i] = TEOB.Mf/omega_i         # [s]
+
             elif pars['qnms-values'] == 'qnm':
                 Warning('Using qnm fits to compute the remnant samples [Mf, af]. This option is still experimental and it is currently very slow: we suggest to use the option "qnms-values" = "pyRing-fits".')
                 omg[i], tau[i] = get_qnms(Mf, af, l, m, n)
@@ -653,6 +674,51 @@ def compute_qnms_from_Mf_af(df, modes, pars, scaling = 1):
         df.insert(0, 'tau_{}{}{}'.format(l,m,n), tau)
 
     return df
+
+def _setup_TEOB_quantities(df, tau):
+
+    m1          = df.m1
+    m2          = df.m2
+    chi1        = df.chi1
+    chi2        = df.chi2
+    try:
+        logdistance = df.logdistance
+        r           = np.exp(logdistance)
+    except:
+        r           = df.luminosity_distance
+    try:
+        try:    cosiota = df.cosiota
+        except: cosiota = df.cos_iota
+        
+        iota = np.arccos(cosiota)
+    except:
+        iota = df.iota
+
+    modes      = []
+    phases     = {}
+    TGR_params = {}
+
+    for key in df.keys():
+        if 'phase' in key:
+            try:
+                raw_mode = key.strip('phase_')
+                mode     = tuple(map(int, raw_mode))
+                modes.append(mode)
+                phases[mode] = df[key]
+            except:
+                pass
+        if 'domega' in key or 'dtau' in key:
+            TGR_params[key] = df[key]
+
+    if modes == [()]: 
+        modes  = [(2,2)]
+        phases = {(2,2): 0}
+    
+    TEOB_quantities = (tau, m1, m2, chi1, chi2, phases, r, iota, 0, modes, TGR_params)
+
+    return(TEOB_quantities)
+
+
 
 def get_qnms(Mf, af, l, m, n = 0):
     '''
@@ -783,6 +849,41 @@ def phase_amplitude_fits(df, mode, Amp_Phase_Fits, fit = None):
         Acmp = QNM_dict[mode]
         Amp  = np.abs(Acmp)
         phi  = cmath.phase(Acmp)
+
+    elif Amp_Phase_Fits == 'TEOBPM':
+
+        try:
+            import pyRing.waveform as wf
+        except:
+            raise ValueError('Unable to find the pyRing installation for the QNMs fits. Please either install pyRing or change the option for "qnms-values".')
+
+        TEOB_quantities = _setup_TEOB_quantities(df, 0)
+        TEOB = wf.TEOBPM(*TEOB_quantities)
+
+        Mf = TEOB.Mf * T_MSUN
+
+        l, m, _ = mode
+
+        fit_coefficients = TEOB.fit_coefficients[(l,m)]
+
+        sigma_real = fit_coefficients['alpha1']
+        sigma_imag = fit_coefficients['omega1']
+        a1         = fit_coefficients['a1']
+        a2         = fit_coefficients['a2']
+        a3         = fit_coefficients['a3']
+        a4         = fit_coefficients['a4']
+        p1         = fit_coefficients['p1']
+        p2         = fit_coefficients['p2']
+        p3         = fit_coefficients['p3']
+        p4         = fit_coefficients['p4']
+
+        try:    philm = df[f'phase_{l}{m}']
+        except: philm = 0
+
+        tau = 0 #The time is set to 0 to give the actual amplitude. One can change the hardcoded value (in units of Mf) to see the time evolution of the amplitude
+
+        Amp = TEOB.TEOBPM_Amplitude(tau*Mf, sigma_real,        a1, a2, a3, a4)
+        phi = TEOB.TEOBPM_Phase(    tau*Mf, sigma_imag, philm, p1, p2, p3, p4)
 
     return Amp, phi
 
@@ -1019,7 +1120,14 @@ class Posteriors:
 
                 EventDataFrame, EventPriorDataFrame, _ = read_posteriors_event(file_path, pars, single_evt_keys)
                 if not pars['stack-mode'] == '':
-                    EventDataFrame = EventDataFrame.assign(par = single_evt_keys[pars['stack-mode']])
+                    if pars['spectroscopy'] == 0:
+                        EventDataFrame = EventDataFrame.assign(par = single_evt_keys[pars['stack-mode']])
+                    else:
+                        mode_keys = {}
+                        for mode in pars['modes']:
+                            l, m, n = mode[0], mode[1], mode[2]
+                            mode_keys[f"({l},{m},{n})"] = single_evt_keys[pars['stack-mode']] + f"-{l}{m}{n}"
+                        EventDataFrame['par'] = EventDataFrame['mode'].map(mode_keys)
                     EventDataFrame.rename(columns={'par': pars['stack-mode']}, inplace = True)
                     if pars['include-prior']:
                         EventPriorDataFrame = EventPriorDataFrame.assign(par = single_evt_keys[pars['stack-mode']])

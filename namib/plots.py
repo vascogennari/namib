@@ -15,22 +15,25 @@ def sort_times_list(input_keys, labels = False):
     num_keys = len(input_keys)
     # Convert the list into a numpy array and sort it
     tmp = np.empty(num_keys)
+    switch_dict = {}
     for i, key in enumerate(input_keys):
         if not 'IMR' in key:
             tmp[i] = float(key.strip('M'))
         else:
             tmp[i] = 999
+        if '.' in key: switch_dict[tmp[i]] = True
+        else:          switch_dict[tmp[i]] = False
     sorted_array = np.sort(tmp)
 
     # Clean the array and re-add the M
-    switch = False
-    for key in input_keys:
-        if '.' in key: switch = True
+    # switch = False
+    # for key in input_keys:
+    #     if '.' in key: switch = True
     keys = [0] * num_keys
     for i, key in enumerate(sorted_array):
         if not key == 999:
             tmp = str(key)
-            if not switch:
+            if not switch_dict[key]:
                 if tmp.endswith('.0'): tmp = tmp[:-2]
             keys[i] = tmp
             if not labels: keys[i] += 'M'
@@ -202,17 +205,17 @@ def get_sigma_IMR(df, pars, keys):
 
 def corner_plots(pars, SampDataFrame, PriorDataFrame, IMRDataFrame):
 
+    _, labels_dict = lp.labels_parameters(pars)
+
     if not pars['compare'] == '': comp_pars = pd.unique(SampDataFrame[pars['compare']])
     else:                         comp_pars = 'a'
 
     keys = pd.unique(SampDataFrame[pars['stack-mode']])
     if pars['stack-mode'] == 'time':     keys = sort_times_list(keys)
-    if pars['stack-mode'] == 'pipeline': keys = sort_SNR_list(  keys)
+    #if pars['stack-mode'] == 'pipeline': keys = sort_SNR_list(  keys)
     if pars['include-IMR'] and not pars['IMR-posteriors']: CI = get_sigma_IMR(IMRDataFrame, pars, keys)
     if pars['include-IMR'] and     pars['IMR-posteriors'] and not any('IMR' in par for par in pars['ordering']): pars['ordering'].append('IMR')
-    if not pars['ordering'] == []:
-        if ((set(pars['ordering']) <= set(keys))) and (len(pars['ordering']) == len(keys)): keys = pars['ordering']
-        else: raise ValueError('Invalid option for {stack_mode} ordering.'.format(stack_mode = pars['stack-mode']))
+    if not pars['ordering'] == []: keys = pars['ordering']
 
     if pars['truths'] == []: truths = None
     else:                    truths = pars['truths']
@@ -236,7 +239,7 @@ def corner_plots(pars, SampDataFrame, PriorDataFrame, IMRDataFrame):
                 range = [ran for ran,f in zip(range,           flag) if f == False]
         else: params = pars['parameters']
 
-        fig = plt.figure(figsize = (pars['corner-settings']['figsize'], pars['corner-settings']['figsize']))
+        fig, axes = plt.subplots(len(pars['parameters']), len(pars['parameters']), figsize = (pars['corner-settings']['figsize'], pars['corner-settings']['figsize']))
         for i,key in enumerate(keys):
             SampDataFrameFilt = SampDataFrameComp[SampDataFrameComp[pars['stack-mode']] == key]
             samp = np.column_stack(SampDataFrameFilt[par] for par in params)
@@ -252,7 +255,7 @@ def corner_plots(pars, SampDataFrame, PriorDataFrame, IMRDataFrame):
                 labels           = labels,
                 color            = colors[i],
                 show_titles      = True,
-                title_kwargs     = {"fontsize": 22},
+                #title_kwargs     = {"fontsize": 22},
                 use_math_text    = True,
                 no_fill_contours = True,
                 smooth           = pars['corner-settings']['smooth'],
@@ -306,34 +309,53 @@ def corner_plots(pars, SampDataFrame, PriorDataFrame, IMRDataFrame):
             for pi,_ in enumerate(pars['parameters']):
                 for qi,_ in enumerate(pars['parameters']):
                     if pi == qi: # Diagonal elements
-                        fig.axes[pi, qi].axvline(pars['truths'][qi], ls = '--', lw = 0.7, alpha = 0.5, color = pars['truth-color'], zorder = 10)
+                        axes[pi, qi].axvline(pars['truths'][qi], ls = '--', lw = 0.7, alpha = 0.5, color = pars['truth-color'], zorder = 10)
                     elif pi > qi:
-                        fig.axes[pi, qi].axvline(pars['truths'][qi], ls = '--', lw = 0.7, alpha = 0.5, color = pars['truth-color'], zorder = 10)
-                        fig.axes[pi, qi].axhline(pars['truths'][pi], ls = '--', lw = 0.7, alpha = 0.5, color = pars['truth-color'], zorder = 10)
+                        axes[pi, qi].axvline(pars['truths'][qi], ls = '--', lw = 0.7, alpha = 0.5, color = pars['truth-color'], zorder = 10)
+                        axes[pi, qi].axhline(pars['truths'][pi], ls = '--', lw = 0.7, alpha = 0.5, color = pars['truth-color'], zorder = 10)
 
         # Add IMRCI if required
         if pars['include-IMR'] and not pars['IMR-posteriors']:
             for pi,par in enumerate(pars['parameters']):
                 for qi,qar in enumerate(pars['parameters']):
                     if pi == qi: # Diagonal elements
-                        fig.axes[pi, qi].axvline(CI[par]['median'],  ls = '-',  lw = 1., alpha = 0.6, color = pars['truth-color'], zorder = 10)
-                        fig.axes[pi, qi].axvline(CI[par]['90-low'],  ls = '--', lw = 1., alpha = 0.2, color = pars['truth-color'], zorder = 10)
-                        fig.axes[pi, qi].axvline(CI[par]['90-high'], ls = '--', lw = 1., alpha = 0.2, color = pars['truth-color'], zorder = 10)
+                        axes[pi, qi].axvline(CI[par]['median'],  ls = '-',  lw = 1., alpha = 0.6, color = pars['truth-color'], zorder = 10)
+                        axes[pi, qi].axvline(CI[par]['90-low'],  ls = '--', lw = 1., alpha = 0.2, color = pars['truth-color'], zorder = 10)
+                        axes[pi, qi].axvline(CI[par]['90-high'], ls = '--', lw = 1., alpha = 0.2, color = pars['truth-color'], zorder = 10)
                     elif pi > qi:
-                        fig.axes[pi, qi].axhline(CI[par]['median'],  ls = '-',  lw = 1., alpha = 0.6, color = pars['truth-color'], zorder = 10)
-                        fig.axes[pi, qi].axhline(CI[par]['90-low'],  ls = '--', lw = 1., alpha = 0.2, color = pars['truth-color'], zorder = 10)
-                        fig.axes[pi, qi].axhline(CI[par]['90-high'], ls = '--', lw = 1., alpha = 0.2, color = pars['truth-color'], zorder = 10)
-                        fig.axes[pi, qi].axvline(CI[qar]['median'],  ls = '-',  lw = 1., alpha = 0.6, color = pars['truth-color'], zorder = 10)
-                        fig.axes[pi, qi].axvline(CI[qar]['90-low'],  ls = '--', lw = 1., alpha = 0.2, color = pars['truth-color'], zorder = 10)
-                        fig.axes[pi, qi].axvline(CI[qar]['90-high'], ls = '--', lw = 1., alpha = 0.2, color = pars['truth-color'], zorder = 10)
+                        axes[pi, qi].axhline(CI[par]['median'],  ls = '-',  lw = 1., alpha = 0.6, color = pars['truth-color'], zorder = 10)
+                        axes[pi, qi].axhline(CI[par]['90-low'],  ls = '--', lw = 1., alpha = 0.2, color = pars['truth-color'], zorder = 10)
+                        axes[pi, qi].axhline(CI[par]['90-high'], ls = '--', lw = 1., alpha = 0.2, color = pars['truth-color'], zorder = 10)
+                        axes[pi, qi].axvline(CI[qar]['median'],  ls = '-',  lw = 1., alpha = 0.6, color = pars['truth-color'], zorder = 10)
+                        axes[pi, qi].axvline(CI[qar]['90-low'],  ls = '--', lw = 1., alpha = 0.2, color = pars['truth-color'], zorder = 10)
+                        axes[pi, qi].axvline(CI[qar]['90-high'], ls = '--', lw = 1., alpha = 0.2, color = pars['truth-color'], zorder = 10)
+
+        for pi,par in enumerate(pars['parameters']):
+            for qi,qar in enumerate(pars['parameters']):
+                # Set the bounds
+                if not pars['bounds'] == []:
+                    if pi == qi:
+                        axes[pi, qi].set_xlim(pars['bounds'][pi])
+                    elif pi > qi:
+                        axes[pi, qi].set_xlim(pars['bounds'][pi])
+                        axes[pi, qi].set_ylim(pars['bounds'][qi])
+                if pars['automatic-bounds'] or pars['min-max-bounds']:
+                    if pi == qi:
+                        bounds_p=get_sigma_bounds(SampDataFrame, pars, keys, comp_pars, par)
+                        axes[pi, qi].set_xlim(bounds_p)
+                    elif pi > qi:
+                        bounds_p=get_sigma_bounds(SampDataFrame, pars, keys, comp_pars, par)
+                        bounds_q=get_sigma_bounds(SampDataFrame, pars, keys, comp_pars, qar)
+                        axes[pi, qi].set_xlim(bounds_q)
+                        axes[pi, qi].set_ylim(bounds_p)
+                axes[len(pars['parameters'])-1, pi].set_xlabel(labels_dict[par])
+                if not pi==0: axes[pi, 0].set_ylabel(labels_dict[par])
 
         if pars['corner-settings']['figtitle'] is not None:
             fig.figure.suptitle(pars['corner-settings']['figtitle'])
             
-        utils.create_directory(pars['plots-dir'], 'PNG')
-        for extension in ['pdf', 'png']:
-            if extension == 'pdf': filename = os.path.join(pars['plots-dir'],        '{name}.{ext}'.format(name = pars['corner-settings']['figname'], ext = extension))
-            if extension == 'png': filename = os.path.join(pars['plots-dir'], 'PNG', '{name}.{ext}'.format(name = pars['corner-settings']['figname'], ext = extension))
+        for extension in pars['extension']:
+            filename = os.path.join(pars['plots-dir'], '{name}.{ext}'.format(name = pars['corner-settings']['figname'], ext = extension))
             fig.savefig(filename, bbox_inches = 'tight', transparent = True)
 
 
@@ -449,10 +471,8 @@ def corner_plots_sns(pars, SampDataFrame, PriorDataFrame, IMRDataFrame):
     if pars['corner-settings']['figtitle'] is not None:
         fig.figure.suptitle(pars['corner-settings']['figtitle'])
 
-    utils.create_directory(pars['plots-dir'], 'PNG')
-    for extension in ['pdf', 'png']:
-        if extension == 'pdf': filename = os.path.join(pars['plots-dir'],        '{name}.{ext}'.format(name = pars['corner-settings']['figname'], ext = extension))
-        if extension == 'png': filename = os.path.join(pars['plots-dir'], 'PNG', '{name}.{ext}'.format(name = pars['corner-settings']['figname'], ext = extension))
+    for extension in pars['extension']:
+        filename = os.path.join(pars['plots-dir'], '{name}.{ext}'.format(name = pars['corner-settings']['figname'], ext = extension))
         fig.savefig(filename, bbox_inches = 'tight', transparent = True)
 
 
@@ -646,10 +666,8 @@ def violin_plots(pars, SampDataFrame, PriorDataFrame, IMRDataFrame, EvidenceData
     if pars['violin-settings']['figtitle'] is not None:
         plt.title(pars['violin-settings']['figtitle'])
 
-    utils.create_directory(pars['plots-dir'], 'PNG')
-    for extension in ['pdf', 'png']:
-        if extension == 'pdf': filename = os.path.join(pars['plots-dir'],        '{name}.{ext}'.format(name = pars['violin-settings']['figname'], ext = extension))
-        if extension == 'png': filename = os.path.join(pars['plots-dir'], 'PNG', '{name}.{ext}'.format(name = pars['violin-settings']['figname'], ext = extension))
+    for extension in pars['extension']:
+        filename = os.path.join(pars['plots-dir'], '{name}.{ext}'.format(name = pars['violin-settings']['figname'], ext = extension))
         if not pars['fix-dimensions']:
             fig.savefig(filename, bbox_inches = 'tight', transparent = True)
         else:
@@ -738,18 +756,22 @@ def ridgeline_plots(pars, SampDataFrame, PriorDataFrame, IMRDataFrame):
                     SampDataFrame.loc[SampDataFrame[pars['compare']] == comp, [elems]] = np.nan
             SampDataFrame['ordering'] = pd.Categorical(SampDataFrame[pars['stack-mode']], categories = keys, ordered = True)
             if pars['stack-mode'] == 'time':
-                SampDataFrame['ordering'] = SampDataFrame['ordering'].map(lambda x: x.replace('M', ''))
+                SampDataFrame['ordering'] = SampDataFrame['ordering'].map(lambda x: str(x).replace('M', ''))
             if pars['stack-mode'] == 'event':
-                SampDataFrame['ordering'] = SampDataFrame['ordering'].map(lambda x: x.replace('GW', '\mathrm{GW}'))
-                SampDataFrame['ordering'] = SampDataFrame['ordering'].map(lambda x: x.replace('A' , '\mathrm{A}' ))
-                SampDataFrame['ordering'] = SampDataFrame['ordering'].map(lambda x: x.replace('B' , '\mathrm{B}' ))
-            SampDataFrame['ordering'] = SampDataFrame['ordering'].map(lambda x: '$'+x+'$')
-
+                SampDataFrame['ordering'] = SampDataFrame['ordering'].map(lambda x: str(x).replace('GW', '\mathrm{GW}'))
+                SampDataFrame['ordering'] = SampDataFrame['ordering'].map(lambda x: str(x).replace('A' , '\mathrm{A}' ))
+                SampDataFrame['ordering'] = SampDataFrame['ordering'].map(lambda x: str(x).replace('B' , '\mathrm{B}' ))
+            SampDataFrame['ordering'] = SampDataFrame['ordering'].map(lambda x: '$'+str(x)+'$')
+            
             if len(keys) == 1: subset = ax
             elif ax.ndim == 1: subset = ax
             else:              subset = ax[:,pi]
-            if pi == 0: flag = True
-            else:       flag = False
+            if pi == 0: 
+                flag = True
+                ylabels = label_y
+            else:       
+                flag = False
+                ylabels = False
 
             if pars['automatic-bounds'] or pars['min-max-bounds']: bounds = get_sigma_bounds(SampDataFrame, pars, keys, comp_pars, par)
             joyplot(SampDataFrame.sort_values('ordering'),
@@ -757,7 +779,7 @@ def ridgeline_plots(pars, SampDataFrame, PriorDataFrame, IMRDataFrame):
                 column    = comp_pars,
                 ylim      = 'own',
                 legend    = flag,
-                ylabels   = flag,
+                ylabels   = ylabels,
                 color     = colors,
                 alpha     = pars['ridgeline-settings']['alpha'],
                 fade      = pars['ridgeline-settings']['fade'],
@@ -837,11 +859,9 @@ def ridgeline_plots(pars, SampDataFrame, PriorDataFrame, IMRDataFrame):
         elif ax.ndim == 1: ax[0].set_ylabel('$Time\ [M_{f}]$')
         else:              ax[round(len(keys)/2)][0].set_ylabel('$Time\ [M_{f}]$')
 
-    utils.create_directory(pars['plots-dir'], 'PNG')
-    for extension in ['pdf', 'png']:
-        if extension == 'pdf': filename = os.path.join(pars['plots-dir'],        '{name}.{ext}'.format(name = pars['ridgeline-settings']['figname'], ext = extension))
-        if extension == 'png': filename = os.path.join(pars['plots-dir'], 'PNG', '{name}.{ext}'.format(name = pars['ridgeline-settings']['figname'], ext = extension))
-        plt.savefig(filename, bbox_inches = 'tight', transparent = True)
+    for extension in pars['extension']:
+        filename = os.path.join(pars['plots-dir'], '{name}.{ext}'.format(name = pars['ridgeline-settings']['figname'], ext = extension))
+        fig.savefig(filename, bbox_inches = 'tight', transparent = True)
 
 
 
